@@ -33,9 +33,13 @@ FetchContent_MakeAvailable(googletest)
 file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_SOURCE_DIR}/tests/*.cpp
 )
-add_executable(ctc_tests ${TEST_SOURCES})
+file(GLOB_RECURSE PRODUCTION_SOURCES
+    ${CMAKE_SOURCE_DIR}/src/*.cpp
+)
+list(FILTER PRODUCTION_SOURCES EXCLUDE REGEX "main.cpp")
+add_executable(ctc_tests ${TEST_SOURCES} ${PRODUCTION_SOURCES})
 target_include_directories(ctc_tests PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(ctc_tests PRIVATE gtest_main)
+target_link_libraries(ctc_tests PRIVATE gmock_main)
 set_target_properties(ctc_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests)
 
 
