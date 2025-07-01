@@ -25,7 +25,7 @@ protected:
     class MockTrain : public Train
     {
     public:
-        MockTrain(int i, TrainLine l, ServiceType t) : Train(i, l, t) {}
+        MockTrain(int i, TrainLine l, ServiceType t) : Train(i, l, t, nullptr) {}
     };
 
     MockTrain mock_train{1, TrainLine::SEVEN, ServiceType::LOCAL};

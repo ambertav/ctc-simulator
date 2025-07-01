@@ -18,7 +18,7 @@ private:
     Platform *destination;
 
 public:
-    Train(int i, TrainLine l, ServiceType t);
+    Train(int i, TrainLine l, ServiceType t, Track* ct);
 
     int get_id() const;
     TrainLine get_line() const;
@@ -27,7 +27,8 @@ public:
     TrainStatus get_status() const;
     Platform *get_destination() const;
 
-    bool move_to_track(Track* track);
+    bool can_advance() const;
+    bool move_to_track();
     void update_status(TrainStatus status);
     void update_destination(Platform* destination);
 };

@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-Train::Train(int i, TrainLine l, ServiceType t) : id(i), line(l), type(t), current_track(nullptr), status(TrainStatus::IDLE), destination(nullptr) {}
+Train::Train(int i, TrainLine l, ServiceType t, Track *ct) : id(i), line(l), type(t), current_track(ct), status(TrainStatus::IDLE), destination(nullptr) {}
 
 int Train::get_id() const
 {
@@ -36,15 +36,25 @@ Platform *Train::get_destination() const
     return destination;
 }
 
-bool Train::move_to_track(Track *track)
+bool Train::can_advance() const
 {
-    if (track == nullptr) {
+    Track *next = current_track ? current_track->get_next() : nullptr;
+    if (!next)
+        return false;
+    return next->allow_entry();
+}
+
+bool Train::move_to_track()
+{
+    Track *next = current_track ? current_track->get_next() : nullptr;
+    if (!next)
+    {
         std::cout << "Invalid, train " << id << " cannot move to nullptr\n";
         return false;
     }
-    else if (!track->allow_entry())
+    else if (!next->allow_entry())
     {
-        std::cout << "Train " << id << " cannot move to track " << track->get_id() << "\n";
+        std::cout << "Train " << id << " cannot move to track " << next->get_id() << "\n";
         return false;
     }
     else
@@ -52,11 +62,21 @@ bool Train::move_to_track(Track *track)
         if (current_track)
             current_track->release_train();
 
-        current_track = track;
-        track->accept_entry(this);
-        status = TrainStatus::MOVING;
+        current_track = next;
+        next->accept_entry(this);
 
-        std::cout << "Train " << id << " is moving to Track " << track->get_id() << "\n";
+        if (next->is_platform())
+        {
+            status = TrainStatus::ARRIVING;
+            Platform *platform = static_cast<Platform *>(next);
+            std::cout << "Train " << id << " is arriving at Station " << platform->get_station() << " on platform " << platform->get_id() << "\n";
+        }
+        else
+        {
+            status = TrainStatus::MOVING;
+            std::cout << "Train " << id << " is moving to Track " << next->get_id() << "\n";
+        }
+
         return true;
     }
 }
