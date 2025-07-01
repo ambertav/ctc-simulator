@@ -19,7 +19,7 @@ protected:
     class MockStation : public Station
     {
     public:
-        MockStation(int i, const std::string &n, const std::vector<TrainLine> &l) : Station(i, n, l) {}
+        MockStation(int i, const std::string &n, bool y, const std::vector<TrainLine> &l) : Station(i, n, y, l) {}
     };
 
     class MockTrain : public Train
@@ -29,7 +29,7 @@ protected:
     };
 
     MockTrain mock_train{1, TrainLine::SEVEN, ServiceType::LOCAL};
-    MockStation mock_station{1, "station", {TrainLine::SEVEN}};
+    MockStation mock_station{1, "station", false, {TrainLine::SEVEN}};
     MockSignal mock_signal{1, 1};
 
     Platform platform{1, &mock_signal, &mock_station, Direction::DOWNTOWN};

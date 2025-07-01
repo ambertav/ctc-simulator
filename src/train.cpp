@@ -62,22 +62,42 @@ bool Train::move_to_track()
         if (current_track)
             current_track->release_train();
 
+        Track *from = current_track;
         current_track = next;
-        next->accept_entry(this);
+        current_track->accept_entry(this);
 
-        if (next->is_platform())
+        if (current_track->is_platform())
         {
             status = TrainStatus::ARRIVING;
-            Platform *platform = static_cast<Platform *>(next);
+            Platform *platform = static_cast<Platform *>(current_track);
             std::cout << "Train " << id << " is arriving at Station " << platform->get_station() << " on platform " << platform->get_id() << "\n";
+        }
+        else if (from && from->is_platform())
+        {
+            status = TrainStatus::DEPARTING;
+            Platform *platform = static_cast<Platform *>(from);
+            std::cout << "Train " << id << " is departing from Station " << platform->get_station() << " at platform " << platform->get_id() << "\n";
         }
         else
         {
             status = TrainStatus::MOVING;
-            std::cout << "Train " << id << " is moving to Track " << next->get_id() << "\n";
+            std::cout << "Train " << id << " is moving to Track " << current_track->get_id() << "\n";
         }
 
         return true;
+    }
+}
+
+void Train::spawn(Platform *yard)
+{
+    current_track = yard;
+
+    if (yard == nullptr)
+        status = TrainStatus::OUTOFSERVICE;
+    else
+    {
+        yard->accept_entry(this);
+        status = TrainStatus::READY;
     }
 }
 

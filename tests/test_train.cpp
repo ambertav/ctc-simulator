@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
+#include "core/platform.h"
 #include "core/track.h"
 #include "core/train.h"
 
@@ -10,12 +11,17 @@ protected:
     class MockTrack : public Track
     {
     public:
-        MockTrack(int i, const Signal *s) : Track(i, s) {}
+        MockTrack(int i, Signal *s) : Track(i, s) {}
         MOCK_METHOD(bool, allow_entry, (), (const, override));
+    };
+    class MockPlatform : public Platform {
+        public :
+            MockPlatform(int i, Signal *si, const Station *st, Direction d) : Platform(i, si, st, d) {}
     };
 
     MockTrack mock_track_1{1, nullptr};
     MockTrack mock_track_2{2, nullptr};
+    MockPlatform mock_platform{1, nullptr, nullptr, Direction::DOWNTOWN};
     Train train{1, TrainLine::FOUR, ServiceType::EXPRESS, &mock_track_1};
 };
 
@@ -81,4 +87,16 @@ TEST_F(TrainTest, MoveToTrackFailsWhenNullptr)
     mock_track_2.set_prev(nullptr);
 
     EXPECT_FALSE(train.move_to_track());
+}
+
+TEST_F(TrainTest, SpawnsAtYardIsReady)
+{
+    train.spawn(&mock_platform);
+    EXPECT_EQ(train.get_status(), TrainStatus::READY);
+}
+
+TEST_F(TrainTest, DespawnsToNullptrIsOutOfService)
+{
+    train.spawn(nullptr);
+    EXPECT_EQ(train.get_status(), TrainStatus::OUTOFSERVICE);
 }

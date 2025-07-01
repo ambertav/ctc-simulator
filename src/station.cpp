@@ -3,8 +3,8 @@
 
 #include <ranges>
 
-Station::Station(int i, const std::string &n, const std::vector<TrainLine> &l)
-    : id(i), name(n), train_lines(l) {}
+Station::Station(int i, const std::string &n, bool y, const std::vector<TrainLine> &l)
+    : id(i), name(n), yard(y), train_lines(l) {}
 
 int Station::get_id() const
 {
@@ -31,6 +31,11 @@ std::vector<Platform *> Station::get_platforms() const
     }
 
     return output;
+}
+
+bool Station::is_yard() const
+{
+    return yard;
 }
 
 void Station::add_platform(std::unique_ptr<Platform> platform)

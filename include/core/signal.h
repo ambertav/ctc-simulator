@@ -11,6 +11,7 @@ private:
     const int id;
     SignalState state;
     const int target_id;
+    int delay;
 
 public:
     Signal(int i, int t);
@@ -22,5 +23,10 @@ public:
     bool is_yellow() const;
     virtual bool is_green() const;
 
-    void change_state(SignalState state);
+    int get_delay() const;
+    void set_delay(int d);
+    bool is_delayed() const;
+    void decrement_delay();
+
+    bool change_state(SignalState state);
 };

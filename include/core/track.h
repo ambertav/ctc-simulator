@@ -9,16 +9,16 @@ class Track
 private:
     const int id;
     bool occupied;
-    const Signal *const signal;
+    Signal *const signal;
     Train *current_train;
     Track *next;
     Track *prev;
 
 public:
-    Track(int i, const Signal *s);
+    Track(int i, Signal *s);
 
     int get_id() const;
-    const Signal *get_signal() const;
+    Signal *get_signal() const;
     const Train *get_occupying_train() const;
     Track *get_next() const;
     Track *get_prev() const;
