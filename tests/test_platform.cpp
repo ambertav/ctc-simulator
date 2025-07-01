@@ -39,12 +39,13 @@ TEST_F(PlatformTest, ConstructorInitializesCorrectly)
 {
     EXPECT_EQ(platform.get_id(), 1);
     EXPECT_EQ(platform.get_signal(), &mock_signal);
-    EXPECT_EQ(platform.get_station(), &mock_station);
     EXPECT_EQ(platform.get_occupying_train(), nullptr);
-    EXPECT_EQ(platform.get_direction(), Direction::DOWNTOWN);
-    EXPECT_EQ(platform.get_next_track(), nullptr);
-    EXPECT_EQ(platform.get_prev_track(), nullptr);
     EXPECT_FALSE(platform.is_occupied());
+    EXPECT_TRUE(platform.is_platform());
+    EXPECT_EQ(platform.get_next(), nullptr);
+    EXPECT_EQ(platform.get_prev(), nullptr);
+    EXPECT_EQ(platform.get_station(), &mock_station);
+    EXPECT_EQ(platform.get_direction(), Direction::DOWNTOWN);
 }
 
 TEST_F(PlatformTest, AllowsEntrySuccessfully)

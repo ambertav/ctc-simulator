@@ -33,30 +33,9 @@ TEST_F(TrackTest, ConstructorInitializesCorrectly)
     EXPECT_EQ(track.get_signal(), &mock_signal);
     EXPECT_EQ(track.get_occupying_train(), nullptr);
     EXPECT_FALSE(track.is_occupied());
-    EXPECT_FALSE(track.is_switch_on());
+    EXPECT_FALSE(track.is_platform());
     EXPECT_EQ(track.get_next(), nullptr);
-    EXPECT_EQ(track.get_switch_next(), nullptr);
     EXPECT_EQ(track.get_prev(), nullptr);
-}
-
-TEST_F(TrackTest, SwitchTogglesCorrectly)
-{
-    Track mock_next{98, nullptr};
-    Track mock_switch_next{99, nullptr};
-
-    track.set_next(&mock_next);
-    track.set_switch_next(&mock_switch_next);
-
-    bool original = track.is_switch_on();
-    track.toggle_switch();
-    EXPECT_EQ(track.is_switch_on(), !original);
-}
-
-TEST_F(TrackTest, ToggleFailsIfNullptrNext)
-{
-    bool original = track.is_switch_on();
-    track.toggle_switch();
-    EXPECT_EQ(track.is_switch_on(), original);
 }
 
 TEST_F(TrackTest, AllowsEntrySuccessfully)
