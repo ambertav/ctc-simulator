@@ -27,7 +27,7 @@ std::vector<Platform *> Station::get_platforms() const
     output.reserve(platforms.size());
     for (const auto &p : platforms)
     {
-        output.push_back(p.get());
+        output.push_back(p);
     }
 
     return output;
@@ -38,9 +38,9 @@ bool Station::is_yard() const
     return yard;
 }
 
-void Station::add_platform(std::unique_ptr<Platform> platform)
+void Station::add_platform(Platform* platform)
 {
-    platforms.push_back(std::move(platform));
+    platforms.push_back(platform);
 }
 
 std::optional<Platform *> Station::find_available_platform(Direction dir) const
@@ -48,7 +48,7 @@ std::optional<Platform *> Station::find_available_platform(Direction dir) const
     for (const auto &p : platforms)
     {
         if (p->get_direction() == dir && p->allow_entry())
-            return p.get();
+            return p;
     }
 
     return std::nullopt;
@@ -62,7 +62,7 @@ std::vector<Platform *> Station::get_platforms_by_direction(Direction dir) const
     for (const auto &p : platforms)
     {
         if (p->get_direction() == dir)
-            output.push_back(p.get());
+            output.push_back(p);
     }
 
     return output;

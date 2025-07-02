@@ -17,7 +17,7 @@ private:
     const std::string name;
     const bool yard;
     std::vector<TrainLine> train_lines;
-    std::vector<std::unique_ptr<Platform>> platforms;
+    std::vector<Platform*> platforms;
 
 public:
     Station(int i, const std::string &n, bool y, const std::vector<TrainLine> &l);
@@ -29,7 +29,7 @@ public:
 
     bool is_yard() const;
     
-    void add_platform(std::unique_ptr<Platform> platform);
+    void add_platform(Platform* platform);
 
     std::optional<Platform *> find_available_platform(Direction dir) const;
     std::vector<Platform *> get_platforms_by_direction(Direction dir) const;

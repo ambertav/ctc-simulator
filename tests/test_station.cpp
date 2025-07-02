@@ -17,13 +17,7 @@ protected:
 
     Station station{1, "station", false, {TrainLine::A, TrainLine::C, TrainLine::E}};
     Station yard{2, "yard", true, {TrainLine::A, TrainLine::C, TrainLine::E}};
-    std::unique_ptr<MockPlatform> mock_platform;
-
-    void SetUp() override
-    {
-        mock_platform = std::make_unique<MockPlatform>(1, nullptr, &station, Direction::DOWNTOWN);
-        ::testing::Mock::AllowLeak(mock_platform.get());
-    }
+    MockPlatform mock_platform{1, nullptr, &station, Direction::DOWNTOWN};
 };
 
 TEST_F(StationTest, ConstructorInitializesCorrectly)
@@ -38,51 +32,40 @@ TEST_F(StationTest, ConstructorInitializesCorrectly)
 
 TEST_F(StationTest, AddsPlatformSuccessfully)
 {
-    auto raw_ptr = mock_platform.get();
-
-    station.add_platform(std::move(mock_platform));
-    EXPECT_THAT(station.get_platforms(), ::testing::ElementsAre(raw_ptr));
+    station.add_platform(&mock_platform);
+    EXPECT_THAT(station.get_platforms(), ::testing::ElementsAre(&mock_platform));
 }
 
 TEST_F(StationTest, FindsAvailablePlatformSuccessfully)
 {
-    auto raw_ptr = mock_platform.get();
+    station.add_platform(&mock_platform);
+    EXPECT_CALL(mock_platform, get_direction()).WillOnce(testing::Return(Direction::DOWNTOWN));
+    EXPECT_CALL(mock_platform, allow_entry()).WillOnce(testing::Return(true));
 
-    station.add_platform(std::move(mock_platform));
-    EXPECT_CALL(*raw_ptr, get_direction()).WillOnce(testing::Return(Direction::DOWNTOWN));
-    EXPECT_CALL(*raw_ptr, allow_entry()).WillOnce(testing::Return(true));
-
-    EXPECT_EQ(station.find_available_platform(Direction::DOWNTOWN), raw_ptr);
-
-    std::cout << "mock_platform unique_ptr address: " << mock_platform.get() << "\n";
-    std::cout << "raw_ptr address: " << raw_ptr << "\n";
+    EXPECT_EQ(station.find_available_platform(Direction::DOWNTOWN), &mock_platform);
 }
 
 TEST_F(StationTest, FailsToFindAvailablePlatformIfDenyingEntry)
 {
-    auto raw_ptr = mock_platform.get();
-
-    station.add_platform(std::move(mock_platform));
-    EXPECT_CALL(*raw_ptr, allow_entry()).WillOnce(testing::Return(false));
-    EXPECT_CALL(*raw_ptr, get_direction()).WillOnce(testing::Return(Direction::DOWNTOWN));
+    station.add_platform(&mock_platform);
+    EXPECT_CALL(mock_platform, allow_entry()).WillOnce(testing::Return(false));
+    EXPECT_CALL(mock_platform, get_direction()).WillOnce(testing::Return(Direction::DOWNTOWN));
 
     EXPECT_EQ(station.find_available_platform(Direction::DOWNTOWN), std::nullopt);
 }
 
 TEST_F(StationTest, GetsPlatformsByDirectionSuccessfully)
 {
-    auto raw_ptr = mock_platform.get();
-    station.add_platform(std::move(mock_platform));
-    EXPECT_CALL(*raw_ptr, get_direction()).WillOnce(testing::Return(Direction::DOWNTOWN));
+    station.add_platform(&mock_platform);
+    EXPECT_CALL(mock_platform, get_direction()).WillOnce(testing::Return(Direction::DOWNTOWN));
 
-    EXPECT_THAT(station.get_platforms_by_direction(Direction::DOWNTOWN), ::testing::ElementsAre((raw_ptr)));
+    EXPECT_THAT(station.get_platforms_by_direction(Direction::DOWNTOWN), ::testing::ElementsAre(&mock_platform));
 }
 
 TEST_F(StationTest, ReturnsEmptyIfNoMatchingPlatformDirections)
 {
-    auto raw_ptr = mock_platform.get();
-    station.add_platform(std::move(mock_platform));
-    EXPECT_CALL(*raw_ptr, get_direction()).WillOnce(testing::Return(Direction::UPTOWN));
+    station.add_platform(&mock_platform);
+    EXPECT_CALL(mock_platform, get_direction()).WillOnce(testing::Return(Direction::UPTOWN));
 
     EXPECT_THAT(station.get_platforms_by_direction(Direction::DOWNTOWN), ::testing::IsEmpty());
 }

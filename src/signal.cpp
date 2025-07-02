@@ -55,11 +55,7 @@ void Signal::decrement_delay()
 
 bool Signal::change_state(SignalState state)
 {
-    if (this->state != state)
-    {
-        this->state = state;
-        return true;
-    }
-    else
-        return false;
+    bool changed = this->state != state;
+    this->state = state;
+    return changed;
 }

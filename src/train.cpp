@@ -1,10 +1,8 @@
-#include "core/track.h"
-#include "core/platform.h"
 #include "core/train.h"
 
 #include <iostream>
 
-Train::Train(int i, TrainLine l, ServiceType t, Track *ct) : id(i), line(l), type(t), current_track(ct), status(TrainStatus::IDLE), destination(nullptr) {}
+Train::Train(int i, TrainLine l, ServiceType t, Track* ct) : id(i), line(l), type(t), current_track(ct), status(TrainStatus::IDLE), destination(nullptr) {}
 
 int Train::get_id() const
 {
@@ -76,7 +74,7 @@ bool Train::move_to_track()
         {
             status = TrainStatus::DEPARTING;
             Platform *platform = static_cast<Platform *>(from);
-            std::cout << "Train " << id << " is departing from Station " << platform->get_station() << " at platform " << platform->get_id() << "\n";
+            std::cout << "Train " << id << " is departing from Station " << platform->get_station()->get_name() << " at platform " << platform->get_id() << "\n";
         }
         else
         {

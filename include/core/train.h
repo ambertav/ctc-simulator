@@ -4,6 +4,10 @@
 #include "enums/service_type.h"
 #include "enums/train_status.h"
 
+#include "core/track.h"
+#include "core/platform.h"
+#include "core/station.h"
+
 class Track;
 class Platform;
 
