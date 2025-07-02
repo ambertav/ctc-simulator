@@ -9,6 +9,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
+set(LOG_DIR ${CMAKE_SOURCE_DIR}/logs)
+set(DATA_DIR ${CMAKE_SOURCE_DIR}/data)
+
 # =============================
 # app
 # =============================
@@ -18,6 +21,12 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 add_executable(app ${SOURCES})
 target_include_directories(app PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(app PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
+target_compile_definitions(app PRIVATE 
+    LOG_DIR=\"${LOG_DIR}\"
+    DATA_DIR=\"${DATA_DIR}\"
+)
+
 
 # =============================
 # tests
@@ -42,6 +51,10 @@ target_include_directories(ctc_tests PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(ctc_tests PRIVATE gmock_main)
 set_target_properties(ctc_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests)
 
+target_compile_definitions(ctc_tests PRIVATE 
+    LOG_DIR=\"${LOG_DIR}\"
+    DATA_DIR=\"${DATA_DIR}\"
+)
 
 include(GoogleTest)
 gtest_discover_tests(ctc_tests)
