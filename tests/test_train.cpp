@@ -97,6 +97,6 @@ TEST_F(TrainTest, SpawnsAtYardIsReady)
 
 TEST_F(TrainTest, DespawnsToNullptrIsOutOfService)
 {
-    train.spawn(nullptr);
+    train.despawn();
     EXPECT_EQ(train.get_status(), TrainStatus::OUTOFSERVICE);
 }

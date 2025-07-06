@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 
+#include "config.h"
 #include "core/dispatch.h"
 
 class DispatchTest : public testing::Test
@@ -14,7 +15,7 @@ protected:
     class MockTrain : public Train
     {
     public:
-        MockTrain(int i, TrainLine l, ServiceType t) : Train(i, l, t, nullptr) {}
+        MockTrain(int i, TrainLine l, ServiceType t, Track *ct) : Train(i, l, t, ct) {}
     };
     class MockTrack : public Track
     {
@@ -31,7 +32,6 @@ protected:
     public:
         MockSignal(int i, int t) : Signal(i, t) {}
     };
-
     class MockStation : public Station
     {
     public:
@@ -46,12 +46,15 @@ protected:
     std::unique_ptr<MockSignal> mock_signal_yard_1, mock_signal_track_1, mock_signal_station, mock_signal_track_2, mock_signal_yard_2;
     std::unique_ptr<Dispatch> dispatch;
 
+    std::string test_file{std::string(LOG_DIRECTORY) + "/test_sim.txt"};
+    Logger logger{test_file};
+
     void build_objects()
     {
         auto lines = std::vector<TrainLine>{TrainLine::FOUR};
 
-        mock_train_1 = std::make_unique<MockTrain>(1, TrainLine::FOUR, ServiceType::EXPRESS);
-        mock_train_2 = std::make_unique<MockTrain>(2, TrainLine::FOUR, ServiceType::EXPRESS);
+        mock_train_1 = std::make_unique<MockTrain>(1, TrainLine::FOUR, ServiceType::EXPRESS, nullptr);
+        mock_train_2 = std::make_unique<MockTrain>(2, TrainLine::FOUR, ServiceType::EXPRESS, nullptr);
 
         mock_yard_1 = std::make_unique<MockStation>(1, "yard 1", true, lines);
         mock_signal_yard_1 = std::make_unique<MockSignal>(1, 1);
@@ -98,6 +101,8 @@ protected:
 
     void SetUp() override
     {
+        std::ofstream file(test_file, std::ios::trunc);
+        file.close();
         /*
         constructs:
         1 train, 2 yards, 1 station, 3 platforms, 2 tracks, 5 signals
@@ -128,7 +133,8 @@ protected:
         std::vector<Platform *> platforms{mock_platform_yard_1.get(), mock_platform_station.get(), mock_platform_yard_2.get()};
         std::vector<Track *> tracks{mock_track_1.get(), mock_track_2.get()};
         std::vector<Signal *> signals{mock_signal_yard_1.get(), mock_signal_track_1.get(), mock_signal_station.get(), mock_signal_track_2.get(), mock_signal_yard_2.get()};
-        dispatch = std::make_unique<Dispatch>(stations, trains, tracks, platforms, signals);
+
+        dispatch = std::make_unique<Dispatch>(stations, trains, tracks, platforms, signals, logger);
     }
 };
 
@@ -159,10 +165,11 @@ TEST_F(DispatchTest, ConstructorInitializesCorrectly)
     const auto schedule = dispatch->get_schedule();
     EXPECT_EQ(schedule.size(), stations_map.size());
 
-    for (const auto &[station_id, queue] : schedule)
+    for (const auto &[station_id, queues] : schedule)
     {
         EXPECT_TRUE(stations_map.contains(station_id));
-        EXPECT_TRUE(queue.empty());
+        EXPECT_TRUE(queues.arrivals.empty());
+        EXPECT_TRUE(queues.departures.empty());
     }
 }
 
@@ -184,8 +191,10 @@ TEST_F(DispatchTest, LoadsScheduleAndConstructsPriorityQueuesSucessfully)
 
     EXPECT_TRUE(schedule.contains(1));
     EXPECT_TRUE(schedule.contains(2));
-    EXPECT_EQ(schedule.at(1).size(), 2);
-    EXPECT_EQ(schedule.at(2).size(), 2);
+    EXPECT_EQ(schedule.at(1).arrivals.size(), 1);
+    EXPECT_EQ(schedule.at(1).departures.size(), 1);
+    EXPECT_EQ(schedule.at(2).arrivals.size(), 1);
+    EXPECT_EQ(schedule.at(2).departures.size(), 1);
 
     std::remove(temp_filename.c_str());
 }
@@ -197,9 +206,10 @@ TEST_F(DispatchTest, ReturnsEarlyFromLoadScheduleForEmptyFile)
     dispatch->load_schedule(temp_filename);
     const auto &schedule = dispatch->get_schedule();
 
-    for (const auto &[station_id, queue] : schedule)
+    for (const auto &[station_id, queues] : schedule)
     {
-        EXPECT_TRUE(queue.empty());
+        EXPECT_TRUE(queues.arrivals.empty());
+        EXPECT_TRUE(queues.departures.empty());
     }
 }
 
@@ -220,9 +230,11 @@ TEST_F(DispatchTest, SkipsMalformedLinesInLoadSchedule)
     const auto &schedule = dispatch->get_schedule();
 
     EXPECT_TRUE(schedule.contains(1));
-    EXPECT_EQ(schedule.at(1).size(), 2);
+    EXPECT_EQ(schedule.at(1).arrivals.size(), 1);
+    EXPECT_EQ(schedule.at(1).departures.size(), 1);
 
-    EXPECT_TRUE(schedule.at(2).empty());
+    EXPECT_TRUE(schedule.at(2).arrivals.empty());
+    EXPECT_TRUE(schedule.at(2).departures.empty());
 }
 
 TEST_F(DispatchTest, SkipsLinesWithInvalidInputInLoadSchedule)
@@ -243,10 +255,13 @@ TEST_F(DispatchTest, SkipsLinesWithInvalidInputInLoadSchedule)
     const auto &schedule = dispatch->get_schedule();
 
     EXPECT_TRUE(schedule.contains(1));
-    EXPECT_EQ(schedule.at(1).size(), 2);
+    EXPECT_EQ(schedule.at(1).arrivals.size(), 1);
+    EXPECT_EQ(schedule.at(1).departures.size(), 1);
 
-    EXPECT_TRUE(schedule.at(2).empty());
-    EXPECT_TRUE(schedule.at(3).empty());
+    EXPECT_TRUE(schedule.at(2).arrivals.empty());
+    EXPECT_TRUE(schedule.at(2).departures.empty());
+    EXPECT_TRUE(schedule.at(3).arrivals.empty());
+    EXPECT_TRUE(schedule.at(3).departures.empty());
 }
 
 TEST_F(DispatchTest, UpdateHandlesDelayedSignals)
@@ -292,18 +307,6 @@ TEST_F(DispatchTest, UpdateHandlesDespawnTrainOnYardArrival)
 
     EXPECT_EQ(mock_train_1->get_current_track(), nullptr);
     EXPECT_EQ(mock_train_1->get_status(), TrainStatus::OUTOFSERVICE);
-
-}
-
-TEST_F(DispatchTest, UpdateHandlesAddingStationArrivalDelay)
-{
-    mock_train_1->spawn(mock_platform_yard_1.get());
-    dispatch->update(0); // moves to track_1
-    dispatch->update(1); // moves to station
-
-    EXPECT_EQ(mock_train_1->get_current_track(), static_cast<Track*>(mock_platform_station.get()));
-    EXPECT_EQ(mock_train_1->get_status(), TrainStatus::ARRIVING);
-    EXPECT_EQ(mock_platform_station->get_next()->get_signal()->get_delay(), 2);
 }
 
 TEST_F(DispatchTest, UpdateHandlesSpawnTrainsOnYardDeparture)
@@ -325,6 +328,5 @@ TEST_F(DispatchTest, UpdateHandlesSpawnTrainsOnYardDeparture)
 
     dispatch->update(0);
 
-    EXPECT_EQ(mock_train_1->get_current_track(), static_cast<Track*>(mock_platform_yard_1.get()));
-
+    EXPECT_EQ(mock_train_1->get_current_track(), static_cast<Track *>(mock_platform_yard_1.get()));
 }

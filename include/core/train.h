@@ -34,6 +34,7 @@ public:
     bool can_advance() const;
     bool move_to_track();
     void spawn(Platform* yard);
+    void despawn();
     
     void update_status(TrainStatus status);
     void update_destination(Platform* destination);

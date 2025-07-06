@@ -1,7 +1,7 @@
 #include "core/logger.h"
 
 Logger::Logger(const std::string &file_path)
-    : outfile(file_path, std::ios::out | std::ios::app)
+    : outfile(file_path, std::ios::out | std::ios::trunc)
 {
     if (!outfile.is_open())
     {
@@ -59,7 +59,8 @@ void Logger::log_signal_change(int tick, Signal *signal)
     log(message);
 }
 
-void Logger::log_train_spawn(int actual_tick, int planned_tick, Train* train, Direction dir) {
+void Logger::log_train_spawn(int actual_tick, int planned_tick, Train *train, Direction dir)
+{
 
     std::string direction = dir == Direction::DOWNTOWN ? "downtown" : "uptown";
     std::string message = "Train " + std::to_string(train->get_id()) +

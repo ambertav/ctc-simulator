@@ -7,8 +7,8 @@
 #include "core/dispatch.h"
 #include "constants.h"
 
-Dispatch::Dispatch(const std::vector<Station *> &st, const std::vector<Train *> &tn, const std::vector<Track *> &tk, const std::vector<Platform *> &p, const std::vector<Signal *> &si)
-    : trains(tn), signals(si)
+Dispatch::Dispatch(const std::vector<Station *> &st, const std::vector<Train *> &tn, const std::vector<Track *> &tk, const std::vector<Platform *> &p, const std::vector<Signal *> &si, Logger &log)
+    : trains(tn), signals(si), logger(log)
 {
     segments.reserve(tk.size() + p.size());
     segments.insert(segments.end(), tk.begin(), tk.end());
@@ -19,7 +19,7 @@ Dispatch::Dispatch(const std::vector<Station *> &st, const std::vector<Train *> 
 
     for (Station *station : st)
     {
-        schedule.emplace(station->get_id(), std::priority_queue<Event>{});
+        schedule.emplace(station->get_id(), EventQueues{});
         stations[station->get_id()] = station;
     }
 }
@@ -44,7 +44,7 @@ const std::vector<Track *> &Dispatch::get_segments() const
     return segments;
 }
 
-const std::unordered_map<int, std::priority_queue<Event>> &Dispatch::get_schedule() const
+const std::unordered_map<int, EventQueues> &Dispatch::get_schedule() const
 {
     return schedule;
 }
@@ -108,56 +108,78 @@ void Dispatch::load_schedule(const std::string &csv_file)
 
         dir = dir_str == "Downtown" ? Direction::DOWNTOWN : Direction::UPTOWN;
 
-        schedule[station_id].emplace(arrival_tick, train_id, station_id, dir, EventType::ARRIVAL);
-        schedule[station_id].emplace(departure_tick, train_id, station_id, dir, EventType::DEPARTURE);
+        if (arrival_tick != -1)
+        {
+            schedule[station_id].arrivals.emplace(arrival_tick, train_id, station_id, dir, EventType::ARRIVAL);
+        }
+
+        if (departure_tick != -1)
+        {
+            schedule[station_id].departures.emplace(departure_tick, train_id, station_id, dir, EventType::DEPARTURE);
+        }
     }
 }
 
 void Dispatch::update(int tick)
 {
     // handle_delays();
-    handle_signals();
+    handle_signals(tick);
 
     for (Train *train : trains)
     {
-        if (!train)
+        if (!train || train->get_status() == TrainStatus::OUTOFSERVICE)
             continue;
 
         if (train->can_advance())
         {
             bool moved = train->move_to_track();
+
             if (train->get_status() == TrainStatus::ARRIVING)
             {
-
                 Platform *arrived = static_cast<Platform *>(train->get_current_track());
 
                 if (arrived->get_station()->is_yard())
                 {
                     despawn_train(train, arrived->get_station()->get_id());
                 }
-                else
+
+                auto &event_queue = schedule[arrived->get_station()->get_id()];
+
+                if (!event_queue.arrivals.empty())
                 {
-                    Signal *next_signal = arrived->get_next()->get_signal();
-                    if (next_signal)
-                        next_signal->set_delay(2); // platform dwell
+                    Event event = event_queue.arrivals.top();
+
+                    if (event.train_id == train->get_id())
+                    {
+                        event_queue.arrivals.pop();
+                        logger.log_arrival(tick, event.tick, train, arrived);
+                    }
                 }
             }
-            if (train->get_status() == TrainStatus::DEPARTING)
+            else if (train->get_status() == TrainStatus::DEPARTING)
             {
-                // LOG ACTUAL VS PLANNED
+                Platform *departing = static_cast<Platform *>(train->get_current_track()->get_prev());
+
+                auto &event_queue = schedule[departing->get_station()->get_id()];
+
+                if (!event_queue.departures.empty())
+                {
+                    Event event = event_queue.departures.top();
+
+                    if (event.train_id == train->get_id())
+                    {
+                        event_queue.departures.pop();
+                        logger.log_departure(tick, event.tick, train, departing);
+                    }
+                }
             }
         }
-        else
-        {
-            handle_spawns(tick);
-            // LOG DEPART FROM YARD
-        }
     }
+    handle_spawns(tick);
 }
 
-void Dispatch::handle_signals()
+void Dispatch::handle_signals(int tick)
 {
-
     for (Track *segment : segments)
     {
         Signal *signal = segment->get_signal();
@@ -176,7 +198,8 @@ void Dispatch::handle_signals()
 
         bool changed = signal->change_state(new_state);
         if (changed)
-        { // LOG CHANGE
+        {
+            logger.log_signal_change(tick, signal);
         }
 
         if (signal->is_delayed())
@@ -186,29 +209,30 @@ void Dispatch::handle_signals()
 
 void Dispatch::handle_spawns(int tick)
 {
-    for (int id : Yards::ids)
+    int id = Yards::ids[0];
+
+    auto &event_queue = schedule[id];
+
+    if (!event_queue.departures.empty())
     {
-        auto &event_queue = schedule[id];
+        Event event = event_queue.departures.top();
 
-        while (!event_queue.empty() && event_queue.top().tick <= tick)
+        if (event.tick <= tick)
         {
-            Event event = event_queue.top();
-            event_queue.pop();
-
-            if (event.type == EventType::DEPARTURE)
-                spawn_train(event);
+            event_queue.departures.pop();
+            spawn_train(tick, event);
         }
     }
 }
 
-void Dispatch::spawn_train(Event event)
+void Dispatch::spawn_train(int tick, Event event)
 {
     Station *station = stations[event.station_id];
 
     auto platforms = station->get_platforms_by_direction(event.direction);
     if (platforms.empty())
     {
-        std::cout << "No platforms found at yard " << event.station_id << " for direction " << event.direction << "\n";
+        std::cerr << "No platforms found at yard " << event.station_id << " for direction " << event.direction << "\n";
         return;
     }
 
@@ -216,15 +240,15 @@ void Dispatch::spawn_train(Event event)
 
     for (Train *train : trains)
     {
-        if (event.train_id == train->get_id())
+        if (event.train_id == train->get_id() && train->get_status() == TrainStatus::IDLE)
         {
             train->spawn(platform);
-            break;
+            logger.log_train_spawn(tick, event.tick, train, event.direction);
         }
     }
 }
 
 void Dispatch::despawn_train(Train *train, int yard_id)
 {
-    train->spawn(nullptr);
+    train->despawn();
 }

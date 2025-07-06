@@ -9,6 +9,7 @@
 #include "core/platform.h"
 #include "core/signal.h"
 #include "core/station.h"
+#include "core/logger.h"
 
 enum class EventType
 {
@@ -34,6 +35,12 @@ struct Event
     }
 };
 
+struct EventQueues
+{
+    std::priority_queue<Event> arrivals;
+    std::priority_queue<Event> departures;
+};
+
 class Dispatch
 {
 private:
@@ -42,24 +49,26 @@ private:
     std::vector<Track *> segments;
     std::vector<Signal *> signals;
 
-    std::unordered_map<int, std::priority_queue<Event>> schedule;
+    std::unordered_map<int, EventQueues> schedule;
+
+    Logger &logger;
 
 public:
-    Dispatch(const std::vector<Station *> &st, const std::vector<Train *> &tn, const std::vector<Track *> &tk, const std::vector<Platform *> &p, const std::vector<Signal *> &si);
+    Dispatch(const std::vector<Station *> &st, const std::vector<Train *> &tn, const std::vector<Track *> &tk, const std::vector<Platform *> &p, const std::vector<Signal *> &si, Logger &log);
 
-    const std::unordered_map<int, Station *>& get_stations() const;
-    const std::vector<Train *>& get_trains() const;
-    const std::vector<Signal *>& get_signals() const;
-    const std::vector<Track *>& get_segments() const;
+    const std::unordered_map<int, Station *> &get_stations() const;
+    const std::vector<Train *> &get_trains() const;
+    const std::vector<Signal *> &get_signals() const;
+    const std::vector<Track *> &get_segments() const;
 
-    const std::unordered_map<int, std::priority_queue<Event>>& get_schedule() const;
+    const std::unordered_map<int, EventQueues> &get_schedule() const;
 
     void load_schedule(const std::string &csv_file);
     void update(int tick);
 
 private:
-    void handle_signals();
+    void handle_signals(int tick);
     void handle_spawns(int tick);
-    void spawn_train(Event event);
+    void spawn_train(int tick, Event event);
     void despawn_train(Train *train, int yard_id);
 };
