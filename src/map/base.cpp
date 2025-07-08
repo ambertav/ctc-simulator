@@ -1,5 +1,8 @@
 #include "map/base.h"
 
+#include <queue>
+#include <limits>
+
 using namespace Transit::Map;
 
 Node *Base::add_node(const std::string &i, const std::string &n, const std::vector<TrainLine> &t, ServiceType s)
@@ -34,7 +37,7 @@ void Base::remove_node(const std::string &node_id)
         {
             continue;
         }
-        
+
         Node *neighbor = node_map[id];
 
         auto it = std::remove_if(edges.begin(), edges.end(), [node_id](const Edge &e)
@@ -115,6 +118,17 @@ void Base::remove_edge(Node *u, Node *v)
     --v->degree;
 }
 
+const Node *Base::get_node(const std::string &id) const
+{
+    auto it = node_map.find(id);
+    if (it != node_map.end())
+    {
+        return it->second;
+    }
+
+    return nullptr;
+}
+
 const std::unordered_map<std::string, std::vector<Edge>> &Base::get_adjacency_list() const
 {
     return adjacency_list;
@@ -140,4 +154,151 @@ void Base::print() const
 
         std::cout << "\n";
     }
+}
+
+Path Base::find_path(const std::string &u_id, const std::string &v_id) const
+{
+    const Node *u = get_node(u_id);
+    const Node *v = get_node(v_id);
+
+    if (!u || !v || u == v)
+    {
+        return Path{};
+    }
+    else
+    {
+        return dijkstra(u, v);
+    }
+}
+
+Path Base::dijkstra(const Node *u, const Node *v) const
+{
+    std::unordered_map<std::string, int> dist;
+    std::unordered_map<std::string, int> transfers;
+    std::unordered_map<std::string, std::string> prev;
+    std::unordered_set<std::string> visited;
+
+    for (const auto &[id, _] : adjacency_list)
+    {
+        dist[id] = std::numeric_limits<int>::max();
+    }
+    dist[u->id] = 0;
+    transfers[u->id] = 0;
+
+    using PQElement = std::tuple<int /* distance */, int /* transfers */, std::string /* id */, std::vector<TrainLine>> /* train lines */;
+    auto comparator = [](const PQElement &a, const PQElement &b)
+    {
+        if (std::get<0>(a) != std::get<0>(b)) // shorter distance
+        {
+            return std::get<0>(a) > std::get<0>(b);
+        }
+        else // then fewer transfers
+        {
+            return std::get<1>(a) > std::get<1>(b);
+        }
+    };
+    std::priority_queue<PQElement, std::vector<PQElement>, decltype(comparator)> pq(comparator);
+
+    pq.emplace(0, 0, u->id, u->train_lines);
+
+    while (!pq.empty())
+    {
+        auto [current_dist, current_transfers, node_id, prev_lines] = pq.top();
+        pq.pop();
+
+        if (visited.contains(node_id))
+        {
+            continue;
+        }
+        visited.insert(node_id);
+
+        if (node_id == v->id)
+        {
+            break;
+        }
+
+        for (const auto &edge : adjacency_list.at(node_id))
+        {
+            const std::string &neighbor_id = edge.to;
+            int weight = edge.weight;
+            const std::vector<TrainLine> &edge_lines = edge.train_lines;
+
+            if (visited.contains(neighbor_id))
+            {
+                continue;
+            }
+
+            int new_dist = current_dist + weight;
+            int new_transfers = current_transfers + (requires_transfer(prev_lines, edge_lines) ? 1 : 0);
+
+            if (new_dist < dist[neighbor_id] || (new_dist == dist[neighbor_id] && new_transfers < transfers[neighbor_id]))
+            {
+                dist[neighbor_id] = new_dist;
+                transfers[neighbor_id] = new_transfers;
+                prev[neighbor_id] = node_id;
+                pq.emplace(new_dist, new_transfers, neighbor_id, edge_lines);
+            }
+        }
+    }
+
+    if (dist[v->id] == std::numeric_limits<int>::max())
+    {
+        return Path();
+    }
+
+    return reconstruct_path(u, v, prev, transfers);
+}
+
+Path Base::reconstruct_path(const Node *u, const Node *v, const std::unordered_map<std::string, std::string> &prev, const std::unordered_map<std::string, int> &transfers) const
+{
+    std::vector<std::string> path_nodes;
+
+    std::string at = v->id;
+    while (at != u->id)
+    {
+        auto it = prev.find(at);
+        if (it == prev.end())
+        {
+            return Path();
+        }
+        path_nodes.push_back(at);
+        at = it->second;
+    }
+
+    path_nodes.push_back(u->id);
+    std::reverse(path_nodes.begin(), path_nodes.end());
+
+    std::vector<int> segment_weights;
+    for (int i = 0; i < path_nodes.size() - 1; ++i)
+    {
+        const auto &edges = adjacency_list.at(path_nodes[i]);
+        auto it = std::find_if(edges.begin(), edges.end(), [&](const Edge &e)
+                               { return e.to == path_nodes[i + 1]; });
+
+        if (it != edges.end())
+        {
+            segment_weights.push_back(it->weight);
+        }
+        else
+        {
+            throw std::runtime_error("Missing edge between " + path_nodes[i] + " and " + path_nodes[i + 1]);
+        }
+    }
+
+    int transfer_count = transfers.at(v->id);
+
+    return Path(path_nodes, segment_weights, transfer_count);
+}
+
+bool Base::requires_transfer(const std::vector<TrainLine> &a, const std::vector<TrainLine> &b) const
+{
+    for (const auto &line_a : a)
+    {
+        for (const auto &line_b : b)
+        {
+            if (line_a == line_b)
+                return false;
+        }
+    }
+    return true;
 }

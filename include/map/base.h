@@ -2,6 +2,9 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
+#include <numeric>
 
 #include "enums/train_line.h"
 #include "enums/service_type.h"
@@ -34,6 +37,23 @@ namespace Transit::Map
             : to(to), weight(w), train_lines(t), service_type(s) {}
     };
 
+    struct Path
+    {
+        std::vector<std::string> path;
+        std::vector<int> segment_weights;
+        int total_weight = 0;
+        int transfers = 0;
+        bool path_found = false;
+
+        Path() = default;
+
+        Path(const std::vector<std::string> &p, const std::vector<int> &sw, int t) : path(p), segment_weights(sw), transfers(t)
+        {
+            total_weight = std::accumulate(sw.begin(), sw.end(), 0);
+            path_found = true;
+        }
+    };
+
     class Base
     {
     private:
@@ -51,7 +71,15 @@ namespace Transit::Map
         void add_edge(Node *u, Node *v, int w, const std::vector<TrainLine> &t, ServiceType s);
         void remove_edge(Node *u, Node *v);
 
+        const Node *get_node(const std::string &id) const;
         const std::unordered_map<std::string, std::vector<Edge>> &get_adjacency_list() const;
         void print() const;
+
+        Path find_path(const std::string &u_id, const std::string &v_id) const;
+
+    protected:
+        Path dijkstra(const Node *u, const Node *v) const;
+        Path reconstruct_path(const Node *u, const Node *v, const std::unordered_map<std::string, std::string> &prev, const std::unordered_map<std::string, int> &transfers) const;
+        bool requires_transfer(const std::vector<TrainLine> &a, const std::vector<TrainLine> &b) const;
     };
 }

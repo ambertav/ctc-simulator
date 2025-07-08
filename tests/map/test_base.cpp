@@ -11,9 +11,13 @@ protected:
     Transit::Map::Node *A;
     Transit::Map::Node *B;
     Transit::Map::Node *C;
+    Transit::Map::Node *D;
+    Transit::Map::Node *E;
 
     int AB_weight = 3;
     int BC_weight = 2;
+    int AE_weight = AB_weight;
+    int EC_weight = BC_weight;
 
     void SetUp() override
     {
@@ -22,9 +26,13 @@ protected:
         A = graph.add_node("A", "Station A", {TrainLine::A}, ServiceType::BOTH);
         B = graph.add_node("B", "Station B", {TrainLine::A}, ServiceType::BOTH);
         C = graph.add_node("C", "Station C", {TrainLine::A}, ServiceType::BOTH);
+        D = graph.add_node("D", "Station D", {TrainLine::A}, ServiceType::BOTH);
+        E = graph.add_node("E", "Station E", {TrainLine::B}, ServiceType::BOTH);
 
         graph.add_edge(A, B, AB_weight, {TrainLine::A}, ServiceType::BOTH);
         graph.add_edge(B, C, BC_weight, {TrainLine::A}, ServiceType::BOTH);
+        graph.add_edge(A, E, AE_weight, {TrainLine::B}, ServiceType::BOTH);
+        graph.add_edge(E, C, EC_weight, {TrainLine::B}, ServiceType::BOTH);
     }
 };
 
@@ -108,4 +116,59 @@ TEST_F(GraphTest, DeletesNodeAndAllCorrespondingEdges)
     auto it_CB = std::find_if(edges_from_C.begin(), edges_from_C.end(), [](const Edge &e)
                               { return e.to == "B"; });
     EXPECT_EQ(it_CB, edges_from_C.end());
+}
+
+TEST_F(GraphTest, FindsPathSuccessfully)
+{
+    auto path = graph.find_path("A", "C");
+
+    EXPECT_TRUE(path.path_found);
+    EXPECT_EQ(path.path, std::vector<std::string>({"A", "B", "C"}));
+    EXPECT_EQ(path.segment_weights, std::vector<int>({AB_weight, BC_weight}));
+    EXPECT_EQ(path.total_weight, AB_weight + BC_weight);
+}
+
+TEST_F(GraphTest, FindPathHandlesCycles)
+{
+    // A->B->C vs A->C path
+    graph.add_edge(C, A, 1, {TrainLine::A}, ServiceType::BOTH);
+    auto path = graph.find_path("A", "C");
+
+    EXPECT_TRUE(path.path_found);
+
+    EXPECT_EQ(path.path, std::vector<std::string>({"A", "C"}));
+}
+
+TEST_F(GraphTest, FindsLeastTransfersPathForMultipleShortestPaths)
+{
+    // A->B->C and A->E->C have equal weight
+    // A->B->C has less transfers
+    // should return A->B->C
+
+    auto path = graph.find_path("A", "C");
+
+    EXPECT_TRUE(path.path_found);
+    EXPECT_EQ(path.total_weight, AB_weight + BC_weight);
+
+    EXPECT_EQ(path.path, std::vector<std::string>({"A", "B", "C"}));
+}
+
+TEST_F(GraphTest, PathToSelfReturnsEmptyPath)
+{
+    auto path = graph.find_path("A", "A");
+
+    EXPECT_FALSE(path.path_found);
+    EXPECT_TRUE(path.path.empty());
+    EXPECT_TRUE(path.segment_weights.empty());
+    EXPECT_EQ(path.total_weight, 0);
+}
+
+TEST_F(GraphTest, NoPathReturnsEmptyPath)
+{
+    auto path = graph.find_path("A", "D");
+
+    EXPECT_FALSE(path.path_found);
+    EXPECT_TRUE(path.path.empty());
+    EXPECT_TRUE(path.segment_weights.empty());
+    EXPECT_EQ(path.total_weight, 0);
 }
