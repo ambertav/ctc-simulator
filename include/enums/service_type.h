@@ -5,7 +5,8 @@
 enum class ServiceType
 {
     LOCAL,
-    EXPRESS
+    EXPRESS,
+    BOTH
 };
 
 inline std::ostream &operator<<(std::ostream &os, ServiceType type)
@@ -16,5 +17,7 @@ inline std::ostream &operator<<(std::ostream &os, ServiceType type)
         return os << "local";
     case ServiceType::EXPRESS:
         return os << "express";
+    case ServiceType::BOTH:
+        return os << "both";
     }
 }
