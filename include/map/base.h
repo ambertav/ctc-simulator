@@ -17,13 +17,13 @@ namespace Transit::Map
         std::string id;
         std::string name;
         std::vector<TrainLine> train_lines;
-        ServiceType service_type;
+        std::vector<std::string> gtfs_ids;
         double latitude;
         double longitude;
         int degree;
 
-        Node(const std::string &i, const std::string &n, const std::vector<TrainLine> &t, ServiceType s, double lat = 0.0, double lon = 0.0)
-            : id(i), name(n), train_lines(t), service_type(s), latitude(lat), longitude(lon), degree(0) {}
+        Node(const std::string &i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string>& g, double lat = 0.0, double lon = 0.0)
+            : id(i), name(n), train_lines(t), gtfs_ids(g), latitude(lat), longitude(lon), degree(0) {}
     };
 
     struct Edge
@@ -31,10 +31,9 @@ namespace Transit::Map
         std::string to;
         int weight;
         std::vector<TrainLine> train_lines;
-        ServiceType service_type;
 
-        Edge(const std::string &to, int w, const std::vector<TrainLine> &t, ServiceType s)
-            : to(to), weight(w), train_lines(t), service_type(s) {}
+        Edge(const std::string &to, int w, const std::vector<TrainLine> &t)
+            : to(to), weight(w), train_lines(t) {}
     };
 
     struct Path
@@ -64,12 +63,15 @@ namespace Transit::Map
     public:
         Base() = default;
 
-        Node *add_node(const std::string &i, const std::string &n, const std::vector<TrainLine> &t, ServiceType s);
+        Node *add_node(const std::string &i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string>& g, double lat = 0.0, double lon = 0.0);
         void remove_node(const std::string &node_id);
         void remove_node(Node *u);
 
-        void add_edge(Node *u, Node *v, int w, const std::vector<TrainLine> &t, ServiceType s);
+        void add_edge(Node *u, Node *v, int w, const std::vector<TrainLine> &t);
+        void add_edge(const std::string& u, const std::string& v);
         void remove_edge(Node *u, Node *v);
+
+        void update_node(const std::string &id, const std::vector<TrainLine> &more_train_lines, const std::vector<std::string> more_gtfs_ids);
 
         const Node *get_node(const std::string &id) const;
         const std::unordered_map<std::string, std::vector<Edge>> &get_adjacency_list() const;

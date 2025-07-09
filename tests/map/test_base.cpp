@@ -23,16 +23,16 @@ protected:
     {
         using namespace Transit::Map;
 
-        A = graph.add_node("A", "Station A", {TrainLine::A}, ServiceType::BOTH);
-        B = graph.add_node("B", "Station B", {TrainLine::A}, ServiceType::BOTH);
-        C = graph.add_node("C", "Station C", {TrainLine::A}, ServiceType::BOTH);
-        D = graph.add_node("D", "Station D", {TrainLine::A}, ServiceType::BOTH);
-        E = graph.add_node("E", "Station E", {TrainLine::B}, ServiceType::BOTH);
+        A = graph.add_node("A", "Station A", {TrainLine::A}, {"1"});
+        B = graph.add_node("B", "Station B", {TrainLine::A}, {"2"});
+        C = graph.add_node("C", "Station C", {TrainLine::A}, {"3"});
+        D = graph.add_node("D", "Station D", {TrainLine::A}, {"4"});
+        E = graph.add_node("E", "Station E", {TrainLine::B}, {"5"});
 
-        graph.add_edge(A, B, AB_weight, {TrainLine::A}, ServiceType::BOTH);
-        graph.add_edge(B, C, BC_weight, {TrainLine::A}, ServiceType::BOTH);
-        graph.add_edge(A, E, AE_weight, {TrainLine::B}, ServiceType::BOTH);
-        graph.add_edge(E, C, EC_weight, {TrainLine::B}, ServiceType::BOTH);
+        graph.add_edge(A, B, AB_weight, {TrainLine::A});
+        graph.add_edge(B, C, BC_weight, {TrainLine::A});
+        graph.add_edge(A, E, AE_weight, {TrainLine::B});
+        graph.add_edge(E, C, EC_weight, {TrainLine::B});
     }
 };
 
@@ -51,7 +51,7 @@ TEST_F(GraphTest, CreatedAndAddedNodesSuccessfully)
 
 TEST_F(GraphTest, DuplicateNodeInsertionFails)
 {
-    EXPECT_THROW(graph.add_node("A", "Duplicate Station", {TrainLine::A}, ServiceType::BOTH), std::invalid_argument);
+    EXPECT_THROW(graph.add_node("A", "Duplicate Station", {TrainLine::A}, {"4"}), std::invalid_argument);
 }
 
 TEST_F(GraphTest, EdgesCreatedSuccessfully)
@@ -131,7 +131,7 @@ TEST_F(GraphTest, FindsPathSuccessfully)
 TEST_F(GraphTest, FindPathHandlesCycles)
 {
     // A->B->C vs A->C path
-    graph.add_edge(C, A, 1, {TrainLine::A}, ServiceType::BOTH);
+    graph.add_edge(C, A, 1, {TrainLine::A});
     auto path = graph.find_path("A", "C");
 
     EXPECT_TRUE(path.path_found);

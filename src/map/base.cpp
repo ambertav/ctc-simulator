@@ -5,13 +5,13 @@
 
 using namespace Transit::Map;
 
-Node *Base::add_node(const std::string &i, const std::string &n, const std::vector<TrainLine> &t, ServiceType s)
+Node *Base::add_node(const std::string &i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string> &g, double lat, double lon)
 {
     if (node_map.count(i) > 0)
     {
         throw std::invalid_argument("Node with id " + i + " already exists in transit graph");
     }
-    auto new_node = std::make_unique<Node>(i, n, t, s);
+    auto new_node = std::make_unique<Node>(i, n, t, g, lat, lon);
 
     Node *raw_ptr = new_node.get();
     nodes.push_back(std::move(new_node));
@@ -69,7 +69,7 @@ void Base::remove_node(Node *u)
     remove_node(u->id);
 }
 
-void Base::add_edge(Node *u, Node *v, int w, const std::vector<TrainLine> &t, ServiceType s)
+void Base::add_edge(Node *u, Node *v, int w, const std::vector<TrainLine> &t)
 {
     if (!node_map.count(u->id) || !node_map.count(v->id))
     {
@@ -81,11 +81,49 @@ void Base::add_edge(Node *u, Node *v, int w, const std::vector<TrainLine> &t, Se
         throw std::invalid_argument("Self connections are not allowed in transit graph");
     }
 
-    adjacency_list[u->id].emplace_back(v->id, w, t, s);
-    adjacency_list[v->id].emplace_back(u->id, w, t, s);
+    for (const auto &edge : adjacency_list[u->id])
+    {
+        if (edge.to == v->id)
+        {
+            return;
+        }
+    }
+
+    adjacency_list[u->id].emplace_back(v->id, w, t);
+    adjacency_list[v->id].emplace_back(u->id, w, t);
 
     ++u->degree;
     ++v->degree;
+}
+
+void Base::add_edge(const std::string &u, const std::string &v)
+{
+    if (!node_map.count(u) || !node_map.count(v))
+    {
+        throw std::invalid_argument("Nodes " + u + " and " + v + " are not in the transit graph");
+    }
+
+    if (u == v)
+    {
+        throw std::invalid_argument("Self connections are not allowed in transit graph");
+    }
+
+    Node *u_node = node_map[u];
+    Node *v_node = node_map[v];
+
+    std::vector<TrainLine> shared_lines;
+
+    std::unordered_set<TrainLine> u_lines(u_node->train_lines.begin(), u_node->train_lines.end());
+
+    for (const auto &line : v_node->train_lines)
+    {
+        if (u_lines.count(line))
+        {
+            shared_lines.push_back(line);
+        }
+    }
+
+    add_edge(u_node, v_node, 1, shared_lines);
 }
 
 void Base::remove_edge(Node *u, Node *v)
@@ -118,6 +156,19 @@ void Base::remove_edge(Node *u, Node *v)
     --v->degree;
 }
 
+void Base::update_node(const std::string &id, const std::vector<TrainLine> &more_train_lines, const std::vector<std::string> more_gtfs_ids)
+{
+    auto it = node_map.find(id);
+    if (it == node_map.end())
+    {
+        throw std::invalid_argument("Node " + id + " are not in transit graph");
+    }
+    Node *node = it->second;
+
+    node->train_lines.insert(node->train_lines.end(), more_train_lines.begin(), more_train_lines.end());
+    node->gtfs_ids.insert(node->gtfs_ids.end(), more_gtfs_ids.begin(), more_gtfs_ids.end());
+}
+
 const Node *Base::get_node(const std::string &id) const
 {
     auto it = node_map.find(id);
@@ -139,13 +190,13 @@ void Base::print() const
     for (const auto &[id, edges] : adjacency_list)
     {
         const Node *node = node_map.at(id);
-        std::cout << node->name << " (id: " << id << " ): ";
+        std::cout << node->name << " ( id: " << id << " ): ";
 
         for (int i = 0; i < edges.size(); ++i)
         {
             const Edge &e = edges[i];
             const Node *neighbor = node_map.at(e.to);
-            std::cout << neighbor->name << " (id: " << e.to << " )";
+            std::cout << neighbor->name << " ( id: " << e.to << " )";
             if (i != edges.size() - 1)
             {
                 std::cout << ", ";
