@@ -26,7 +26,8 @@ enum class TrainLine
     L,
     J,
     Z,
-    S,
+    GS,
+    FS,
     SIR
 };
 
@@ -78,8 +79,10 @@ inline std::ostream &operator<<(std::ostream &os, TrainLine line)
         return os << "J";
     case TrainLine::Z:
         return os << "Z";
-    case TrainLine::S:
-        return os << "Shuttle";
+    case TrainLine::GS:
+        return os << "42nd Street Shuttle";
+    case TrainLine::FS:
+        return os << "Franklin Street Shuttle";
     case TrainLine::SIR:
         return os << "Station Island Railway";
     default:
@@ -97,6 +100,7 @@ inline TrainLine subway_train_line_from_string(const std::string &str)
         {"5", TrainLine::FIVE},
         {"6", TrainLine::SIX},
         {"7", TrainLine::SEVEN},
+        {"H", TrainLine::A},
         {"A", TrainLine::A},
         {"C", TrainLine::C},
         {"E", TrainLine::E},
@@ -112,7 +116,10 @@ inline TrainLine subway_train_line_from_string(const std::string &str)
         {"L", TrainLine::L},
         {"J", TrainLine::J},
         {"Z", TrainLine::Z},
-        {"S", TrainLine::S},
+        {"S", TrainLine::GS},
+        {"GS", TrainLine::GS},
+        {"FS", TrainLine::FS},
+        {"SI", TrainLine::SIR},
         {"SIR", TrainLine::SIR},
     };
 

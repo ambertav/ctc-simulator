@@ -214,6 +214,7 @@ Path Base::find_path(const std::string &u_id, const std::string &v_id) const
 
     if (!u || !v || u == v)
     {
+        std::cerr << "Nodes do not exist in transit graph\n";
         return Path{};
     }
     else
@@ -294,6 +295,7 @@ Path Base::dijkstra(const Node *u, const Node *v) const
 
     if (dist[v->id] == std::numeric_limits<int>::max())
     {
+        std::cerr << "No path exists\n";
         return Path();
     }
 
@@ -310,6 +312,7 @@ Path Base::reconstruct_path(const Node *u, const Node *v, const std::unordered_m
         auto it = prev.find(at);
         if (it == prev.end())
         {
+            std::cerr << "Error reconstructing path\n";
             return Path();
         }
         path_nodes.push_back(at);
