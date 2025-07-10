@@ -2,7 +2,7 @@
 
 #include "config.h"
 #include "constants.h"
-#include "core/scheduler.h"
+#include "systems/scheduler.h"
 
 void Scheduler::create_schedule(const Transit::Map::Path &path, const std::string &outfile) const
 {

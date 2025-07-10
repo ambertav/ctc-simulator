@@ -4,7 +4,6 @@
 
 #include "config.h"
 #include "core/dispatch.h"
-#include "core/logger.h"
 #include "core/platform.h"
 #include "core/station.h"
 #include "core/signal.h"
@@ -12,6 +11,8 @@
 #include "core/train.h"
 
 #include "enums/train_line.h"
+
+#include "systems/logger.h"
 
 void build_objects(
     std::vector<std::unique_ptr<Train>> &trains,

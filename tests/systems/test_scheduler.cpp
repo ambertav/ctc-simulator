@@ -2,7 +2,7 @@
 #include <gmock/gmock.h>
 
 #include "config.h"
-#include "core/scheduler.h"
+#include "systems/scheduler.h"
 
 class SchedulerTest : public ::testing::Test
 {
