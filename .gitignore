@@ -21,3 +21,4 @@ Makefile
 
 
 logs/
+data/test_schedule.csv
