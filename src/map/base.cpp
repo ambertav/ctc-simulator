@@ -304,30 +304,35 @@ Path Base::dijkstra(const Node *u, const Node *v) const
 
 Path Base::reconstruct_path(const Node *u, const Node *v, const std::unordered_map<std::string, std::string> &prev, const std::unordered_map<std::string, int> &transfers) const
 {
-    std::vector<std::string> path_nodes;
+    std::vector<const Node*> path_nodes;
 
     std::string at = v->id;
     while (at != u->id)
     {
         auto it = prev.find(at);
-        if (it == prev.end())
-        {
-            std::cerr << "Error reconstructing path\n";
-            return Path();
-        }
-        path_nodes.push_back(at);
+    if (it == prev.end())
+    {
+        std::cerr << "Error reconstructing path: missing predecessor for " << at << "\n";
+        return Path{};
+    }
+    const Node* node = get_node(at);
+    if (!node) {
+        std::cerr << "Error: Node with id " << at << " not found\n";
+        return Path{};
+    }
+    path_nodes.push_back(node);
         at = it->second;
     }
 
-    path_nodes.push_back(u->id);
+    path_nodes.push_back(get_node(u->id));
     std::reverse(path_nodes.begin(), path_nodes.end());
 
     std::vector<int> segment_weights;
     for (int i = 0; i < path_nodes.size() - 1; ++i)
     {
-        const auto &edges = adjacency_list.at(path_nodes[i]);
+        const auto &edges = adjacency_list.at(path_nodes[i]->id);
         auto it = std::find_if(edges.begin(), edges.end(), [&](const Edge &e)
-                               { return e.to == path_nodes[i + 1]; });
+                               { return e.to == path_nodes[i + 1]->id; });
 
         if (it != edges.end())
         {
@@ -335,7 +340,7 @@ Path Base::reconstruct_path(const Node *u, const Node *v, const std::unordered_m
         }
         else
         {
-            throw std::runtime_error("Missing edge between " + path_nodes[i] + " and " + path_nodes[i + 1]);
+            throw std::runtime_error("Missing edge between " + path_nodes[i]->id + " and " + path_nodes[i + 1]->id);
         }
     }
 

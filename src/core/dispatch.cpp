@@ -100,13 +100,13 @@ void Dispatch::load_schedule(const std::string &csv_file)
             continue;
         }
 
-        if (dir_str != "Downtown" && dir_str != "Uptown")
+        if (dir_str != "downtown" && dir_str != "uptown")
         {
             std::cerr << "Invalid direction input on line " << line_num << ": " << line << "\n";
             continue;
         }
 
-        dir = dir_str == "Downtown" ? Direction::DOWNTOWN : Direction::UPTOWN;
+        dir = dir_str == "downtown" ? Direction::DOWNTOWN : Direction::UPTOWN;
 
         if (arrival_tick != -1)
         {

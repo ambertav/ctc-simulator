@@ -1,5 +1,6 @@
 #pragma once
 
+#include "map/base.h"
 #include <iostream>
 
 enum class Direction
@@ -25,6 +26,16 @@ inline Direction direction_from_string(const std::string &str)
     {
         return Direction::UNKNOWN;
     }
+}
+
+inline Direction infer_direction(const Transit::Map::Node *start, const Transit::Map::Node *end)
+{
+    if (!start || !end)
+    {
+        throw std::invalid_argument("Start or end node is null");
+    }
+
+    return start->longitude > end->longitude ? Direction::UPTOWN : Direction::DOWNTOWN;
 }
 
 inline std::ostream &operator<<(std::ostream &os, Direction direction)

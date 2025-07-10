@@ -47,6 +47,7 @@ protected:
     std::unique_ptr<Dispatch> dispatch;
 
     std::string test_file{std::string(LOG_DIRECTORY) + "/test_sim.txt"};
+    std::string test_schedule{std::string(DATA_DIRECTORY) + "/dispatch_test_schedule.csv"};
     Logger logger{test_file};
 
     void build_objects()
@@ -175,35 +176,31 @@ TEST_F(DispatchTest, ConstructorInitializesCorrectly)
 
 TEST_F(DispatchTest, LoadsScheduleAndConstructsPriorityQueuesSucessfully)
 {
-    const std::string temp_filename = "test_schedule.csv";
-
-    std::ofstream out(temp_filename);
+    std::ofstream out(test_schedule);
     ASSERT_TRUE(out.is_open());
 
     // write valid data
     out << "train_id,station_id,station_name,direction,arrival_tick,departure_tick\n";
-    out << "1,1,Yard 1,Downtown,0,2\n";
-    out << "1,2,Station,Downtown,3,5\n";
+    out << "1,1,Yard 1,downtown,-1,2\n";
+    out << "1,2,Station,downtown,3,5\n";
     out.close();
 
-    dispatch->load_schedule(temp_filename);
+    dispatch->load_schedule(test_schedule);
     const auto &schedule = dispatch->get_schedule();
 
     EXPECT_TRUE(schedule.contains(1));
     EXPECT_TRUE(schedule.contains(2));
-    EXPECT_EQ(schedule.at(1).arrivals.size(), 1);
+    EXPECT_EQ(schedule.at(1).arrivals.size(), 0);
     EXPECT_EQ(schedule.at(1).departures.size(), 1);
     EXPECT_EQ(schedule.at(2).arrivals.size(), 1);
     EXPECT_EQ(schedule.at(2).departures.size(), 1);
 
-    std::remove(temp_filename.c_str());
+    std::remove(test_schedule.c_str());
 }
 
 TEST_F(DispatchTest, ReturnsEarlyFromLoadScheduleForEmptyFile)
 {
-    const std::string temp_filename = "test_schedule.csv";
-
-    dispatch->load_schedule(temp_filename);
+    dispatch->load_schedule(test_schedule);
     const auto &schedule = dispatch->get_schedule();
 
     for (const auto &[station_id, queues] : schedule)
@@ -211,57 +208,58 @@ TEST_F(DispatchTest, ReturnsEarlyFromLoadScheduleForEmptyFile)
         EXPECT_TRUE(queues.arrivals.empty());
         EXPECT_TRUE(queues.departures.empty());
     }
+    std::remove(test_schedule.c_str());
 }
 
 TEST_F(DispatchTest, SkipsMalformedLinesInLoadSchedule)
 {
-    const std::string temp_filename = "test_schedule.csv";
-
-    std::ofstream out(temp_filename);
+    std::ofstream out(test_schedule);
     ASSERT_TRUE(out.is_open());
 
     // write invalid data
     out << "train_id,station_id,station_name,direction,arrival_tick,departure_tick\n";
-    out << "1,1,Yard 1,Downtown,0,2\n";
-    out << "1,2,Station,Downtown\n"; // malformed, should not add events for station 2 to schedule
+    out << "1,1,Yard 1,downtown,-1,2\n";
+    out << "1,2,Station,downtown\n"; // malformed, should not add events for station 2 to schedule
     out.close();
 
-    dispatch->load_schedule(temp_filename);
+    dispatch->load_schedule(test_schedule);
     const auto &schedule = dispatch->get_schedule();
 
     EXPECT_TRUE(schedule.contains(1));
-    EXPECT_EQ(schedule.at(1).arrivals.size(), 1);
+    EXPECT_EQ(schedule.at(1).arrivals.size(), 0);
     EXPECT_EQ(schedule.at(1).departures.size(), 1);
 
     EXPECT_TRUE(schedule.at(2).arrivals.empty());
     EXPECT_TRUE(schedule.at(2).departures.empty());
+
+    std::remove(test_schedule.c_str());
 }
 
 TEST_F(DispatchTest, SkipsLinesWithInvalidInputInLoadSchedule)
 {
-    const std::string temp_filename = "test_schedule.csv";
-
-    std::ofstream out(temp_filename);
+    std::ofstream out(test_schedule);
     ASSERT_TRUE(out.is_open());
 
     // write invalid data
     out << "train_id,station_id,station_name,direction,arrival_tick,departure_tick\n";
-    out << "1,1,Yard 1,Downtown,0,2\n";
-    out << "1,2,Station,Downtown,t,k\n"; // invalid number, should skip
-    out << "1,3,Station,Up,3,4\n";       // invalid direction, should skip
+    out << "1,1,Yard 1,downtown,-1,2\n";
+    out << "1,2,Station,downtown,t,k\n"; // invalid number, should skip
+    out << "1,3,Station,up,3,4\n";       // invalid direction, should skip
     out.close();
 
-    dispatch->load_schedule(temp_filename);
+    dispatch->load_schedule(test_schedule);
     const auto &schedule = dispatch->get_schedule();
 
     EXPECT_TRUE(schedule.contains(1));
-    EXPECT_EQ(schedule.at(1).arrivals.size(), 1);
+    EXPECT_EQ(schedule.at(1).arrivals.size(), 0);
     EXPECT_EQ(schedule.at(1).departures.size(), 1);
 
     EXPECT_TRUE(schedule.at(2).arrivals.empty());
     EXPECT_TRUE(schedule.at(2).departures.empty());
     EXPECT_TRUE(schedule.at(3).arrivals.empty());
     EXPECT_TRUE(schedule.at(3).departures.empty());
+
+    std::remove(test_schedule.c_str());
 }
 
 TEST_F(DispatchTest, UpdateHandlesDelayedSignals)
@@ -313,20 +311,19 @@ TEST_F(DispatchTest, UpdateHandlesSpawnTrainsOnYardDeparture)
 {
     EXPECT_EQ(mock_train_1->get_current_track(), nullptr);
 
-    const std::string temp_filename = "test_schedule.csv";
-
-    std::ofstream out(temp_filename);
+    std::ofstream out(test_schedule);
     ASSERT_TRUE(out.is_open());
 
     // write valid data
     out << "train_id,station_id,station_name,direction,arrival_tick,departure_tick\n";
-    out << "1,1,Yard 1,Downtown,0,0\n";
-    out << "1,2,Station,Downtown,3,5\n";
+    out << "1,1,Yard 1,downtown,-1,0\n";
+    out << "1,2,Station,downtown,3,5\n";
     out.close();
 
-    dispatch->load_schedule(temp_filename);
+    dispatch->load_schedule(test_schedule);
 
     dispatch->update(0);
 
     EXPECT_EQ(mock_train_1->get_current_track(), static_cast<Track *>(mock_platform_yard_1.get()));
+    std::remove(test_schedule.c_str());
 }
