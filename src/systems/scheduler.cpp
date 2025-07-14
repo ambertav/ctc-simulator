@@ -6,7 +6,7 @@
 
 void Scheduler::create_schedule(const Transit::Map::Path &path, const std::string &outfile) const
 {
-    if (path.path.empty() || !path.path.front() || !path.path.back())
+    if (path.nodes.empty() || !path.nodes.front() || !path.nodes.back())
     {
         throw std::logic_error("Path is empty or has null nodes");
     }
@@ -28,13 +28,13 @@ void Scheduler::create_schedule(const Transit::Map::Path &path, const std::strin
 
             int train_id, start_yard, end_yard;
 
-            if (dir == Direction::UPTOWN)
+            if (dir == Direction::DOWNTOWN)
             {
                 train_id = i + 1;
                 start_yard = Yards::ids[0];
                 end_yard = Yards::ids[1];
             }
-            else if (dir == Direction::DOWNTOWN)
+            else if (dir == Direction::UPTOWN)
             {
                 train_id = i + 1 + number_of_trains;
                 start_yard = Yards::ids[1];
@@ -63,13 +63,13 @@ void Scheduler::create_schedule(const Transit::Map::Path &path, const std::strin
         }
     };
 
-    Direction forward = infer_direction(path.path.front(), path.path.back());
-    Direction reverse = forward == Direction::UPTOWN ? Direction::DOWNTOWN : Direction::UPTOWN;
+    Direction original = infer_direction(path.nodes.front(), path.nodes.back());
+    Direction reverse = original == Direction::UPTOWN ? Direction::DOWNTOWN : Direction::UPTOWN;
 
-    write_schedule(path.path, path.segment_weights, forward);
+    write_schedule(path.nodes, path.segment_weights, original);
 
-    const std::vector<const Transit::Map::Node *> reversed_path(path.path.rbegin(), path.path.rend());
-    const std::vector<int> revered_distances(path.segment_weights.rbegin(), path.segment_weights.rend());
+    const std::vector<const Transit::Map::Node *> reversed_path(path.nodes.rbegin(), path.nodes.rend());
+    const std::vector<int> reversed_distances(path.segment_weights.rbegin(), path.segment_weights.rend());
 
-    write_schedule(reversed_path, revered_distances, reverse);
+    write_schedule(reversed_path, reversed_distances, reverse);
 }

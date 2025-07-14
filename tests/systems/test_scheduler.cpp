@@ -42,8 +42,8 @@ TEST_F(SchedulerTest, CreatesScheduleAndWritesToFileSuccessfully)
 {
     scheduler.create_schedule(valid_path, outfile);
 
-    int total_trains = 3 * 2;                        // number of trains (default 3) * 2
-    int total_stations = valid_path.path.size() + 2; // path size + 2 yards
+    int total_trains = 3 * 2;                         // number of trains (default 3) * 2
+    int total_stations = valid_path.nodes.size() + 2; // path size + 2 yards
 
     int expected_line_count{1 + (total_trains * total_stations)}; // plus 1 for header
 

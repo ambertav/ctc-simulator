@@ -123,7 +123,7 @@ TEST_F(GraphTest, FindsPathSuccessfully)
     auto path = graph.find_path("A", "C");
 
     EXPECT_TRUE(path.path_found);
-    EXPECT_EQ(path.path, std::vector<const Transit::Map::Node *>({A, B, C}));
+    EXPECT_EQ(path.nodes, std::vector<const Transit::Map::Node *>({A, B, C}));
     EXPECT_EQ(path.segment_weights, std::vector<int>({AB_weight, BC_weight}));
     EXPECT_EQ(path.total_weight, AB_weight + BC_weight);
 }
@@ -136,7 +136,7 @@ TEST_F(GraphTest, FindPathHandlesCycles)
 
     EXPECT_TRUE(path.path_found);
 
-    EXPECT_EQ(path.path, std::vector<const Transit::Map::Node *>({A, C}));
+    EXPECT_EQ(path.nodes, std::vector<const Transit::Map::Node *>({A, C}));
 }
 
 TEST_F(GraphTest, FindsLeastTransfersPathForMultipleShortestPaths)
@@ -150,7 +150,7 @@ TEST_F(GraphTest, FindsLeastTransfersPathForMultipleShortestPaths)
     EXPECT_TRUE(path.path_found);
     EXPECT_EQ(path.total_weight, AB_weight + BC_weight);
 
-    EXPECT_EQ(path.path, std::vector<const Transit::Map::Node *>({A, B, C}));
+    EXPECT_EQ(path.nodes, std::vector<const Transit::Map::Node *>({A, B, C}));
 }
 
 TEST_F(GraphTest, PathToSelfReturnsEmptyPath)
@@ -158,7 +158,7 @@ TEST_F(GraphTest, PathToSelfReturnsEmptyPath)
     auto path = graph.find_path("A", "A");
 
     EXPECT_FALSE(path.path_found);
-    EXPECT_TRUE(path.path.empty());
+    EXPECT_TRUE(path.nodes.empty());
     EXPECT_TRUE(path.segment_weights.empty());
     EXPECT_EQ(path.total_weight, 0);
 }
@@ -168,7 +168,7 @@ TEST_F(GraphTest, NoPathReturnsEmptyPath)
     auto path = graph.find_path("A", "D");
 
     EXPECT_FALSE(path.path_found);
-    EXPECT_TRUE(path.path.empty());
+    EXPECT_TRUE(path.nodes.empty());
     EXPECT_TRUE(path.segment_weights.empty());
     EXPECT_EQ(path.total_weight, 0);
 }

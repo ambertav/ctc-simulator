@@ -54,13 +54,10 @@ TEST_F(SubwayGraphTest, CreatesConnectionsBetweenStationsSuccessfully)
         const auto &u_neighbors = adj_list.at(u);
         const auto &v_neighbors = adj_list.at(v);
 
-        bool u_to_v = std::any_of(u_neighbors.begin(), u_neighbors.end(),
-                                  [&](const Edge &edge)
-                                  { return edge.to == v; });
-
-        bool v_to_u = std::any_of(v_neighbors.begin(), v_neighbors.end(),
-                                  [&](const Edge &edge)
-                                  { return edge.to == u; });
+        bool u_to_v = std::ranges::any_of(u_neighbors, [&](const Edge &edge)
+                                          { return edge.to == v; });
+        bool v_to_u = std::ranges::any_of(v_neighbors, [&](const Edge &edge)
+                                          { return edge.to == u; });
 
         EXPECT_TRUE(u_to_v);
         EXPECT_TRUE(v_to_u);
@@ -84,7 +81,7 @@ TEST_F(SubwayGraphTest, FindsPathBetweenTwoStationsSuccessfully)
     Path path = graph.find_path("384", "610"); // burnside av, grand central
 
     EXPECT_TRUE(path.path_found);
-    EXPECT_FALSE(path.path.empty());
+    EXPECT_FALSE(path.nodes.empty());
 }
 
 std::vector<std::string> extract_random_complex_ids(const std::string &path, int count)

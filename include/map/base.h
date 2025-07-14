@@ -38,7 +38,7 @@ namespace Transit::Map
 
     struct Path
     {
-        std::vector<const Node*> path;
+        std::vector<const Node*> nodes;
         std::vector<int> segment_weights;
         int total_weight = 0;
         int transfers = 0;
@@ -46,7 +46,7 @@ namespace Transit::Map
 
         Path() = default;
 
-        Path(const std::vector<const Node*> &p, const std::vector<int> &sw, int t) : path(p), segment_weights(sw), transfers(t)
+        Path(const std::vector<const Node*> &n, const std::vector<int> &sw, int t) : nodes(n), segment_weights(sw), transfers(t)
         {
             total_weight = std::accumulate(sw.begin(), sw.end(), 0);
             path_found = true;
