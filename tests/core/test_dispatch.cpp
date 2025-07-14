@@ -20,12 +20,12 @@ protected:
     class MockTrack : public Track
     {
     public:
-        MockTrack(int i, Signal *s) : Track(i, s) {}
+        MockTrack(int i, Signal *s, int d = 1) : Track(i, s, d) {}
     };
     class MockPlatform : public Platform
     {
     public:
-        MockPlatform(int i, Signal *si, const Station *st, Direction d) : Platform(i, si, st, d) {}
+        MockPlatform(int i, int dw, Signal *si, const Station *st, Direction dir) : Platform(i, dw, si, st, dir) {}
     };
     class MockSignal : public Signal
     {
@@ -59,21 +59,21 @@ protected:
 
         mock_yard_1 = std::make_unique<MockStation>(1, "yard 1", true, lines);
         mock_signal_yard_1 = std::make_unique<MockSignal>(1, 1);
-        mock_platform_yard_1 = std::make_unique<MockPlatform>(1, mock_signal_yard_1.get(), mock_yard_1.get(), Direction::DOWNTOWN);
+        mock_platform_yard_1 = std::make_unique<MockPlatform>(1, 1, mock_signal_yard_1.get(), mock_yard_1.get(), Direction::DOWNTOWN);
 
         mock_signal_track_1 = std::make_unique<MockSignal>(2, 2);
         mock_track_1 = std::make_unique<MockTrack>(2, mock_signal_track_1.get());
 
         mock_station = std::make_unique<MockStation>(2, "station", false, lines);
         mock_signal_station = std::make_unique<MockSignal>(3, 3);
-        mock_platform_station = std::make_unique<MockPlatform>(3, mock_signal_station.get(), mock_station.get(), Direction::DOWNTOWN);
+        mock_platform_station = std::make_unique<MockPlatform>(3, 1, mock_signal_station.get(), mock_station.get(), Direction::DOWNTOWN);
 
         mock_signal_track_2 = std::make_unique<MockSignal>(4, 4);
         mock_track_2 = std::make_unique<MockTrack>(4, mock_signal_track_2.get());
 
         mock_yard_2 = std::make_unique<MockStation>(3, "yard 2", true, lines);
         mock_signal_yard_2 = std::make_unique<MockSignal>(5, 5);
-        mock_platform_yard_2 = std::make_unique<MockPlatform>(5, mock_signal_yard_2.get(), mock_yard_2.get(), Direction::DOWNTOWN);
+        mock_platform_yard_2 = std::make_unique<MockPlatform>(5, 1, mock_signal_yard_2.get(), mock_yard_2.get(), Direction::DOWNTOWN);
 
         mock_yard_1->add_platform(mock_platform_yard_1.get());
         mock_station->add_platform(mock_platform_station.get());

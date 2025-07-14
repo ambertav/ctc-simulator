@@ -11,17 +11,17 @@ protected:
     class MockTrack : public Track
     {
     public:
-        MockTrack(int i, Signal *s) : Track(i, s) {}
+        MockTrack(int i, Signal *s, int d = 1) : Track(i, s, d) {}
         MOCK_METHOD(bool, allow_entry, (), (const, override));
     };
     class MockPlatform : public Platform {
         public :
-            MockPlatform(int i, Signal *si, const Station *st, Direction d) : Platform(i, si, st, d) {}
+            MockPlatform(int i, int dw, Signal *si, const Station *st, Direction dir) : Platform(i, dw, si, st, dir) {}
     };
 
     MockTrack mock_track_1{1, nullptr};
     MockTrack mock_track_2{2, nullptr};
-    MockPlatform mock_platform{1, nullptr, nullptr, Direction::DOWNTOWN};
+    MockPlatform mock_platform{1, 1, nullptr, nullptr, Direction::DOWNTOWN};
     Train train{1, TrainLine::FOUR, ServiceType::EXPRESS, &mock_track_1};
 };
 

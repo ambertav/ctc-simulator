@@ -8,6 +8,7 @@ class Track
 {
 private:
     const int id;
+    int distance;
     bool occupied;
     Signal *const signal;
     Train *current_train;
@@ -15,9 +16,10 @@ private:
     Track *prev;
 
 public:
-    Track(int i, Signal *s);
+    Track(int i, Signal *s, int d = 1);
 
     int get_id() const;
+    int get_duration() const;
     Signal *get_signal() const;
     const Train *get_occupying_train() const;
     Track *get_next() const;

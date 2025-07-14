@@ -1,8 +1,8 @@
 #include "core/signal.h"
 #include "core/platform.h"
 
-Platform::Platform(int i, Signal *si, const Station *st, Direction d)
-    : Track(i, si), station(st), direction(d) {}
+Platform::Platform(int i, int dw, Signal *si, const Station *st, Direction dir)
+    : Track(i, si, dw), station(st), direction(dir) {}
 
 const Station *Platform::get_station() const
 {

@@ -10,14 +10,14 @@ protected:
     class MockPlatform : public Platform
     {
     public:
-        MockPlatform(int i, Signal *si, const Station *st, Direction d) : Platform(i, si, st, d) {}
+        MockPlatform(int i, int dw, Signal *si, const Station *st, Direction dir) : Platform(i, dw, si, st, dir) {}
         MOCK_METHOD(bool, allow_entry, (), (const, override));
         MOCK_METHOD(Direction, get_direction, (), (const, override));
     };
 
     Station station{1, "station", false, {TrainLine::A, TrainLine::C, TrainLine::E}};
     Station yard{2, "yard", true, {TrainLine::A, TrainLine::C, TrainLine::E}};
-    MockPlatform mock_platform{1, nullptr, &station, Direction::DOWNTOWN};
+    MockPlatform mock_platform{1, 1, nullptr, &station, Direction::DOWNTOWN};
 };
 
 TEST_F(StationTest, ConstructorInitializesCorrectly)

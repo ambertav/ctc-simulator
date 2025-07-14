@@ -32,7 +32,7 @@ protected:
     MockStation mock_station{1, "station", false, {TrainLine::SEVEN}};
     MockSignal mock_signal{1, 1};
 
-    Platform platform{1, &mock_signal, &mock_station, Direction::DOWNTOWN};
+    Platform platform{1, 1, &mock_signal, &mock_station, Direction::DOWNTOWN};
 };
 
 TEST_F(PlatformTest, ConstructorInitializesCorrectly)

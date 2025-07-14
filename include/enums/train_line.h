@@ -28,7 +28,8 @@ enum class TrainLine
     Z,
     GS,
     FS,
-    SIR
+    SIR,
+    UNKNOWN
 };
 
 inline std::ostream &operator<<(std::ostream &os, TrainLine line)
@@ -85,6 +86,7 @@ inline std::ostream &operator<<(std::ostream &os, TrainLine line)
         return os << "Franklin Street Shuttle";
     case TrainLine::SIR:
         return os << "Station Island Railway";
+    case TrainLine::UNKNOWN:
     default:
         return os << "Unknown";
     }

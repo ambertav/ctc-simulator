@@ -35,7 +35,7 @@ inline Direction infer_direction(const Transit::Map::Node *start, const Transit:
         throw std::invalid_argument("Start or end node is null");
     }
 
-    return start->longitude > end->longitude ? Direction::UPTOWN : Direction::DOWNTOWN;
+    return start->latitude > end->latitude ? Direction::DOWNTOWN : Direction::UPTOWN;
 }
 
 inline std::ostream &operator<<(std::ostream &os, Direction direction)

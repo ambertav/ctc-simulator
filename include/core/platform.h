@@ -14,7 +14,7 @@ private:
     Direction direction;
 
 public:
-    Platform(int i, Signal *si, const Station *st, Direction d);
+    Platform(int i, int dw, Signal *si, const Station *st, Direction dir);
 
     const Station *get_station() const;
     virtual Direction get_direction() const;

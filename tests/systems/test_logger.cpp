@@ -21,7 +21,7 @@ protected:
     class MockPlatform : public Platform
     {
     public:
-        MockPlatform(int i, Signal *si, const Station *st, Direction d) : Platform(i, si, st, d) {}
+        MockPlatform(int i, int dw, Signal *si, const Station *st, Direction dir) : Platform(i, dw, si, st, dir) {}
     };
     class MockSignal : public Signal
     {
@@ -47,7 +47,7 @@ protected:
         mock_train = std::make_unique<MockTrain>(1, TrainLine::FOUR, ServiceType::EXPRESS, nullptr);
         mock_station = std::make_unique<MockStation>(1, "station", false, std::vector<TrainLine>{TrainLine::FOUR});
         mock_signal = std::make_unique<MockSignal>(1, 1);
-        mock_platform = std::make_unique<MockPlatform>(1, mock_signal.get(), mock_station.get(), Direction::DOWNTOWN);
+        mock_platform = std::make_unique<MockPlatform>(1, 1, mock_signal.get(), mock_station.get(), Direction::DOWNTOWN);
 
         logger = std::make_unique<Logger>(valid_file);
     }

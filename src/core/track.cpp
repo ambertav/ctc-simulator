@@ -1,7 +1,7 @@
 #include "core/signal.h"
 #include "core/track.h"
 
-Track::Track(int i, Signal *s) : id(i), occupied(false), signal(s), current_train(nullptr), next(nullptr), prev(nullptr) {}
+Track::Track(int i, Signal *s, int d) : id(i), distance(d), occupied(false), signal(s), current_train(nullptr), next(nullptr), prev(nullptr) {}
 
 int Track::get_id() const
 {
