@@ -7,7 +7,7 @@
 class SchedulerTest : public ::testing::Test
 {
 protected:
-    Scheduler scheduler;
+    Scheduler scheduler{std::string(DATA_DIRECTORY) + "/test_schedule.csv"};
     Transit::Map::Base graph;
     Transit::Map::Path valid_path;
     Transit::Map::Path invalid_path;
@@ -17,9 +17,6 @@ protected:
 
     void SetUp() override
     {
-        std::ofstream file(outfile, std::ios::trunc);
-        file.close();
-
         Transit::Map::Node *A = graph.add_node("A", "Station A", {TrainLine::FOUR}, {"1"});
         Transit::Map::Node *B = graph.add_node("B", "Station B", {TrainLine::FOUR}, {"2"});
         Transit::Map::Node *C = graph.add_node("C", "Station C", {TrainLine::FOUR}, {"3"});
@@ -35,12 +32,12 @@ protected:
 
 TEST_F(SchedulerTest, ThrowsErrorWhenPathIsNull)
 {
-    EXPECT_THROW(scheduler.create_schedule(invalid_path, outfile), std::logic_error);
+    EXPECT_THROW(scheduler.create_schedule(invalid_path), std::logic_error);
 }
 
 TEST_F(SchedulerTest, CreatesScheduleAndWritesToFileSuccessfully)
 {
-    scheduler.create_schedule(valid_path, outfile);
+    scheduler.create_schedule(valid_path);
 
     int total_trains = 3 * 2;                         // number of trains (default 3) * 2
     int total_stations = valid_path.nodes.size() + 2; // path size + 2 yards

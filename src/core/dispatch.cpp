@@ -66,7 +66,7 @@ void Dispatch::load_schedule(const std::string &csv_file)
         return;
     }
 
-    int line_num;
+    int line_num {};
     while (std::getline(file, line))
     {
         ++line_num;
@@ -228,11 +228,8 @@ void Dispatch::handle_spawns(int tick)
 
         auto &event_queue = it->second;
 
-        std::cout << "Got the queue\n";
-
         if (!event_queue.departures.empty())
         {
-            std::cout << "Accessed the departures\n";
             Event event = event_queue.departures.top();
 
             if (event.tick <= tick)

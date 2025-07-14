@@ -4,21 +4,22 @@
 #include "constants.h"
 #include "systems/scheduler.h"
 
-void Scheduler::create_schedule(const Transit::Map::Path &path, const std::string &outfile) const
+Scheduler::Scheduler(const std::string &file_path, int stg, int dt, int nt) : outfile(file_path, std::ios::out | std::ios::trunc), spawn_tick_gap(stg), dwell_time(dt), number_of_trains(nt) {}
+
+void Scheduler::create_schedule(const Transit::Map::Path &path)
 {
     if (path.nodes.empty() || !path.nodes.front() || !path.nodes.back())
     {
         throw std::logic_error("Path is empty or has null nodes");
     }
 
-    std::ofstream file(outfile);
-    if (!file.is_open())
+    if (!outfile.is_open())
     {
         std::cerr << "Failed to open schedule.csv for writing.\n";
         return;
     }
 
-    file << "train_id,station_id,station_name,direction,arrival_tick,departure_tick\n";
+    outfile << "train_id,station_id,station_name,direction,arrival_tick,departure_tick\n";
 
     auto write_schedule = [&](const std::vector<const Transit::Map::Node *> &stations, const std::vector<int> distances, Direction dir)
     {
@@ -41,7 +42,7 @@ void Scheduler::create_schedule(const Transit::Map::Path &path, const std::strin
                 end_yard = Yards::ids[0];
             }
 
-            file << train_id << "," << start_yard << "," << Yards::get_yard_name(start_yard) << "," << dir << "," << -1 << "," << tick << "\n";
+            outfile << train_id << "," << start_yard << "," << Yards::get_yard_name(start_yard) << "," << dir << "," << -1 << "," << tick << "\n";
 
             for (int i = 0; i < stations.size(); ++i)
             {
@@ -49,7 +50,7 @@ void Scheduler::create_schedule(const Transit::Map::Path &path, const std::strin
                 int arrival = ++tick;
                 int departure = arrival + dwell_time;
 
-                file << train_id << "," << node->id << "," << node->name << "," << dir << "," << arrival << "," << departure << "\n";
+                outfile << train_id << "," << node->id << "," << node->name << "," << dir << "," << arrival << "," << departure << "\n";
 
                 tick = departure;
 
@@ -59,7 +60,7 @@ void Scheduler::create_schedule(const Transit::Map::Path &path, const std::strin
                 }
             }
 
-            file << train_id << "," << end_yard << "," << Yards::get_yard_name(end_yard) << "," << dir << "," << tick + 1 << "," << "-1\n";
+            outfile << train_id << "," << end_yard << "," << Yards::get_yard_name(end_yard) << "," << dir << "," << tick + 1 << "," << "-1\n";
         }
     };
 
@@ -72,4 +73,6 @@ void Scheduler::create_schedule(const Transit::Map::Path &path, const std::strin
     const std::vector<int> reversed_distances(path.segment_weights.rbegin(), path.segment_weights.rend());
 
     write_schedule(reversed_path, reversed_distances, reverse);
+
+    outfile.flush();
 }

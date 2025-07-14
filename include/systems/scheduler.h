@@ -9,11 +9,12 @@
 class Scheduler
 {
 private:
+    std::ofstream outfile;
     int spawn_tick_gap;
     int dwell_time;
     int number_of_trains;
 
 public:
-    Scheduler(int stg = 2, int dt = 1, int nt = 3) : spawn_tick_gap(stg), dwell_time(dt), number_of_trains(nt) {}
-    void create_schedule(const Transit::Map::Path &path, const std::string &outfile) const;
+    Scheduler(const std::string &file_path, int stg = 2, int dt = 2, int nt = 3);
+    void create_schedule(const Transit::Map::Path &path);
 };
