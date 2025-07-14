@@ -67,7 +67,7 @@ public:
     void update(int tick);
 
 private:
-    void handle_signals(int tick);
+    bool authorize(int tick, Train* train);
     void handle_spawns(int tick);
     void spawn_train(int tick, Event event);
     void despawn_train(Train *train, int yard_id);

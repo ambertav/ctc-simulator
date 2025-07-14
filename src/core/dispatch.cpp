@@ -123,53 +123,60 @@ void Dispatch::load_schedule(const std::string &csv_file)
 void Dispatch::update(int tick)
 {
     // handle_delays();
-    handle_signals(tick);
 
     for (Train *train : trains)
     {
-        if (!train || train->get_status() == TrainStatus::OUTOFSERVICE)
-            continue;
-
-        if (train->can_advance())
+        if (!train || !train->is_active())
         {
-            bool moved = train->move_to_track();
+            continue;
+        }
 
-            if (train->get_status() == TrainStatus::ARRIVING)
+        if (train->request_movement())
+        {
+            bool can_advance = authorize(tick, train);
+
+            if (can_advance)
             {
-                Platform *arrived = static_cast<Platform *>(train->get_current_track());
+                bool moved = train->move_to_track();
 
-                if (arrived->get_station()->is_yard())
+                if (train->get_status() == TrainStatus::ARRIVING)
                 {
-                    despawn_train(train, arrived->get_station()->get_id());
-                }
+                    Platform *arrived = static_cast<Platform *>(train->get_current_track());
 
-                auto &event_queue = schedule[arrived->get_station()->get_id()];
-
-                if (!event_queue.arrivals.empty())
-                {
-                    Event event = event_queue.arrivals.top();
-
-                    if (event.train_id == train->get_id())
+                    if (arrived->get_station()->is_yard())
                     {
-                        event_queue.arrivals.pop();
-                        logger.log_arrival(tick, event.tick, train, arrived);
+                        despawn_train(train, arrived->get_station()->get_id());
+                        continue;
+                    }
+
+                    auto &event_queue = schedule[arrived->get_station()->get_id()];
+
+                    if (!event_queue.arrivals.empty())
+                    {
+                        Event event = event_queue.arrivals.top();
+
+                        if (event.train_id == train->get_id())
+                        {
+                            event_queue.arrivals.pop();
+                            logger.log_arrival(tick, event.tick, train, arrived);
+                        }
                     }
                 }
-            }
-            else if (train->get_status() == TrainStatus::DEPARTING)
-            {
-                Platform *departing = static_cast<Platform *>(train->get_current_track()->get_prev());
-
-                auto &event_queue = schedule[departing->get_station()->get_id()];
-
-                if (!event_queue.departures.empty())
+                else if (train->get_status() == TrainStatus::DEPARTING)
                 {
-                    Event event = event_queue.departures.top();
+                    Platform *departing = static_cast<Platform *>(train->get_current_track()->get_prev());
 
-                    if (event.train_id == train->get_id())
+                    auto &event_queue = schedule[departing->get_station()->get_id()];
+
+                    if (!event_queue.departures.empty())
                     {
-                        event_queue.departures.pop();
-                        logger.log_departure(tick, event.tick, train, departing);
+                        Event event = event_queue.departures.top();
+
+                        if (event.train_id == train->get_id())
+                        {
+                            event_queue.departures.pop();
+                            logger.log_departure(tick, event.tick, train, departing);
+                        }
                     }
                 }
             }
@@ -178,49 +185,61 @@ void Dispatch::update(int tick)
     handle_spawns(tick);
 }
 
-void Dispatch::handle_signals(int tick)
+bool Dispatch::authorize(int tick, Train *train)
 {
-    for (Track *segment : segments)
+    Track *next = train->get_current_track()->get_next();
+    if (!next)
     {
-        Signal *signal = segment->get_signal();
-        if (!signal)
-            continue;
-
-        SignalState new_state;
-        if (signal->is_delayed() || segment->is_occupied())
-        {
-            new_state = SignalState::RED;
-        }
-        else if (!signal->is_delayed() && !segment->is_occupied())
-        {
-            new_state = SignalState::GREEN;
-        }
-
-        bool changed = signal->change_state(new_state);
-        if (changed)
-        {
-            logger.log_signal_change(tick, signal);
-        }
-
-        if (signal->is_delayed())
-            signal->decrement_delay();
+        std::cerr << "No next segment available to authorize movement for train " << train->get_id() << "\n";
     }
+
+    Signal *signal = next->get_signal();
+    if (!signal)
+    {
+        std::cerr << "No signal available to authorize movement for train " << train->get_id() << "\n";
+        return false;
+    }
+
+    SignalState new_state = SignalState::RED;
+    if (!next->is_occupied())
+    {
+        new_state = SignalState::GREEN;
+    }
+
+    bool changed = signal->change_state(new_state);
+    if (changed)
+    {
+        logger.log_signal_change(tick, signal);
+    }
+
+    return signal->is_green();
 }
 
 void Dispatch::handle_spawns(int tick)
 {
-    int id = Yards::ids[0];
 
-    auto &event_queue = schedule[id];
-
-    if (!event_queue.departures.empty())
+    for (const auto &id : Yards::ids)
     {
-        Event event = event_queue.departures.top();
-
-        if (event.tick <= tick)
+        auto it = schedule.find(id);
+        if (it == schedule.end())
         {
-            event_queue.departures.pop();
-            spawn_train(tick, event);
+            continue;
+        }
+
+        auto &event_queue = it->second;
+
+        std::cout << "Got the queue\n";
+
+        if (!event_queue.departures.empty())
+        {
+            std::cout << "Accessed the departures\n";
+            Event event = event_queue.departures.top();
+
+            if (event.tick <= tick)
+            {
+                event_queue.departures.pop();
+                spawn_train(tick, event);
+            }
         }
     }
 }

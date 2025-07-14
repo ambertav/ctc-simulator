@@ -8,7 +8,7 @@ class Track
 {
 private:
     const int id;
-    int distance;
+    int duration;
     bool occupied;
     Signal *const signal;
     Train *current_train;

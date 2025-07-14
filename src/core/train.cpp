@@ -2,11 +2,16 @@
 
 #include <iostream>
 
-Train::Train(int i, TrainLine l, ServiceType t, Track *ct) : id(i), line(l), type(t), current_track(ct), status(TrainStatus::IDLE), destination(nullptr) {}
+Train::Train(int i, TrainLine l, ServiceType t, Track *ct) : id(i), delay(0), line(l), type(t), current_track(ct), status(TrainStatus::IDLE), destination(nullptr) {}
 
 int Train::get_id() const
 {
     return id;
+}
+
+int Train::get_delay() const
+{
+    return delay;
 }
 
 TrainLine Train::get_line() const
@@ -34,12 +39,30 @@ Platform *Train::get_destination() const
     return destination;
 }
 
-bool Train::can_advance() const
+bool Train::is_active() const 
 {
-    Track *next = current_track ? current_track->get_next() : nullptr;
-    if (!next)
+    return status != TrainStatus::IDLE && status != TrainStatus::OUTOFSERVICE;
+}
+
+void Train::add_delay(int additional_delay)
+{
+    if (additional_delay > 0)
+    {
+        delay += additional_delay;
+    }
+}
+
+bool Train::request_movement()
+{
+    if (delay <= 0)
+    {
+        return true;
+    }
+    else
+    {
+        --delay;
         return false;
-    return next->allow_entry();
+    }
 }
 
 bool Train::move_to_track()
@@ -80,6 +103,8 @@ bool Train::move_to_track()
         {
             status = TrainStatus::MOVING;
         }
+
+        delay = current_track->get_duration();
 
         return true;
     }

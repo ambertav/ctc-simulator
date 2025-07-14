@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "config.h"
+#include "constants.h"
 #include "core/dispatch.h"
 
 class DispatchTest : public testing::Test
@@ -57,7 +58,7 @@ protected:
         mock_train_1 = std::make_unique<MockTrain>(1, TrainLine::FOUR, ServiceType::EXPRESS, nullptr);
         mock_train_2 = std::make_unique<MockTrain>(2, TrainLine::FOUR, ServiceType::EXPRESS, nullptr);
 
-        mock_yard_1 = std::make_unique<MockStation>(1, "yard 1", true, lines);
+        mock_yard_1 = std::make_unique<MockStation>(Yards::North, "yard 1", true, lines);
         mock_signal_yard_1 = std::make_unique<MockSignal>(1, 1);
         mock_platform_yard_1 = std::make_unique<MockPlatform>(1, 1, mock_signal_yard_1.get(), mock_yard_1.get(), Direction::DOWNTOWN);
 
@@ -71,7 +72,7 @@ protected:
         mock_signal_track_2 = std::make_unique<MockSignal>(4, 4);
         mock_track_2 = std::make_unique<MockTrack>(4, mock_signal_track_2.get());
 
-        mock_yard_2 = std::make_unique<MockStation>(3, "yard 2", true, lines);
+        mock_yard_2 = std::make_unique<MockStation>(Yards::South, "yard 2", true, lines);
         mock_signal_yard_2 = std::make_unique<MockSignal>(5, 5);
         mock_platform_yard_2 = std::make_unique<MockPlatform>(5, 1, mock_signal_yard_2.get(), mock_yard_2.get(), Direction::DOWNTOWN);
 
@@ -181,17 +182,17 @@ TEST_F(DispatchTest, LoadsScheduleAndConstructsPriorityQueuesSucessfully)
 
     // write valid data
     out << "train_id,station_id,station_name,direction,arrival_tick,departure_tick\n";
-    out << "1,1,Yard 1,downtown,-1,2\n";
+    out << "1,4000,Yard 1,downtown,-1,2\n";
     out << "1,2,Station,downtown,3,5\n";
     out.close();
 
     dispatch->load_schedule(test_schedule);
     const auto &schedule = dispatch->get_schedule();
 
-    EXPECT_TRUE(schedule.contains(1));
+    EXPECT_TRUE(schedule.contains(Yards::North));
     EXPECT_TRUE(schedule.contains(2));
-    EXPECT_EQ(schedule.at(1).arrivals.size(), 0);
-    EXPECT_EQ(schedule.at(1).departures.size(), 1);
+    EXPECT_EQ(schedule.at(Yards::North).arrivals.size(), 0);
+    EXPECT_EQ(schedule.at(Yards::North).departures.size(), 1);
     EXPECT_EQ(schedule.at(2).arrivals.size(), 1);
     EXPECT_EQ(schedule.at(2).departures.size(), 1);
 
@@ -218,16 +219,16 @@ TEST_F(DispatchTest, SkipsMalformedLinesInLoadSchedule)
 
     // write invalid data
     out << "train_id,station_id,station_name,direction,arrival_tick,departure_tick\n";
-    out << "1,1,Yard 1,downtown,-1,2\n";
+    out << "1,4000,Yard 1,downtown,-1,2\n";
     out << "1,2,Station,downtown\n"; // malformed, should not add events for station 2 to schedule
     out.close();
 
     dispatch->load_schedule(test_schedule);
     const auto &schedule = dispatch->get_schedule();
 
-    EXPECT_TRUE(schedule.contains(1));
-    EXPECT_EQ(schedule.at(1).arrivals.size(), 0);
-    EXPECT_EQ(schedule.at(1).departures.size(), 1);
+    EXPECT_TRUE(schedule.contains(Yards::North));
+    EXPECT_EQ(schedule.at(Yards::North).arrivals.size(), 0);
+    EXPECT_EQ(schedule.at(Yards::North).departures.size(), 1);
 
     EXPECT_TRUE(schedule.at(2).arrivals.empty());
     EXPECT_TRUE(schedule.at(2).departures.empty());
@@ -242,34 +243,24 @@ TEST_F(DispatchTest, SkipsLinesWithInvalidInputInLoadSchedule)
 
     // write invalid data
     out << "train_id,station_id,station_name,direction,arrival_tick,departure_tick\n";
-    out << "1,1,Yard 1,downtown,-1,2\n";
-    out << "1,2,Station,downtown,t,k\n"; // invalid number, should skip
-    out << "1,3,Station,up,3,4\n";       // invalid direction, should skip
+    out << "1,4000,Yard 1,downtown,-1,2\n";
+    out << "1,2,Station,downtown,t,k\n";    // invalid number, should skip
+    out << "1,4001,Station,up,3,4\n";       // invalid direction, should skip
     out.close();
 
     dispatch->load_schedule(test_schedule);
     const auto &schedule = dispatch->get_schedule();
 
-    EXPECT_TRUE(schedule.contains(1));
-    EXPECT_EQ(schedule.at(1).arrivals.size(), 0);
-    EXPECT_EQ(schedule.at(1).departures.size(), 1);
+    EXPECT_TRUE(schedule.contains(Yards::North));
+    EXPECT_EQ(schedule.at(Yards::North).arrivals.size(), 0);
+    EXPECT_EQ(schedule.at(Yards::North).departures.size(), 1);
 
     EXPECT_TRUE(schedule.at(2).arrivals.empty());
     EXPECT_TRUE(schedule.at(2).departures.empty());
-    EXPECT_TRUE(schedule.at(3).arrivals.empty());
-    EXPECT_TRUE(schedule.at(3).departures.empty());
+    EXPECT_TRUE(schedule.at(Yards::South).arrivals.empty());
+    EXPECT_TRUE(schedule.at(Yards::South).departures.empty());
 
     std::remove(test_schedule.c_str());
-}
-
-TEST_F(DispatchTest, UpdateHandlesDelayedSignals)
-{
-    mock_train_1->spawn(mock_platform_yard_1.get());
-    mock_signal_track_1->set_delay(2);
-
-    dispatch->update(0);
-    EXPECT_TRUE(mock_signal_track_1->is_red());
-    EXPECT_EQ(mock_train_1->get_current_track(), static_cast<Track *>(mock_platform_yard_1.get()));
 }
 
 TEST_F(DispatchTest, UpdateMovesTrainIfAllowed)
@@ -280,28 +271,35 @@ TEST_F(DispatchTest, UpdateMovesTrainIfAllowed)
     EXPECT_EQ(mock_train_1->get_current_track(), mock_track_1.get());
 }
 
-TEST_F(DispatchTest, UpdateHandlesOccupiedSignals)
+TEST_F(DispatchTest, UpdateDeniesTrainMovementIfTrainIsDelayed)
+{
+    mock_train_1->spawn(mock_platform_yard_1.get());
+
+    mock_train_1->add_delay(2);
+    dispatch->update(0);
+
+    EXPECT_EQ(mock_train_1->get_current_track(), mock_platform_yard_1.get());
+}
+
+TEST_F(DispatchTest, UpdateDeniesTrainMovementIfSignalIsOccupied)
 {
     mock_train_1->spawn(mock_platform_yard_1.get());
     dispatch->update(0);
-    mock_signal_station->set_delay(2); // delay to force first train to stay
 
     mock_train_2->spawn(mock_platform_yard_1.get());
     dispatch->update(1);
 
-    // in same place, because next track is occupied
-    EXPECT_EQ(mock_train_2->get_current_track(), static_cast<Track *>(mock_platform_yard_1.get()));
     EXPECT_EQ(mock_train_1->get_current_track(), mock_track_1.get());
-
-    EXPECT_TRUE(mock_track_1->is_occupied());
-    EXPECT_TRUE(mock_signal_track_1->is_red());
+    EXPECT_EQ(mock_train_2->get_current_track(), mock_platform_yard_1.get());
 }
+
 
 TEST_F(DispatchTest, UpdateHandlesDespawnTrainOnYardArrival)
 {
     mock_train_1->spawn(mock_platform_station.get());
     dispatch->update(0); // moves to track_2
     dispatch->update(1); // moves to yard_2
+    dispatch->update(2);
 
     EXPECT_EQ(mock_train_1->get_current_track(), nullptr);
     EXPECT_EQ(mock_train_1->get_status(), TrainStatus::OUTOFSERVICE);
@@ -316,7 +314,7 @@ TEST_F(DispatchTest, UpdateHandlesSpawnTrainsOnYardDeparture)
 
     // write valid data
     out << "train_id,station_id,station_name,direction,arrival_tick,departure_tick\n";
-    out << "1,1,Yard 1,downtown,-1,0\n";
+    out << "1,4000,Yard 1,downtown,-1,0\n";
     out << "1,2,Station,downtown,3,5\n";
     out.close();
 

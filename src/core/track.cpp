@@ -1,11 +1,16 @@
 #include "core/signal.h"
 #include "core/track.h"
 
-Track::Track(int i, Signal *s, int d) : id(i), distance(d), occupied(false), signal(s), current_train(nullptr), next(nullptr), prev(nullptr) {}
+Track::Track(int i, Signal *s, int d) : id(i), duration(std::max(1, d)), occupied(false), signal(s), current_train(nullptr), next(nullptr), prev(nullptr) {}
 
 int Track::get_id() const
 {
     return id;
+}
+
+int Track::get_duration() const
+{
+    return duration;
 }
 
 Signal *Track::get_signal() const

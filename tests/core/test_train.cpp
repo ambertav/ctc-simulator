@@ -35,30 +35,26 @@ TEST_F(TrainTest, ConstructorInitializesCorrectly)
     EXPECT_EQ(train.get_destination(), nullptr);
 }
 
-TEST_F(TrainTest, CanAdvanceWhenAllowed)
+TEST_F(TrainTest, AddsAdditionalDelaysSuccessfully) 
 {
-    mock_track_1.set_next(&mock_track_2);
-    mock_track_2.set_prev(&mock_track_1);
-
-    EXPECT_CALL(mock_track_2, allow_entry()).WillOnce(testing::Return(true));
-    EXPECT_TRUE(train.can_advance());
+    int additional {2};
+    train.add_delay(additional);
+    EXPECT_EQ(train.get_delay(), additional);
 }
 
-TEST_F(TrainTest, CannotAdvanceIfNotAllowed)
+TEST_F(TrainTest, RequestMovementSucceedsWhenTrainIsNotDelayed)
 {
-    mock_track_1.set_next(&mock_track_2);
-    mock_track_2.set_prev(&mock_track_1);
-
-    EXPECT_CALL(mock_track_2, allow_entry()).WillOnce(testing::Return(false));
-    EXPECT_FALSE(train.can_advance());
+    EXPECT_EQ(train.get_delay(), 0);
+    EXPECT_TRUE(train.request_movement());
 }
 
-TEST_F(TrainTest, CannotAdvanceIfNullptr)
+TEST_F(TrainTest, RequestMovementDeductsFromDelayAndReturnsFalse)
 {
-    mock_track_1.set_next(nullptr);
-    mock_track_2.set_prev(nullptr);
-
-    EXPECT_FALSE(train.can_advance());
+    int delay {2};
+    train.add_delay(delay);
+    
+    EXPECT_FALSE(train.request_movement());
+    EXPECT_EQ(train.get_delay(), delay - 1);
 }
 
 TEST_F(TrainTest, MoveToTrackSucceedsWhenAllowed)
@@ -69,6 +65,7 @@ TEST_F(TrainTest, MoveToTrackSucceedsWhenAllowed)
     EXPECT_CALL(mock_track_2, allow_entry()).WillOnce(testing::Return(true));
     EXPECT_TRUE(train.move_to_track());
     EXPECT_EQ(train.get_current_track(), &mock_track_2);
+    EXPECT_EQ(train.get_delay(), train.get_current_track()->get_duration());
 }
 
 TEST_F(TrainTest, MoveToTrackFailsWhenNotAllowed)
