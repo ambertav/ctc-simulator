@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "map/base.h"
 #include "enums/direction.h"
 

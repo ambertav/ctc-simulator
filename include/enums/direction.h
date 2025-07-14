@@ -47,6 +47,7 @@ inline std::ostream &operator<<(std::ostream &os, Direction direction)
     case Direction::DOWNTOWN:
         return os << "downtown";
     case Direction::UNKNOWN:
+    default:
         return os << "unknown";
     }
 }

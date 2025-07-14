@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 #include <span>
+#include <optional>
+
 
 #include "enums/train_line.h"
 #include "enums/direction.h"

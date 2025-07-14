@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <numeric>
+#include <memory>
 
 #include "enums/train_line.h"
 #include "enums/service_type.h"
