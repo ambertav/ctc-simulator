@@ -6,8 +6,9 @@ A Centralized Traffic Control simulator that models realistic train movement, si
 - [MTA NYC Subway Stations](https://data.ny.gov/Transportation/MTA-Subway-Stations/39hk-dx4f/about_data)
 - [Static GTFS Data](https://www.mta.info/developers)
 
-## Table of Contents
+For details about the data files, see the [data folder documentation](data/DATA.md)
 
+## Table of Contents
 
 - [Centralized Traffic Control Simulator](#centralized-traffic-control-simulator)
 - [Project Structure](#project-structure)
@@ -99,7 +100,6 @@ ctest
 | `DATA_DIR` | Input data (e.g., schedule)     | `./data/`                   |
 | `bin/`     | Main app output                 | `./bin/app`                 |
 | `tests/`   | Test binary output              | `./build/tests/ctc_tests`   |
-
 
 ## Roadmap
 
