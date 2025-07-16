@@ -3,7 +3,7 @@
 #include <string>
 #include <fstream>
 
-#include "map/base.h"
+#include "map/graph.h"
 #include "enums/direction.h"
 
 class Scheduler

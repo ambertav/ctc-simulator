@@ -4,7 +4,7 @@
 #include <ranges>
 #include <algorithm>
 
-#include "map/base.h"
+#include "map/graph.h"
 #include "core/factory.h"
 
 #include "constants.h"
@@ -14,7 +14,7 @@ class FactoryTest : public ::testing::Test
 protected:
     Factory factory;
 
-    Transit::Map::Base graph;
+    Transit::Map::Graph graph;
     Transit::Map::Path path;
 
     int number_of_trains{2};

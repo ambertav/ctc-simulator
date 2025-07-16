@@ -8,7 +8,7 @@ class SchedulerTest : public ::testing::Test
 {
 protected:
     Scheduler scheduler{std::string(DATA_DIRECTORY) + "/test_schedule.csv"};
-    Transit::Map::Base graph;
+    Transit::Map::Graph graph;
     Transit::Map::Path valid_path;
     Transit::Map::Path invalid_path;
     std::string outfile{std::string(DATA_DIRECTORY) + "/test_schedule.csv"};

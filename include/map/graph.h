@@ -54,7 +54,7 @@ namespace Transit::Map
         }
     };
 
-    class Base
+    class Graph
     {
     private:
         std::vector<std::unique_ptr<Node>> nodes;
@@ -62,7 +62,7 @@ namespace Transit::Map
         std::unordered_map<std::string, std::vector<Edge>> adjacency_list;
 
     public:
-        Base() = default;
+        Graph() = default;
 
         Node *add_node(const std::string &i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string>& g, double lat = 0.0, double lon = 0.0);
         void remove_node(const std::string &node_id);

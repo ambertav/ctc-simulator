@@ -1,6 +1,6 @@
 #pragma once
 
-#include "map/base.h"
+#include "map/graph.h"
 #include <iostream>
 
 enum class Direction

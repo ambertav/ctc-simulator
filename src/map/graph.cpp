@@ -1,11 +1,11 @@
-#include "map/base.h"
+#include "map/graph.h"
 
 #include <queue>
 #include <limits>
 
 using namespace Transit::Map;
 
-Node *Base::add_node(const std::string &i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string> &g, double lat, double lon)
+Node *Graph::add_node(const std::string &i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string> &g, double lat, double lon)
 {
     if (node_map.count(i) > 0)
     {
@@ -22,7 +22,7 @@ Node *Base::add_node(const std::string &i, const std::string &n, const std::vect
     return raw_ptr;
 }
 
-void Base::remove_node(const std::string &node_id)
+void Graph::remove_node(const std::string &node_id)
 {
     if (!adjacency_list.count(node_id))
     {
@@ -59,7 +59,7 @@ void Base::remove_node(const std::string &node_id)
     }
 }
 
-void Base::remove_node(Node *u)
+void Graph::remove_node(Node *u)
 {
     if (u == nullptr)
     {
@@ -69,7 +69,7 @@ void Base::remove_node(Node *u)
     remove_node(u->id);
 }
 
-void Base::add_edge(Node *u, Node *v, int w, const std::vector<TrainLine> &t)
+void Graph::add_edge(Node *u, Node *v, int w, const std::vector<TrainLine> &t)
 {
     if (!node_map.count(u->id) || !node_map.count(v->id))
     {
@@ -96,7 +96,7 @@ void Base::add_edge(Node *u, Node *v, int w, const std::vector<TrainLine> &t)
     ++v->degree;
 }
 
-void Base::add_edge(const std::string &u, const std::string &v)
+void Graph::add_edge(const std::string &u, const std::string &v)
 {
     if (!node_map.count(u) || !node_map.count(v))
     {
@@ -126,7 +126,7 @@ void Base::add_edge(const std::string &u, const std::string &v)
     add_edge(u_node, v_node, 1, shared_lines);
 }
 
-void Base::remove_edge(Node *u, Node *v)
+void Graph::remove_edge(Node *u, Node *v)
 {
     auto u_id = u->id;
     auto v_id = v->id;
@@ -156,7 +156,7 @@ void Base::remove_edge(Node *u, Node *v)
     --v->degree;
 }
 
-void Base::update_node(const std::string &id, const std::vector<TrainLine> &more_train_lines, const std::vector<std::string> more_gtfs_ids)
+void Graph::update_node(const std::string &id, const std::vector<TrainLine> &more_train_lines, const std::vector<std::string> more_gtfs_ids)
 {
     auto it = node_map.find(id);
     if (it == node_map.end())
@@ -169,7 +169,7 @@ void Base::update_node(const std::string &id, const std::vector<TrainLine> &more
     node->gtfs_ids.insert(node->gtfs_ids.end(), more_gtfs_ids.begin(), more_gtfs_ids.end());
 }
 
-const Node *Base::get_node(const std::string &id) const
+const Node *Graph::get_node(const std::string &id) const
 {
     auto it = node_map.find(id);
     if (it != node_map.end())
@@ -180,12 +180,12 @@ const Node *Base::get_node(const std::string &id) const
     return nullptr;
 }
 
-const std::unordered_map<std::string, std::vector<Edge>> &Base::get_adjacency_list() const
+const std::unordered_map<std::string, std::vector<Edge>> &Graph::get_adjacency_list() const
 {
     return adjacency_list;
 }
 
-void Base::print() const
+void Graph::print() const
 {
     for (const auto &[id, edges] : adjacency_list)
     {
@@ -207,7 +207,7 @@ void Base::print() const
     }
 }
 
-Path Base::find_path(const std::string &u_id, const std::string &v_id) const
+Path Graph::find_path(const std::string &u_id, const std::string &v_id) const
 {
     const Node *u = get_node(u_id);
     const Node *v = get_node(v_id);
@@ -223,7 +223,7 @@ Path Base::find_path(const std::string &u_id, const std::string &v_id) const
     }
 }
 
-Path Base::dijkstra(const Node *u, const Node *v) const
+Path Graph::dijkstra(const Node *u, const Node *v) const
 {
     std::unordered_map<std::string, int> dist;
     std::unordered_map<std::string, int> transfers;
@@ -302,7 +302,7 @@ Path Base::dijkstra(const Node *u, const Node *v) const
     return reconstruct_path(u, v, prev, transfers);
 }
 
-Path Base::reconstruct_path(const Node *u, const Node *v, const std::unordered_map<std::string, std::string> &prev, const std::unordered_map<std::string, int> &transfers) const
+Path Graph::reconstruct_path(const Node *u, const Node *v, const std::unordered_map<std::string, std::string> &prev, const std::unordered_map<std::string, int> &transfers) const
 {
     std::vector<const Node*> path_nodes;
 
@@ -349,7 +349,7 @@ Path Base::reconstruct_path(const Node *u, const Node *v, const std::unordered_m
     return Path(path_nodes, segment_weights, transfer_count);
 }
 
-bool Base::requires_transfer(const std::vector<TrainLine> &a, const std::vector<TrainLine> &b) const
+bool Graph::requires_transfer(const std::vector<TrainLine> &a, const std::vector<TrainLine> &b) const
 {
     for (const auto &line_a : a)
     {

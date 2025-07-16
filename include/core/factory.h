@@ -6,7 +6,7 @@
 #include "core/platform.h"
 #include "core/signal.h"
 
-#include "map/base.h"
+#include "map/graph.h"
 
 class Factory
 {

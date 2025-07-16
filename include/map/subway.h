@@ -2,7 +2,7 @@
 
 #include <functional>
 
-#include "map/base.h"
+#include "map/graph.h"
 #include "enums/direction.h"
 
 namespace Transit::Map
@@ -16,7 +16,7 @@ namespace Transit::Map
         Route(const std::string &h, std::vector<std::string> &s, Direction d) : headsign(h), sequence(s), direction(d) {}
     };
 
-    class Subway : public Base
+    class Subway : public Graph
     {
     public:
         static Subway &get_instance()

@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "map/base.h"
+#include "map/graph.h"
 
 class GraphTest : public ::testing::Test
 {
 protected:
-    Transit::Map::Base graph;
+    Transit::Map::Graph graph;
 
     Transit::Map::Node *A;
     Transit::Map::Node *B;
