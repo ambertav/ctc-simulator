@@ -1,6 +1,6 @@
 #pragma once
 
-#include "enums/train_line.h"
+#include "enums/transit_types.hpp"
 #include "enums/service_type.h"
 #include "enums/train_status.h"
 

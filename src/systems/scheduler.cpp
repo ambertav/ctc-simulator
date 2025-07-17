@@ -1,8 +1,10 @@
+#include <optional>
 #include <fstream>
 
 #include "config.h"
 #include "constants.h"
 #include "systems/scheduler.h"
+#include "enums/transit_types.hpp"
 
 Scheduler::Scheduler(const std::string &file_path, int stg, int dt, int nt) : outfile(file_path, std::ios::out | std::ios::trunc), spawn_tick_gap(stg), dwell_time(dt), number_of_trains(nt) {}
 
@@ -21,26 +23,15 @@ void Scheduler::create_schedule(const Transit::Map::Path &path)
 
     outfile << "train_id,station_id,station_name,direction,arrival_tick,departure_tick\n";
 
+    static int train_id{1};
+
     auto write_schedule = [&](const std::vector<const Transit::Map::Node *> &stations, const std::vector<int> distances, Direction dir)
     {
-        for (int i = 0; i < number_of_trains; ++i)
+        for (int i = 0; i < number_of_trains / 2; ++i)
         {
             int tick = i * spawn_tick_gap;
-
-            int train_id, start_yard, end_yard;
-
-            if (dir == Direction::DOWNTOWN)
-            {
-                train_id = i + 1;
-                start_yard = Yards::ids[0];
-                end_yard = Yards::ids[1];
-            }
-            else if (dir == Direction::UPTOWN)
-            {
-                train_id = i + 1 + number_of_trains;
-                start_yard = Yards::ids[1];
-                end_yard = Yards::ids[0];
-            }
+            
+            auto [start_yard, end_yard] = Yards::get_yard_id_by_direction(dir);
 
             outfile << train_id << "," << start_yard << "," << Yards::get_yard_name(start_yard) << "," << dir << "," << -1 << "," << tick << "\n";
 
@@ -61,11 +52,22 @@ void Scheduler::create_schedule(const Transit::Map::Path &path)
             }
 
             outfile << train_id << "," << end_yard << "," << Yards::get_yard_name(end_yard) << "," << dir << "," << tick + 1 << "," << "-1\n";
+
+            ++train_id;
         }
     };
 
-    Direction original = infer_direction(path.nodes.front(), path.nodes.back());
-    Direction reverse = original == Direction::UPTOWN ? Direction::DOWNTOWN : Direction::UPTOWN;
+    const Transit::Map::Node* start { path.nodes.front() };
+    const Transit::Map::Node* end { path.nodes.back() };
+
+    static_assert(std::is_same_v<decltype(start), const Transit::Map::Node*>);
+static_assert(std::is_same_v<decltype(end), const Transit::Map::Node*>);
+
+    std::optional<Direction> o_opt = infer_direction(start->train_lines.front(), start->latitude, start->longitude, end->latitude, end->longitude);
+    std::optional<Direction> r_opt = infer_direction(start->train_lines.front(), end->latitude, end->longitude, start->latitude, start->longitude);
+    
+    Direction original {*o_opt};
+    Direction reverse {*r_opt};
 
     write_schedule(path.nodes, path.segment_weights, original);
 

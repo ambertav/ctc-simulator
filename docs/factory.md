@@ -39,7 +39,7 @@ For full details, see the [header](/include/core/factory.h) and [source](/src/co
   
 - `create_stations(...)` : creates the stations represented in `path.nodes` and returns the start and ending yard ids.
 
-- `create_network(...)` : uses the `Path` and the start and ending yard ids to build and connect the routes for `Direction::UPTOWN` and `Direction::DOWNTOWN`.
+- `create_network(...)` : uses the `Path` and the start and ending yard ids to build and connect the routes for all directions.
 
 ## Dependencies
 

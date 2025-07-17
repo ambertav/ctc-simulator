@@ -3,7 +3,7 @@
 #include <functional>
 
 #include "map/graph.h"
-#include "enums/direction.h"
+#include "enums/transit_types.hpp"
 
 namespace Transit::Map
 {
@@ -11,9 +11,8 @@ namespace Transit::Map
     {
         std::string headsign;
         std::vector<std::string> sequence;
-        Direction direction;
 
-        Route(const std::string &h, std::vector<std::string> &s, Direction d) : headsign(h), sequence(s), direction(d) {}
+        Route(const std::string &h, std::vector<std::string> &s) : headsign(h), sequence(s) {}
     };
 
     class Subway : public Graph

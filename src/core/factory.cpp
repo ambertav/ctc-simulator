@@ -94,20 +94,11 @@ std::pair<int, int> Factory::create_stations(const Transit::Map::Path &path)
         stations[id] = std::make_unique<Station>(id, node->name, false, node->train_lines);
     }
 
-    Direction dir = infer_direction(path.nodes.front(), path.nodes.back());
+    const Transit::Map::Node *start_node{path.nodes.front()};
+    const Transit::Map::Node *end_node{path.nodes.back()};
+    std::optional<Direction> dir_opt = infer_direction(start_node->train_lines.front(), start_node->latitude, start_node->longitude, end_node->latitude, end_node->longitude);
 
-    int start, end;
-
-    if (dir == Direction::DOWNTOWN)
-    {
-        start = Yards::ids[0];
-        end = Yards::ids[1];
-    }
-    else if (dir == Direction::UPTOWN)
-    {
-        start = Yards::ids[1];
-        end = Yards::ids[0];
-    }
+    auto [start, end] = Yards::get_yard_id_by_direction(*dir_opt);
 
     stations[start] = std::make_unique<Station>(start, Yards::get_yard_name(start), true, path.nodes.front()->train_lines);
     stations[end] = std::make_unique<Station>(end, Yards::get_yard_name(end), true, path.nodes.back()->train_lines);
@@ -208,8 +199,13 @@ void Factory::create_network(const Transit::Map::Path &path, int start, int end)
         ++track_id;
     };
 
-    Direction original = infer_direction(path.nodes.front(), path.nodes.back());
-    Direction reverse = original == Direction::UPTOWN ? Direction::DOWNTOWN : Direction::UPTOWN;
+    const Transit::Map::Node *start_node{path.nodes.front()};
+    const Transit::Map::Node *end_node{path.nodes.back()};
+    std::optional<Direction> o_opt = infer_direction(start_node->train_lines.front(), start_node->latitude, start_node->longitude, end_node->latitude, end_node->longitude);
+    std::optional<Direction> r_opt = infer_direction(start_node->train_lines.front(), end_node->latitude, end_node->longitude, start_node->latitude, start_node->longitude);
+
+    Direction original{*o_opt};
+    Direction reverse{*r_opt};
 
     build(path.nodes, path.segment_weights, start, end, original);
 

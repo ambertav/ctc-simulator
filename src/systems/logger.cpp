@@ -62,9 +62,8 @@ void Logger::log_signal_change(int tick, Signal *signal)
 void Logger::log_train_spawn(int actual_tick, int planned_tick, Train *train, Direction dir)
 {
 
-    std::string direction = dir == Direction::DOWNTOWN ? "downtown" : "uptown";
     std::string message = "Train " + std::to_string(train->get_id()) +
-                          " is leaving the yard and heading " + direction +
+                          " is leaving the yard" +
                           " (actual tick: " + std::to_string(actual_tick) +
                           ", planned tick: " + std::to_string(planned_tick) + ")";
 

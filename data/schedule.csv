@@ -1,5 +1,5 @@
 train_id,station_id,station_name,direction,arrival_tick,departure_tick
-1,4000,North Yard,downtown,-1,0
+1,1000,uptown,downtown,-1,0
 1,384,Burnside Av,downtown,1,3
 1,385,176 St,downtown,5,7
 1,386,Mt Eden Av,downtown,9,11
@@ -12,8 +12,8 @@ train_id,station_id,station_name,direction,arrival_tick,departure_tick
 1,397,86 St,downtown,37,39
 1,613,Lexington Av/59 St,downtown,41,43
 1,610,Grand Central-42 St,downtown,45,47
-1,4001,South Yard,downtown,48,-1
-2,4000,North Yard,downtown,-1,2
+1,1001,downtown,downtown,48,-1
+2,1000,uptown,downtown,-1,2
 2,384,Burnside Av,downtown,3,5
 2,385,176 St,downtown,7,9
 2,386,Mt Eden Av,downtown,11,13
@@ -26,8 +26,8 @@ train_id,station_id,station_name,direction,arrival_tick,departure_tick
 2,397,86 St,downtown,39,41
 2,613,Lexington Av/59 St,downtown,43,45
 2,610,Grand Central-42 St,downtown,47,49
-2,4001,South Yard,downtown,50,-1
-3,4000,North Yard,downtown,-1,4
+2,1001,downtown,downtown,50,-1
+3,1000,uptown,downtown,-1,4
 3,384,Burnside Av,downtown,5,7
 3,385,176 St,downtown,9,11
 3,386,Mt Eden Av,downtown,13,15
@@ -40,8 +40,8 @@ train_id,station_id,station_name,direction,arrival_tick,departure_tick
 3,397,86 St,downtown,41,43
 3,613,Lexington Av/59 St,downtown,45,47
 3,610,Grand Central-42 St,downtown,49,51
-3,4001,South Yard,downtown,52,-1
-4,4001,South Yard,uptown,-1,0
+3,1001,downtown,downtown,52,-1
+4,1001,downtown,uptown,-1,0
 4,610,Grand Central-42 St,uptown,1,3
 4,613,Lexington Av/59 St,uptown,5,7
 4,397,86 St,uptown,9,11
@@ -54,8 +54,8 @@ train_id,station_id,station_name,direction,arrival_tick,departure_tick
 4,386,Mt Eden Av,uptown,37,39
 4,385,176 St,uptown,41,43
 4,384,Burnside Av,uptown,45,47
-4,4000,North Yard,uptown,48,-1
-5,4001,South Yard,uptown,-1,2
+4,1000,uptown,uptown,48,-1
+5,1001,downtown,uptown,-1,2
 5,610,Grand Central-42 St,uptown,3,5
 5,613,Lexington Av/59 St,uptown,7,9
 5,397,86 St,uptown,11,13
@@ -68,8 +68,8 @@ train_id,station_id,station_name,direction,arrival_tick,departure_tick
 5,386,Mt Eden Av,uptown,39,41
 5,385,176 St,uptown,43,45
 5,384,Burnside Av,uptown,47,49
-5,4000,North Yard,uptown,50,-1
-6,4001,South Yard,uptown,-1,4
+5,1000,uptown,uptown,50,-1
+6,1001,downtown,uptown,-1,4
 6,610,Grand Central-42 St,uptown,5,7
 6,613,Lexington Av/59 St,uptown,9,11
 6,397,86 St,uptown,13,15
@@ -82,4 +82,4 @@ train_id,station_id,station_name,direction,arrival_tick,departure_tick
 6,386,Mt Eden Av,uptown,41,43
 6,385,176 St,uptown,45,47
 6,384,Burnside Av,uptown,49,51
-6,4000,North Yard,uptown,52,-1
+6,1000,uptown,uptown,52,-1

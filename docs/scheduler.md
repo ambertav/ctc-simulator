@@ -7,7 +7,7 @@ The `Scheduler` generates a simulation schedule based on a the given route `Path
 For details about the generated schedule files, see the [data folder documentation](data/DATA.md)
 
 ## Responsibilities
-- Determines a bidirectional schedule (`Direction::UPTOWN` and `Direction::DOWNTOWN`) for a given path
+- Determines a bidirectional schedule for a given path
 - Writes the schedule out to a CSV file for use in the simulation loop by `Dispatch`
 
 ## Methods
@@ -39,13 +39,13 @@ Scheduler default_scheduler{"data/schedule.csv"};
 // OR instantiate the Scheduler with custom configuration
 int time_between_train_spawns { 3 };    // in simulation ticks
 int dwell_time_at_stations { 2 };       // in simulation ticks
-int number_of_trains_per_direction { 5 };
+int number_of_trains { 6 };
 
 Scheduler custom_scheduler{
     "data/schedule.csv",
     time_between_train_spawns, 
     dwell_time_at_stations, 
-    number_of_trains_per_directio
+    number_of_trains
 };
 
 // generate and write schedule

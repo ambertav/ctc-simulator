@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/track.h"
-#include "enums/direction.h"
+#include "enums/transit_types.hpp"
 
 class Station;
 class Train;

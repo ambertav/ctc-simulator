@@ -85,7 +85,6 @@ void Dispatch::load_schedule(const std::string &csv_file)
         }
 
         int train_id, station_id, arrival_tick, departure_tick;
-        Direction dir;
 
         try
         {
@@ -100,13 +99,15 @@ void Dispatch::load_schedule(const std::string &csv_file)
             continue;
         }
 
-        if (dir_str != "downtown" && dir_str != "uptown")
+        std::optional<Direction> dir_opt { direction_from_string(dir_str) };
+
+        if (!dir_opt.has_value())
         {
             std::cerr << "Invalid direction input on line " << line_num << ": " << line << "\n";
             continue;
         }
 
-        dir = dir_str == "downtown" ? Direction::DOWNTOWN : Direction::UPTOWN;
+        Direction dir { *dir_opt };
 
         if (arrival_tick != -1)
         {

@@ -7,7 +7,8 @@
 #include <numeric>
 #include <memory>
 
-#include "enums/train_line.h"
+#include "enums/transit_types.hpp"
+#include "constants.h"
 #include "enums/service_type.h"
 
 namespace Transit::Map

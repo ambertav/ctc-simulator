@@ -4,7 +4,7 @@
 #include <fstream>
 
 #include "map/graph.h"
-#include "enums/direction.h"
+#include "enums/transit_types.hpp"
 
 class Scheduler
 {
@@ -15,6 +15,6 @@ private:
     int number_of_trains;
 
 public:
-    Scheduler(const std::string &file_path, int stg = 2, int dt = 2, int nt = 3);
+    Scheduler(const std::string &file_path, int stg = 2, int dt = 2, int nt = 6);
     void create_schedule(const Transit::Map::Path &path);
 };
