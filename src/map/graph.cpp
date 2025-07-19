@@ -2,6 +2,9 @@
 
 #include <queue>
 #include <limits>
+#include <cmath>
+
+#include "utils.h"
 
 using namespace Transit::Map;
 
@@ -69,7 +72,7 @@ void Graph::remove_node(Node *u)
     remove_node(u->id);
 }
 
-void Graph::add_edge(Node *u, Node *v, int w, const std::vector<TrainLine> &t)
+void Graph::add_edge(Node *u, Node *v, double w, const std::vector<TrainLine> &t)
 {
     if (!node_map.count(u->id) || !node_map.count(v->id))
     {
@@ -123,7 +126,9 @@ void Graph::add_edge(const std::string &u, const std::string &v)
         }
     }
 
-    add_edge(u_node, v_node, 1, shared_lines);
+    double weight{haversine_distance(u_node->coordinates, v_node->coordinates)};
+
+    add_edge(u_node, v_node, weight, shared_lines);
 }
 
 void Graph::remove_edge(Node *u, Node *v)
@@ -207,7 +212,7 @@ void Graph::print() const
     }
 }
 
-Path Graph::find_path(const std::string &u_id, const std::string &v_id) const
+std::optional<Path> Graph::find_path(const std::string &u_id, const std::string &v_id) const
 {
     const Node *u = get_node(u_id);
     const Node *v = get_node(v_id);
@@ -215,7 +220,7 @@ Path Graph::find_path(const std::string &u_id, const std::string &v_id) const
     if (!u || !v || u == v)
     {
         std::cerr << "Nodes do not exist in transit graph\n";
-        return Path{};
+        return std::nullopt;
     }
     else
     {
@@ -223,39 +228,30 @@ Path Graph::find_path(const std::string &u_id, const std::string &v_id) const
     }
 }
 
-Path Graph::dijkstra(const Node *u, const Node *v) const
+std::optional<Path> Graph::dijkstra(const Node *u, const Node *v) const
 {
-    std::unordered_map<std::string, int> dist;
-    std::unordered_map<std::string, int> transfers;
+    std::unordered_map<std::string, double> dist;
     std::unordered_map<std::string, std::string> prev;
     std::unordered_set<std::string> visited;
 
     for (const auto &[id, _] : adjacency_list)
     {
-        dist[id] = std::numeric_limits<int>::max();
+        dist[id] = std::numeric_limits<double>::max();
     }
-    dist[u->id] = 0;
-    transfers[u->id] = 0;
+    dist[u->id] = 0.0;
 
-    using PQElement = std::tuple<int /* distance */, int /* transfers */, std::string /* id */, std::vector<TrainLine>> /* train lines */;
+    using PQElement = std::tuple<double /* distance */, std::string /* id */, std::vector<TrainLine>> /* train lines */;
     auto comparator = [](const PQElement &a, const PQElement &b)
     {
-        if (std::get<0>(a) != std::get<0>(b)) // shorter distance
-        {
-            return std::get<0>(a) > std::get<0>(b);
-        }
-        else // then fewer transfers
-        {
-            return std::get<1>(a) > std::get<1>(b);
-        }
+        return std::get<0>(a) > std::get<0>(b);
     };
-    std::priority_queue<PQElement, std::vector<PQElement>, decltype(comparator)> pq(comparator);
 
-    pq.emplace(0, 0, u->id, u->train_lines);
+    std::priority_queue<PQElement, std::vector<PQElement>, decltype(comparator)> pq(comparator);
+    pq.emplace(0.0, u->id, u->train_lines);
 
     while (!pq.empty())
     {
-        auto [current_dist, current_transfers, node_id, prev_lines] = pq.top();
+        auto [current_dist, node_id, prev_lines] = pq.top();
         pq.pop();
 
         if (visited.contains(node_id))
@@ -271,63 +267,65 @@ Path Graph::dijkstra(const Node *u, const Node *v) const
 
         for (const auto &edge : adjacency_list.at(node_id))
         {
-            const std::string &neighbor_id = edge.to;
-            int weight = edge.weight;
-            const std::vector<TrainLine> &edge_lines = edge.train_lines;
+            const std::string &neighbor_id{edge.to};
+            double weight{edge.weight};
+            const std::vector<TrainLine> &edge_lines{edge.train_lines};
 
             if (visited.contains(neighbor_id))
             {
                 continue;
             }
 
-            int new_dist = current_dist + weight;
-            int new_transfers = current_transfers + (requires_transfer(prev_lines, edge_lines) ? 1 : 0);
+            double transfer_penalty{requires_transfer(prev_lines, edge_lines) ? Utils::TRANSFER_EPSILON : 0.0};
+            double new_dist = current_dist + weight + transfer_penalty;
 
-            if (new_dist < dist[neighbor_id] || (new_dist == dist[neighbor_id] && new_transfers < transfers[neighbor_id]))
+            if (new_dist < dist[neighbor_id])
             {
                 dist[neighbor_id] = new_dist;
-                transfers[neighbor_id] = new_transfers;
                 prev[neighbor_id] = node_id;
-                pq.emplace(new_dist, new_transfers, neighbor_id, edge_lines);
+                pq.emplace(new_dist, neighbor_id, edge_lines);
             }
         }
     }
 
-    if (dist[v->id] == std::numeric_limits<int>::max())
+    if (dist[v->id] == std::numeric_limits<double>::max())
     {
         std::cerr << "No path exists\n";
-        return Path();
+        return std::nullopt;
     }
 
-    return reconstruct_path(u, v, prev, transfers);
+    return reconstruct_path(u, v, prev);
 }
 
-Path Graph::reconstruct_path(const Node *u, const Node *v, const std::unordered_map<std::string, std::string> &prev, const std::unordered_map<std::string, int> &transfers) const
+std::optional<Path> Graph::reconstruct_path(const Node *u, const Node *v, const std::unordered_map<std::string, std::string> &prev) const
 {
-    std::vector<const Node*> path_nodes;
+    std::vector<const Node *> path_nodes;
 
     std::string at = v->id;
     while (at != u->id)
     {
         auto it = prev.find(at);
-    if (it == prev.end())
-    {
-        std::cerr << "Error reconstructing path: missing predecessor for " << at << "\n";
-        return Path{};
-    }
-    const Node* node = get_node(at);
-    if (!node) {
-        std::cerr << "Error: Node with id " << at << " not found\n";
-        return Path{};
-    }
-    path_nodes.push_back(node);
+        if (it == prev.end())
+        {
+            std::cerr << "Error reconstructing path: missing predecessor for " << at << "\n";
+            return std::nullopt;
+        }
+
+        const Node *node = get_node(at);
+        if (!node)
+        {
+            std::cerr << "Error: Node with id " << at << " not found\n";
+            return std::nullopt;
+        }
+
+        path_nodes.push_back(node);
         at = it->second;
     }
 
     path_nodes.push_back(get_node(u->id));
     std::reverse(path_nodes.begin(), path_nodes.end());
 
-    std::vector<int> segment_weights;
+    std::vector<double> segment_weights;
     for (int i = 0; i < path_nodes.size() - 1; ++i)
     {
         const auto &edges = adjacency_list.at(path_nodes[i]->id);
@@ -344,9 +342,29 @@ Path Graph::reconstruct_path(const Node *u, const Node *v, const std::unordered_
         }
     }
 
-    int transfer_count = transfers.at(v->id);
+    return Path(path_nodes, segment_weights);
+}
 
-    return Path(path_nodes, segment_weights, transfer_count);
+double Graph::haversine_distance(const Coordinate &from, const Coordinate &to)
+{
+    using namespace Utils;
+
+    double from_lat_rad{from.latitude * DEG_TO_RAD};
+    double from_lon_rad{from.longitude * DEG_TO_RAD};
+
+    double to_lat_rad{to.latitude * DEG_TO_RAD};
+    double to_lon_rad{to.longitude * DEG_TO_RAD};
+
+    double diff_lat{to_lat_rad - from_lat_rad};
+    double diff_lon{to_lon_rad - from_lon_rad};
+
+    double a{sin(diff_lat / 2.0) * sin(diff_lat / 2.0) +
+             cos(from_lat_rad) * cos(to_lat_rad) *
+                 sin(diff_lon / 2.0) * sin(diff_lon / 2.0)};
+
+    double c{2.0 * atan2(sqrt(a), sqrt(1.0 - a))};
+
+    return EARTH_RADIUS_KM * c;
 }
 
 bool Graph::requires_transfer(const std::vector<TrainLine> &a, const std::vector<TrainLine> &b) const

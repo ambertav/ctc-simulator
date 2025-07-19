@@ -9,7 +9,7 @@ const Station *Platform::get_station() const
     return station;
 }
 
-Direction Platform::get_direction() const
+const Direction& Platform::get_direction() const
 {
     return direction;
 }

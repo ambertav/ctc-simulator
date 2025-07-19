@@ -3,7 +3,7 @@
 #include <array>
 #include <variant>
 
-#include "enums/transit_types.hpp"
+#include "enums/transit_types.h"
 
 namespace Yards
 {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/track.h"
-#include "enums/transit_types.hpp"
+#include "enums/transit_types.h"
 
 class Station;
 class Train;
@@ -17,7 +17,7 @@ public:
     Platform(int i, int dw, Signal *si, const Station *st, Direction dir);
 
     const Station *get_station() const;
-    virtual Direction get_direction() const;
+    virtual const Direction& get_direction() const;
 
     bool is_platform() const override;
 

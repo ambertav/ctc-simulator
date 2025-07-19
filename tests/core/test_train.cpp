@@ -21,14 +21,14 @@ protected:
 
     MockTrack mock_track_1{1, nullptr};
     MockTrack mock_track_2{2, nullptr};
-    MockPlatform mock_platform{1, 1, nullptr, nullptr, Direction::DOWNTOWN};
-    Train train{1, TrainLine::FOUR, ServiceType::EXPRESS, &mock_track_1};
+    MockPlatform mock_platform{1, 1, nullptr, nullptr, SUB::Direction::DOWNTOWN};
+    Train train{1, SUB::TrainLine::FOUR, ServiceType::EXPRESS, &mock_track_1};
 };
 
 TEST_F(TrainTest, ConstructorInitializesCorrectly)
 {
     EXPECT_EQ(train.get_id(), 1);
-    EXPECT_EQ(train.get_line(), TrainLine::FOUR);
+    EXPECT_TRUE(trainlines_equal(train.get_line(), SUB::TrainLine::FOUR));
     EXPECT_EQ(train.get_type(), ServiceType::EXPRESS);
     EXPECT_EQ(train.get_current_track(), &mock_track_1);
     EXPECT_EQ(train.get_status(), TrainStatus::IDLE);

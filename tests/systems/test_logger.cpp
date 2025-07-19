@@ -44,10 +44,10 @@ protected:
 
     void SetUp() override
     {
-        mock_train = std::make_unique<MockTrain>(1, TrainLine::FOUR, ServiceType::EXPRESS, nullptr);
-        mock_station = std::make_unique<MockStation>(1, "station", false, std::vector<TrainLine>{TrainLine::FOUR});
+        mock_train = std::make_unique<MockTrain>(1, SUB::TrainLine::FOUR, ServiceType::EXPRESS, nullptr);
+        mock_station = std::make_unique<MockStation>(1, "station", false, std::vector<TrainLine>{SUB::TrainLine::FOUR});
         mock_signal = std::make_unique<MockSignal>(1, 1);
-        mock_platform = std::make_unique<MockPlatform>(1, 1, mock_signal.get(), mock_station.get(), Direction::DOWNTOWN);
+        mock_platform = std::make_unique<MockPlatform>(1, 1, mock_signal.get(), mock_station.get(), SUB::Direction::DOWNTOWN);
 
         logger = std::make_unique<Logger>(valid_file);
     }

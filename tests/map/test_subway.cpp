@@ -78,9 +78,10 @@ TEST_F(SubwayGraphTest, FindsPathBetweenTwoStationsSuccessfully)
 {
     using namespace Transit::Map;
 
-    Path path = graph.find_path("384", "610"); // burnside av, grand central
+    auto path_opt {graph.find_path("384", "610")}; // burnside av, grand central
+    ASSERT_TRUE(path_opt.has_value());
 
-    EXPECT_TRUE(path.path_found);
+    auto path {*path_opt};
     EXPECT_FALSE(path.nodes.empty());
 }
 

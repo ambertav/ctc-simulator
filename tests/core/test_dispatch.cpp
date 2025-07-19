@@ -53,28 +53,28 @@ protected:
 
     void build_objects()
     {
-        auto lines = std::vector<TrainLine>{TrainLine::FOUR};
+        auto lines = std::vector<TrainLine>{SUB::TrainLine::FOUR};
 
-        mock_train_1 = std::make_unique<MockTrain>(1, TrainLine::FOUR, ServiceType::EXPRESS, nullptr);
-        mock_train_2 = std::make_unique<MockTrain>(2, TrainLine::FOUR, ServiceType::EXPRESS, nullptr);
+        mock_train_1 = std::make_unique<MockTrain>(1, SUB::TrainLine::FOUR, ServiceType::EXPRESS, nullptr);
+        mock_train_2 = std::make_unique<MockTrain>(2, SUB::TrainLine::FOUR, ServiceType::EXPRESS, nullptr);
 
-        mock_yard_1 = std::make_unique<MockStation>(Yards::North, "yard 1", true, lines);
+        mock_yard_1 = std::make_unique<MockStation>(Yards::north, "yard 1", true, lines);
         mock_signal_yard_1 = std::make_unique<MockSignal>(1, 1);
-        mock_platform_yard_1 = std::make_unique<MockPlatform>(1, 1, mock_signal_yard_1.get(), mock_yard_1.get(), Direction::DOWNTOWN);
+        mock_platform_yard_1 = std::make_unique<MockPlatform>(1, 1, mock_signal_yard_1.get(), mock_yard_1.get(), SUB::Direction::DOWNTOWN);
 
         mock_signal_track_1 = std::make_unique<MockSignal>(2, 2);
         mock_track_1 = std::make_unique<MockTrack>(2, mock_signal_track_1.get());
 
         mock_station = std::make_unique<MockStation>(2, "station", false, lines);
         mock_signal_station = std::make_unique<MockSignal>(3, 3);
-        mock_platform_station = std::make_unique<MockPlatform>(3, 1, mock_signal_station.get(), mock_station.get(), Direction::DOWNTOWN);
+        mock_platform_station = std::make_unique<MockPlatform>(3, 1, mock_signal_station.get(), mock_station.get(), SUB::Direction::DOWNTOWN);
 
         mock_signal_track_2 = std::make_unique<MockSignal>(4, 4);
         mock_track_2 = std::make_unique<MockTrack>(4, mock_signal_track_2.get());
 
-        mock_yard_2 = std::make_unique<MockStation>(Yards::South, "yard 2", true, lines);
+        mock_yard_2 = std::make_unique<MockStation>(Yards::south, "yard 2", true, lines);
         mock_signal_yard_2 = std::make_unique<MockSignal>(5, 5);
-        mock_platform_yard_2 = std::make_unique<MockPlatform>(5, 1, mock_signal_yard_2.get(), mock_yard_2.get(), Direction::DOWNTOWN);
+        mock_platform_yard_2 = std::make_unique<MockPlatform>(5, 1, mock_signal_yard_2.get(), mock_yard_2.get(), SUB::Direction::DOWNTOWN);
 
         mock_yard_1->add_platform(mock_platform_yard_1.get());
         mock_station->add_platform(mock_platform_station.get());
@@ -189,10 +189,10 @@ TEST_F(DispatchTest, LoadsScheduleAndConstructsPriorityQueuesSucessfully)
     dispatch->load_schedule(test_schedule);
     const auto &schedule = dispatch->get_schedule();
 
-    EXPECT_TRUE(schedule.contains(Yards::North));
+    EXPECT_TRUE(schedule.contains(Yards::north));
     EXPECT_TRUE(schedule.contains(2));
-    EXPECT_EQ(schedule.at(Yards::North).arrivals.size(), 0);
-    EXPECT_EQ(schedule.at(Yards::North).departures.size(), 1);
+    EXPECT_EQ(schedule.at(Yards::north).arrivals.size(), 0);
+    EXPECT_EQ(schedule.at(Yards::north).departures.size(), 1);
     EXPECT_EQ(schedule.at(2).arrivals.size(), 1);
     EXPECT_EQ(schedule.at(2).departures.size(), 1);
 
@@ -226,9 +226,9 @@ TEST_F(DispatchTest, SkipsMalformedLinesInLoadSchedule)
     dispatch->load_schedule(test_schedule);
     const auto &schedule = dispatch->get_schedule();
 
-    EXPECT_TRUE(schedule.contains(Yards::North));
-    EXPECT_EQ(schedule.at(Yards::North).arrivals.size(), 0);
-    EXPECT_EQ(schedule.at(Yards::North).departures.size(), 1);
+    EXPECT_TRUE(schedule.contains(Yards::north));
+    EXPECT_EQ(schedule.at(Yards::north).arrivals.size(), 0);
+    EXPECT_EQ(schedule.at(Yards::north).departures.size(), 1);
 
     EXPECT_TRUE(schedule.at(2).arrivals.empty());
     EXPECT_TRUE(schedule.at(2).departures.empty());
@@ -251,14 +251,14 @@ TEST_F(DispatchTest, SkipsLinesWithInvalidInputInLoadSchedule)
     dispatch->load_schedule(test_schedule);
     const auto &schedule = dispatch->get_schedule();
 
-    EXPECT_TRUE(schedule.contains(Yards::North));
-    EXPECT_EQ(schedule.at(Yards::North).arrivals.size(), 0);
-    EXPECT_EQ(schedule.at(Yards::North).departures.size(), 1);
+    EXPECT_TRUE(schedule.contains(Yards::north));
+    EXPECT_EQ(schedule.at(Yards::north).arrivals.size(), 0);
+    EXPECT_EQ(schedule.at(Yards::north).departures.size(), 1);
 
     EXPECT_TRUE(schedule.at(2).arrivals.empty());
     EXPECT_TRUE(schedule.at(2).departures.empty());
-    EXPECT_TRUE(schedule.at(Yards::South).arrivals.empty());
-    EXPECT_TRUE(schedule.at(Yards::South).departures.empty());
+    EXPECT_TRUE(schedule.at(Yards::south).arrivals.empty());
+    EXPECT_TRUE(schedule.at(Yards::south).departures.empty());
 
     std::remove(test_schedule.c_str());
 }

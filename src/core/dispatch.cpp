@@ -103,7 +103,7 @@ void Dispatch::load_schedule(const std::string &csv_file)
 
         if (!dir_opt.has_value())
         {
-            std::cerr << "Invalid direction input on line " << line_num << ": " << line << "\n";
+            std::cerr << "Invalid direction input on line " << line_num << ": " << line << ", skipping...\n";
             continue;
         }
 

@@ -84,33 +84,76 @@ namespace LIRR
     };
 }
 
-using Direction = std::variant<SUB::Direction, MNR::Direction, LIRR::Direction>;
-using TrainLine = std::variant<SUB::TrainLine, MNR::TrainLine, LIRR::TrainLine>;
+namespace Generic
+{
+    enum class Direction
+    {
+        DEFAULT_A,
+        DEFAULT_B
+    };
+
+    enum class TrainLine
+    {
+        DEFAULT
+    };
+}
+
+using Direction = std::variant<SUB::Direction, MNR::Direction, LIRR::Direction, Generic::Direction>;
+using TrainLine = std::variant<SUB::TrainLine, MNR::TrainLine, LIRR::TrainLine, Generic::TrainLine>;
 
 ///////////////////////
 // DIRECTION HELPERS //
 ///////////////////////
 
-inline std::optional<Direction> infer_direction(const TrainLine& trainline, double start_latitude, double start_longitude, double end_latitude, double end_longitude)
+inline bool directions_equal(const Direction &a, const Direction &b)
 {
-    return std::visit([&](const auto &trainline) -> std::optional<Direction>
+    if (a.index() != b.index())
+    {
+        return false;
+    }
+
+    return std::visit([&](const auto &lhs, const auto &rhs) -> bool
+                      {
+                        using T = std::decay_t<decltype(lhs)>;
+                        using U = std::decay_t<decltype(rhs)>;
+                        if constexpr (std::is_same_v<T, U>){
+                            return lhs == rhs;
+                        } else {
+                            return false;
+                        } }, a, b);
+}
+
+inline Direction infer_direction(const TrainLine &trainline, const std::pair<double, double> &from, const std::pair<double, double> &to)
+{
+    return std::visit([&](const auto &trainline) -> Direction
                       {
         using T = std::decay_t<decltype(trainline)>;
+
+        auto check_latitude = [&](auto down, auto up)
+        {
+            return (from.first > to.first) ? down : up;
+        };
+
+        auto check_longitude = [&](auto west, auto east)
+        {
+            return (from.second > to.second) ? west : east;
+        };
+
         if constexpr (std::is_same_v<T, SUB::TrainLine>)
         {
-            return start_latitude > end_latitude ? SUB::Direction::DOWNTOWN : SUB::Direction::UPTOWN;
+            return check_latitude(SUB::Direction::DOWNTOWN, SUB::Direction::UPTOWN);
         } 
         else if constexpr (std::is_same_v<T, MNR::TrainLine>)
         {
-            return start_latitude > end_latitude ? MNR::Direction::INBOUND : MNR::Direction::OUTBOUND;
+            return check_latitude(MNR::Direction::INBOUND, MNR::Direction::OUTBOUND);
         } 
         else if constexpr (std::is_same_v<T, LIRR::TrainLine>)
         {
-            return start_longitude > end_longitude ? LIRR::Direction::WESTBOUND : LIRR::Direction::EASTBOUND;
+            return check_longitude(LIRR::Direction::WESTBOUND, LIRR::Direction::EASTBOUND);
         }
         else 
         {
-            return std::nullopt;
+            return check_latitude(Generic::Direction::DEFAULT_A, Generic::Direction::DEFAULT_A);
         } }, trainline);
 }
 
@@ -122,7 +165,9 @@ inline std::optional<Direction> direction_from_string(const std::string &str)
         {"inbound", MNR::Direction::INBOUND},
         {"outbound", MNR::Direction::OUTBOUND},
         {"eastbound", LIRR::Direction::EASTBOUND},
-        {"westbound", LIRR::Direction::WESTBOUND}};
+        {"westbound", LIRR::Direction::WESTBOUND},
+        {"defaulta", Generic::Direction::DEFAULT_A},
+        {"defaultb", Generic::Direction::DEFAULT_B}};
 
     auto it = direction_map.find(str);
     if (it != direction_map.end())
@@ -144,9 +189,9 @@ inline std::ostream &operator<<(std::ostream &os, const Direction &direction)
                    {
                        switch (dir)
                        {
-                       case SUB::Direction::UPTOWN: return os << "uptown";
-                       case SUB::Direction::DOWNTOWN: return os << "downtown";
-                       default: return os << "unknown";
+                        case SUB::Direction::UPTOWN: return os << "uptown";
+                        case SUB::Direction::DOWNTOWN: return os << "downtown";
+                        default: return os << "unknown subway direction";
                        }
                    }
 
@@ -154,9 +199,9 @@ inline std::ostream &operator<<(std::ostream &os, const Direction &direction)
                    {
                        switch (dir)
                        {
-                       case MNR::Direction::INBOUND: return os << "inbound";
-                       case MNR::Direction::OUTBOUND: return os << "outbound";
-                       default: return os << "unknown";
+                        case MNR::Direction::INBOUND: return os << "inbound";
+                        case MNR::Direction::OUTBOUND: return os << "outbound";
+                        default: return os << "unknown metro north direction";
                        }
                    }
 
@@ -164,14 +209,25 @@ inline std::ostream &operator<<(std::ostream &os, const Direction &direction)
                    {
                        switch (dir)
                        {
-                       case LIRR::Direction::EASTBOUND: return os << "eastbound";
-                       case LIRR::Direction::WESTBOUND: return os << "westbound";
-                       default: return os << "unknown";
+                        case LIRR::Direction::EASTBOUND: return os << "eastbound";
+                        case LIRR::Direction::WESTBOUND: return os << "westbound";
+                        default: return os << "unknown long island railroad direction";
                        }
                    }
+
+                   else if constexpr (std::is_same_v<T, Generic::Direction>)
+                   {
+                    switch (dir)
+                    {
+                    case Generic::Direction::DEFAULT_A: return os << "default a";
+                    case Generic::Direction::DEFAULT_B: return os << "default b";
+                    default: return os << "unknown generic direction";
+                    }
+                   }
+
                    else
                    {
-                       return os << "unknown";
+                       return os << "unknown direction variant type";
                    } }, direction);
 }
 
@@ -179,7 +235,25 @@ inline std::ostream &operator<<(std::ostream &os, const Direction &direction)
 // TRAINLINE HELPERS //
 ///////////////////////
 
-inline std::optional<TrainLine> trainline_from_string(const std::string &str)
+inline bool trainlines_equal(const TrainLine &a, const TrainLine &b)
+{
+    if (a.index() != b.index())
+    {
+        return false;
+    }
+
+    return std::visit([&](const auto &lhs, const auto &rhs) -> bool
+                      {
+                        using T = std::decay_t<decltype(lhs)>;
+                        using U = std::decay_t<decltype(rhs)>;
+                        if constexpr (std::is_same_v<T, U>){
+                            return lhs == rhs;
+                        } else {
+                            return false;
+                        } }, a, b);
+}
+
+inline TrainLine trainline_from_string(const std::string &str)
 {
     static const std::unordered_map<std::string, TrainLine> trainline_map{
         {"1", SUB::TrainLine::ONE},
@@ -233,7 +307,7 @@ inline std::optional<TrainLine> trainline_from_string(const std::string &str)
     }
     else
     {
-        return std::nullopt;
+        return Generic::TrainLine::DEFAULT;
     }
 }
 
@@ -246,34 +320,34 @@ inline std::ostream &operator<<(std::ostream &os, const TrainLine &trainline)
                    {
                        switch (line)
                        {
-                       case SUB::TrainLine::ONE: return os << "1";
-                       case SUB::TrainLine::TWO: return os << "2";
-                       case SUB::TrainLine::THREE: return os << "3";
-                       case SUB::TrainLine::FOUR: return os << "4";
-                       case SUB::TrainLine::FIVE: return os << "5";
-                       case SUB::TrainLine::SIX: return os << "6";
-                       case SUB::TrainLine::SEVEN: return os << "7";
-                       case SUB::TrainLine::A: return os << "A";
-                       case SUB::TrainLine::C: return os << "C";
-                       case SUB::TrainLine::E: return os << "E";
-                       case SUB::TrainLine::N: return os << "N";
-                       case SUB::TrainLine::Q: return os << "Q";
-                       case SUB::TrainLine::R: return os << "R";
-                       case SUB::TrainLine::W: return os << "W";
-                       case SUB::TrainLine::B: return os << "B";
-                       case SUB::TrainLine::D: return os << "D";
-                       case SUB::TrainLine::F: return os << "F";
-                       case SUB::TrainLine::M: return os << "M";
-                       case SUB::TrainLine::G: return os << "G";
-                       case SUB::TrainLine::L: return os << "L";
-                       case SUB::TrainLine::J: return os << "J";
-                       case SUB::TrainLine::Z: return os << "Z";
-                       case SUB::TrainLine::S: return os << "S";
-                       case SUB::TrainLine::GS: return os << "42nd Street Shuttle";
-                       case SUB::TrainLine::FS: return os << "Franklin Street Shuttle";
-                       case SUB::TrainLine::H: return os << "Far Rockaway Shuttle";
-                       case SUB::TrainLine::SI: return os << "Station Island Railway";
-                       default: return os << "unknown";
+                        case SUB::TrainLine::ONE: return os << "1";
+                        case SUB::TrainLine::TWO: return os << "2";
+                        case SUB::TrainLine::THREE: return os << "3";
+                        case SUB::TrainLine::FOUR: return os << "4";
+                        case SUB::TrainLine::FIVE: return os << "5";
+                        case SUB::TrainLine::SIX: return os << "6";
+                        case SUB::TrainLine::SEVEN: return os << "7";
+                        case SUB::TrainLine::A: return os << "A";
+                        case SUB::TrainLine::C: return os << "C";
+                        case SUB::TrainLine::E: return os << "E";
+                        case SUB::TrainLine::N: return os << "N";
+                        case SUB::TrainLine::Q: return os << "Q";
+                        case SUB::TrainLine::R: return os << "R";
+                        case SUB::TrainLine::W: return os << "W";
+                        case SUB::TrainLine::B: return os << "B";
+                        case SUB::TrainLine::D: return os << "D";
+                        case SUB::TrainLine::F: return os << "F";
+                        case SUB::TrainLine::M: return os << "M";
+                        case SUB::TrainLine::G: return os << "G";
+                        case SUB::TrainLine::L: return os << "L";
+                        case SUB::TrainLine::J: return os << "J";
+                        case SUB::TrainLine::Z: return os << "Z";
+                        case SUB::TrainLine::S: return os << "S";
+                        case SUB::TrainLine::GS: return os << "42nd Street Shuttle";
+                        case SUB::TrainLine::FS: return os << "Franklin Street Shuttle";
+                        case SUB::TrainLine::H: return os << "Far Rockaway Shuttle";
+                        case SUB::TrainLine::SI: return os << "Station Island Railway";
+                        default: return os << "unknown subway train line";
                        }
                    }
 
@@ -281,10 +355,10 @@ inline std::ostream &operator<<(std::ostream &os, const TrainLine &trainline)
                    {
                        switch (line)
                        {
-                       case MNR::TrainLine::HARLEM: return os << "Harlem Line";
-                       case MNR::TrainLine::HUDSON: return os << "Hudson Line";
-                       case MNR::TrainLine::NEW_HAVEN: return os << "New Haven Line";
-                       default: return os << "unknown";
+                        case MNR::TrainLine::HARLEM: return os << "Harlem Line";
+                        case MNR::TrainLine::HUDSON: return os << "Hudson Line";
+                        case MNR::TrainLine::NEW_HAVEN: return os << "New Haven Line";
+                        default: return os << "unknown metro north train line";
                        }
                    }
 
@@ -303,12 +377,19 @@ inline std::ostream &operator<<(std::ostream &os, const TrainLine &trainline)
                        case LIRR::TrainLine::PORT_WASHINGTON: return os << "Port Washington Branch";
                        case LIRR::TrainLine::RONKONKOMA: return os << "Ronkonkoma Branch";
                        case LIRR::TrainLine::WEST_HEMPSTEAD: return os << "West Hempstead Branch";
-                       default: return os << "unknown";
+                       default: return os << "unknown long island railroad train line";
                        }
                    }
+
+                   else if constexpr (std::is_same_v<T, Generic::TrainLine>)
+                   {
+                    case Generic::TrainLine::DEFAULT: return os << "Generic Default";
+                    default: return os << "unknown generic train line";
+                   }
+
                    else
                    {
-                       return os << "unknown";
+                       return os << "unknown train line variant type";
                    } },
                       trainline);
 }

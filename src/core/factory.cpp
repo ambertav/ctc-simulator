@@ -2,6 +2,7 @@
 #include <algorithm>
 
 #include "core/factory.h"
+#include "enums/transit_types.h"
 
 #include "utils.h"
 #include "constants.h"
@@ -88,15 +89,21 @@ void Factory::create_trains(int total, TrainLine train_line)
 
 std::pair<int, int> Factory::create_stations(const Transit::Map::Path &path)
 {
+    using namespace Transit::Map;
+
     for (const auto &node : path.nodes)
     {
         int id = std::stoi(node->id);
         stations[id] = std::make_unique<Station>(id, node->name, false, node->train_lines);
     }
 
-    const Transit::Map::Node *start_node{path.nodes.front()};
-    const Transit::Map::Node *end_node{path.nodes.back()};
-    std::optional<Direction> dir_opt = infer_direction(start_node->train_lines.front(), start_node->latitude, start_node->longitude, end_node->latitude, end_node->longitude);
+    const Node *start_node{path.nodes.front()};
+    const Node *end_node{path.nodes.back()};
+
+    std::pair<double, double> from {start_node->coordinates.latitude, start_node->coordinates.longitude};
+    std::pair<double, double> to {end_node->coordinates.latitude, end_node->coordinates.longitude};
+
+    std::optional<Direction> dir_opt = infer_direction(start_node->train_lines.front(), from, to);
 
     auto [start, end] = Yards::get_yard_id_by_direction(*dir_opt);
 
@@ -108,13 +115,12 @@ std::pair<int, int> Factory::create_stations(const Transit::Map::Path &path)
 
 void Factory::create_network(const Transit::Map::Path &path, int start, int end)
 {
-
     int dwell_time{2};
 
     static int track_id{1};
     static int signal_id{1};
 
-    auto build = [&](const std::vector<const Transit::Map::Node *> &nodes, const std::vector<int> &distances, int start, int end, Direction dir)
+    auto build = [&](const std::vector<const Transit::Map::Node *> &nodes, const std::vector<double> &distances, int start, int end, Direction dir)
     {
         std::unique_ptr<Track> *prev_track = nullptr;
         std::unique_ptr<Platform> *prev_platform = nullptr;
@@ -201,8 +207,12 @@ void Factory::create_network(const Transit::Map::Path &path, int start, int end)
 
     const Transit::Map::Node *start_node{path.nodes.front()};
     const Transit::Map::Node *end_node{path.nodes.back()};
-    std::optional<Direction> o_opt = infer_direction(start_node->train_lines.front(), start_node->latitude, start_node->longitude, end_node->latitude, end_node->longitude);
-    std::optional<Direction> r_opt = infer_direction(start_node->train_lines.front(), end_node->latitude, end_node->longitude, start_node->latitude, start_node->longitude);
+
+    std::pair<double, double> from {start_node->coordinates.latitude, start_node->coordinates.longitude};
+    std::pair<double, double> to {end_node->coordinates.latitude, end_node->coordinates.longitude};
+
+    std::optional<Direction> o_opt = infer_direction(start_node->train_lines.front(), from, to);
+    std::optional<Direction> r_opt = infer_direction(start_node->train_lines.front(), to, from);
 
     Direction original{*o_opt};
     Direction reverse{*r_opt};
@@ -210,7 +220,7 @@ void Factory::create_network(const Transit::Map::Path &path, int start, int end)
     build(path.nodes, path.segment_weights, start, end, original);
 
     const std::vector<const Transit::Map::Node *> reversed_path(path.nodes.rbegin(), path.nodes.rend());
-    const std::vector<int> reversed_distances(path.segment_weights.rbegin(), path.segment_weights.rend());
+    const std::vector<double> reversed_distances(path.segment_weights.rbegin(), path.segment_weights.rend());
 
     build(reversed_path, reversed_distances, end, start, reverse);
 }

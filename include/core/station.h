@@ -5,7 +5,7 @@
 #include <span>
 #include <optional>
 
-#include "enums/transit_types.hpp"
+#include "enums/transit_types.h"
 
 class Platform;
 class Train;

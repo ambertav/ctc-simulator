@@ -14,25 +14,25 @@ protected:
     Transit::Map::Node *D;
     Transit::Map::Node *E;
 
-    int AB_weight = 3;
-    int BC_weight = 2;
-    int AE_weight = AB_weight;
-    int EC_weight = BC_weight;
+    double AB_weight = 3.0;
+    double BC_weight = 2.0;
+    double AE_weight = AB_weight;
+    double EC_weight = BC_weight;
 
     void SetUp() override
     {
         using namespace Transit::Map;
 
-        A = graph.add_node("A", "Station A", {TrainLine::A}, {"1"});
-        B = graph.add_node("B", "Station B", {TrainLine::A}, {"2"});
-        C = graph.add_node("C", "Station C", {TrainLine::A}, {"3"});
-        D = graph.add_node("D", "Station D", {TrainLine::A}, {"4"});
-        E = graph.add_node("E", "Station E", {TrainLine::B}, {"5"});
+        A = graph.add_node("A", "Station A", {SUB::TrainLine::A}, {"1"});
+        B = graph.add_node("B", "Station B", {SUB::TrainLine::A}, {"2"});
+        C = graph.add_node("C", "Station C", {SUB::TrainLine::A}, {"3"});
+        D = graph.add_node("D", "Station D", {SUB::TrainLine::A}, {"4"});
+        E = graph.add_node("E", "Station E", {SUB::TrainLine::B}, {"5"});
 
-        graph.add_edge(A, B, AB_weight, {TrainLine::A});
-        graph.add_edge(B, C, BC_weight, {TrainLine::A});
-        graph.add_edge(A, E, AE_weight, {TrainLine::B});
-        graph.add_edge(E, C, EC_weight, {TrainLine::B});
+        graph.add_edge(A, B, AB_weight, {SUB::TrainLine::A});
+        graph.add_edge(B, C, BC_weight, {SUB::TrainLine::A});
+        graph.add_edge(A, E, AE_weight, {SUB::TrainLine::B});
+        graph.add_edge(E, C, EC_weight, {SUB::TrainLine::B});
     }
 };
 
@@ -51,7 +51,7 @@ TEST_F(GraphTest, CreatedAndAddedNodesSuccessfully)
 
 TEST_F(GraphTest, DuplicateNodeInsertionFails)
 {
-    EXPECT_THROW(graph.add_node("A", "Duplicate Station", {TrainLine::A}, {"4"}), std::invalid_argument);
+    EXPECT_THROW(graph.add_node("A", "Duplicate Station", {SUB::TrainLine::A}, {"4"}), std::invalid_argument);
 }
 
 TEST_F(GraphTest, EdgesCreatedSuccessfully)
@@ -120,21 +120,23 @@ TEST_F(GraphTest, DeletesNodeAndAllCorrespondingEdges)
 
 TEST_F(GraphTest, FindsPathSuccessfully)
 {
-    auto path = graph.find_path("A", "C");
+    auto path_opt = graph.find_path("A", "C");
+    ASSERT_TRUE(path_opt.has_value()) << "No path found in graph test";
+    auto path {*path_opt};
 
-    EXPECT_TRUE(path.path_found);
     EXPECT_EQ(path.nodes, std::vector<const Transit::Map::Node *>({A, B, C}));
-    EXPECT_EQ(path.segment_weights, std::vector<int>({AB_weight, BC_weight}));
+    EXPECT_EQ(path.segment_weights, std::vector<double>({AB_weight, BC_weight}));
     EXPECT_EQ(path.total_weight, AB_weight + BC_weight);
 }
 
 TEST_F(GraphTest, FindPathHandlesCycles)
 {
     // A->B->C vs A->C path
-    graph.add_edge(C, A, 1, {TrainLine::A});
-    auto path = graph.find_path("A", "C");
+    graph.add_edge(C, A, 1, {SUB::TrainLine::A});
 
-    EXPECT_TRUE(path.path_found);
+    auto path_opt = graph.find_path("A", "C");
+    ASSERT_TRUE(path_opt.has_value()) << "No path found in graph test";
+    auto path {*path_opt};
 
     EXPECT_EQ(path.nodes, std::vector<const Transit::Map::Node *>({A, C}));
 }
@@ -145,30 +147,22 @@ TEST_F(GraphTest, FindsLeastTransfersPathForMultipleShortestPaths)
     // A->B->C has less transfers
     // should return A->B->C
 
-    auto path = graph.find_path("A", "C");
+    auto path_opt = graph.find_path("A", "C");
+    ASSERT_TRUE(path_opt.has_value()) << "No path found in graph test";
+    auto path {*path_opt};
 
-    EXPECT_TRUE(path.path_found);
     EXPECT_EQ(path.total_weight, AB_weight + BC_weight);
-
     EXPECT_EQ(path.nodes, std::vector<const Transit::Map::Node *>({A, B, C}));
 }
 
 TEST_F(GraphTest, PathToSelfReturnsEmptyPath)
 {
-    auto path = graph.find_path("A", "A");
-
-    EXPECT_FALSE(path.path_found);
-    EXPECT_TRUE(path.nodes.empty());
-    EXPECT_TRUE(path.segment_weights.empty());
-    EXPECT_EQ(path.total_weight, 0);
+    auto path_opt = graph.find_path("A", "A");
+    ASSERT_FALSE(path_opt.has_value()) << "Path to self was found";
 }
 
 TEST_F(GraphTest, NoPathReturnsEmptyPath)
 {
-    auto path = graph.find_path("A", "D");
-
-    EXPECT_FALSE(path.path_found);
-    EXPECT_TRUE(path.nodes.empty());
-    EXPECT_TRUE(path.segment_weights.empty());
-    EXPECT_EQ(path.total_weight, 0);
+    auto path_opt = graph.find_path("A", "D");
+    ASSERT_FALSE(path_opt.has_value()) << "Path was found when there should not be";
 }

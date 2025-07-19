@@ -21,7 +21,7 @@ protected:
         MockTrain(int i, TrainLine l, ServiceType t) : Train(i, l, t, nullptr) {}
     };
 
-    MockTrain mock_train{1, TrainLine::A, ServiceType::EXPRESS};
+    MockTrain mock_train{1, SUB::TrainLine::A, ServiceType::EXPRESS};
     MockSignal mock_signal{1, 1};
     Track track{1, &mock_signal};
 };

@@ -7,7 +7,7 @@
 
 #include "map/subway.h"
 #include "utils.h"
-#include "enums/transit_types.hpp"
+#include "enums/transit_types.h"
 #include "config.h"
 
 using namespace Transit::Map;
@@ -83,12 +83,7 @@ void Subway::load_stations(const std::string &csv)
         std::vector<TrainLine> train_lines;
         for (const auto &token : train_line_tokens)
         {
-            std::optional<TrainLine> train_line_opt { trainline_from_string(token) };
-            if (!train_line_opt.has_value())
-            {
-                std::cerr << "Line " << line_num << " contains an invalid train line: " << token << "......skipping\n";
-            }
-            train_lines.emplace_back(*train_line_opt);
+            train_lines.emplace_back(trainline_from_string(token));
         }
 
         double latitude = std::stod(latitude_str);
@@ -160,16 +155,8 @@ void Subway::add_route(const std::string &route_headsign, std::vector<std::strin
 {
     auto tokens = Utils::split(route_headsign, '|');
 
-    std::optional<TrainLine> route_opt = trainline_from_string(tokens[0]);
+    TrainLine route = trainline_from_string(tokens[0]);
     std::string headsign = tokens[1];
-
-    if (!route_opt.has_value())
-    {
-        std::cerr << "Invalid trainline route";
-        return;
-    }
-
-    TrainLine route { *route_opt };
 
     std::vector<std::string> sequence;
     for (const auto &gtfs_id : gtfs_sequence)

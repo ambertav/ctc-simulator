@@ -3,7 +3,7 @@
 #include <functional>
 
 #include "map/graph.h"
-#include "enums/transit_types.hpp"
+#include "enums/transit_types.h"
 
 namespace Transit::Map
 {

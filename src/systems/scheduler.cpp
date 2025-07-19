@@ -4,7 +4,7 @@
 #include "config.h"
 #include "constants.h"
 #include "systems/scheduler.h"
-#include "enums/transit_types.hpp"
+#include "enums/transit_types.h"
 
 Scheduler::Scheduler(const std::string &file_path, int stg, int dt, int nt) : outfile(file_path, std::ios::out | std::ios::trunc), spawn_tick_gap(stg), dwell_time(dt), number_of_trains(nt) {}
 
@@ -25,7 +25,7 @@ void Scheduler::create_schedule(const Transit::Map::Path &path)
 
     static int train_id{1};
 
-    auto write_schedule = [&](const std::vector<const Transit::Map::Node *> &stations, const std::vector<int> distances, Direction dir)
+    auto write_schedule = [&](const std::vector<const Transit::Map::Node *> &stations, const std::vector<double>& distances, Direction dir)
     {
         for (int i = 0; i < number_of_trains / 2; ++i)
         {
@@ -57,14 +57,14 @@ void Scheduler::create_schedule(const Transit::Map::Path &path)
         }
     };
 
-    const Transit::Map::Node* start { path.nodes.front() };
-    const Transit::Map::Node* end { path.nodes.back() };
+    const Transit::Map::Node* start_node { path.nodes.front() };
+    const Transit::Map::Node* end_node { path.nodes.back() };
 
-    static_assert(std::is_same_v<decltype(start), const Transit::Map::Node*>);
-static_assert(std::is_same_v<decltype(end), const Transit::Map::Node*>);
+    std::pair<double, double> from {start_node->coordinates.latitude, start_node->coordinates.longitude};
+    std::pair<double, double> to {end_node->coordinates.latitude, end_node->coordinates.longitude};
 
-    std::optional<Direction> o_opt = infer_direction(start->train_lines.front(), start->latitude, start->longitude, end->latitude, end->longitude);
-    std::optional<Direction> r_opt = infer_direction(start->train_lines.front(), end->latitude, end->longitude, start->latitude, start->longitude);
+    std::optional<Direction> o_opt = infer_direction(start_node->train_lines.front(), from, to);
+    std::optional<Direction> r_opt = infer_direction(start_node->train_lines.front(), to, from);
     
     Direction original {*o_opt};
     Direction reverse {*r_opt};
@@ -72,7 +72,7 @@ static_assert(std::is_same_v<decltype(end), const Transit::Map::Node*>);
     write_schedule(path.nodes, path.segment_weights, original);
 
     const std::vector<const Transit::Map::Node *> reversed_path(path.nodes.rbegin(), path.nodes.rend());
-    const std::vector<int> reversed_distances(path.segment_weights.rbegin(), path.segment_weights.rend());
+    const std::vector<double> reversed_distances(path.segment_weights.rbegin(), path.segment_weights.rend());
 
     write_schedule(reversed_path, reversed_distances, reverse);
 

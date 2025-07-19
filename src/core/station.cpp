@@ -25,6 +25,7 @@ std::vector<Platform *> Station::get_platforms() const
 {
     std::vector<Platform *> output;
     output.reserve(platforms.size());
+
     for (const auto &p : platforms)
     {
         output.push_back(p);
@@ -47,8 +48,10 @@ std::optional<Platform *> Station::find_available_platform(Direction dir) const
 {
     for (const auto &p : platforms)
     {
-        if (p->get_direction() == dir && p->allow_entry())
+        if (directions_equal(p->get_direction(), dir) && p->allow_entry())
+        {
             return p;
+        }
     }
 
     return std::nullopt;
@@ -61,8 +64,10 @@ std::vector<Platform *> Station::get_platforms_by_direction(Direction dir) const
 
     for (const auto &p : platforms)
     {
-        if (p->get_direction() == dir)
+        if (directions_equal(p->get_direction(), dir))
+        {
             output.push_back(p);
+        }
     }
 
     return output;

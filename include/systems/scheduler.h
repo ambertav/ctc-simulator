@@ -4,7 +4,7 @@
 #include <fstream>
 
 #include "map/graph.h"
-#include "enums/transit_types.hpp"
+#include "enums/transit_types.h"
 
 class Scheduler
 {

@@ -28,11 +28,11 @@ protected:
         MockTrain(int i, TrainLine l, ServiceType t) : Train(i, l, t, nullptr) {}
     };
 
-    MockTrain mock_train{1, TrainLine::SEVEN, ServiceType::LOCAL};
-    MockStation mock_station{1, "station", false, {TrainLine::SEVEN}};
+    MockTrain mock_train{1, SUB::TrainLine::SEVEN, ServiceType::LOCAL};
+    MockStation mock_station{1, "station", false, {SUB::TrainLine::SEVEN}};
     MockSignal mock_signal{1, 1};
 
-    Platform platform{1, 1, &mock_signal, &mock_station, Direction::DOWNTOWN};
+    Platform platform{1, 1, &mock_signal, &mock_station, SUB::Direction::DOWNTOWN};
 };
 
 TEST_F(PlatformTest, ConstructorInitializesCorrectly)
@@ -45,7 +45,10 @@ TEST_F(PlatformTest, ConstructorInitializesCorrectly)
     EXPECT_EQ(platform.get_next(), nullptr);
     EXPECT_EQ(platform.get_prev(), nullptr);
     EXPECT_EQ(platform.get_station(), &mock_station);
-    EXPECT_EQ(platform.get_direction(), Direction::DOWNTOWN);
+
+    auto dir_ptr = std::get_if<SUB::Direction>(&platform.get_direction());
+    ASSERT_NE(dir_ptr, nullptr);
+    EXPECT_EQ(*dir_ptr, SUB::Direction::DOWNTOWN);
 }
 
 TEST_F(PlatformTest, AllowsEntrySuccessfully)

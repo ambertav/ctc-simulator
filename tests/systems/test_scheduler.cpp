@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
+#include <optional>
+
 #include "config.h"
 #include "systems/scheduler.h"
 
@@ -9,34 +11,38 @@ class SchedulerTest : public ::testing::Test
 protected:
     Scheduler scheduler{std::string(DATA_DIRECTORY) + "/test_schedule.csv"};
     Transit::Map::Graph graph;
-    Transit::Map::Path valid_path;
-    Transit::Map::Path invalid_path;
+    std::optional<Transit::Map::Path> valid_path_opt;
+    std::optional<Transit::Map::Path> invalid_path_opt;
     std::string outfile{std::string(DATA_DIRECTORY) + "/test_schedule.csv"};
 
-    int weight{2};
+    double weight{2.0};
 
     void SetUp() override
     {
-        Transit::Map::Node *A = graph.add_node("A", "Station A", {TrainLine::FOUR}, {"1"});
-        Transit::Map::Node *B = graph.add_node("B", "Station B", {TrainLine::FOUR}, {"2"});
-        Transit::Map::Node *C = graph.add_node("C", "Station C", {TrainLine::FOUR}, {"3"});
-        Transit::Map::Node *D = graph.add_node("D", "Station D", {TrainLine::FOUR}, {"4"});
+        Transit::Map::Node *A = graph.add_node("A", "Station A", {SUB::TrainLine::FOUR}, {"1"});
+        Transit::Map::Node *B = graph.add_node("B", "Station B", {SUB::TrainLine::FOUR}, {"2"});
+        Transit::Map::Node *C = graph.add_node("C", "Station C", {SUB::TrainLine::FOUR}, {"3"});
+        Transit::Map::Node *D = graph.add_node("D", "Station D", {SUB::TrainLine::FOUR}, {"4"});
 
-        graph.add_edge(A, B, weight, {TrainLine::FOUR});
-        graph.add_edge(B, C, weight, {TrainLine::FOUR});
+        graph.add_edge(A, B, weight, {SUB::TrainLine::FOUR});
+        graph.add_edge(B, C, weight, {SUB::TrainLine::FOUR});
 
-        valid_path = graph.find_path("A", "C");
-        invalid_path = graph.find_path("A", "D");
+        valid_path_opt = graph.find_path("A", "C");
+        invalid_path_opt = graph.find_path("A", "D");
     }
 };
 
 TEST_F(SchedulerTest, ThrowsErrorWhenPathIsNull)
 {
-    EXPECT_THROW(scheduler.create_schedule(invalid_path), std::logic_error);
+    ASSERT_FALSE(invalid_path_opt.has_value());
+    EXPECT_THROW(scheduler.create_schedule(Transit::Map::Path{}), std::logic_error);
 }
 
 TEST_F(SchedulerTest, CreatesScheduleAndWritesToFileSuccessfully)
 {
+    ASSERT_TRUE(valid_path_opt.has_value());
+    auto valid_path {*valid_path_opt};
+
     scheduler.create_schedule(valid_path);
 
     int total_trains = 3 * 2;                         // number of trains (default 3) * 2
