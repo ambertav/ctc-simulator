@@ -7,13 +7,6 @@
 
 namespace Transit::Map
 {
-    struct Route
-    {
-        std::string headsign;
-        std::vector<std::string> sequence;
-
-        Route(const std::string &h, std::vector<std::string> &s) : headsign(h), sequence(s) {}
-    };
 
     class Subway : public Graph
     {
@@ -28,7 +21,7 @@ namespace Transit::Map
         Subway &operator=(const Subway &) = delete;
 
     private:
-        std::unordered_map<std::string, std::string> gtfs_to_id;
+        std::unordered_map<std::string, int> gtfs_to_id;
         std::unordered_map<TrainLine, std::vector<Route>> routes;
 
         Subway();

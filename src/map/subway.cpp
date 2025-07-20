@@ -72,12 +72,12 @@ void Subway::load_stations(const std::string &csv)
             continue;
         }
 
-        std::string gtfs = tokens[column_index["GTFS Stop ID"]];
-        std::string complex_id = tokens[column_index["Complex ID"]];
-        std::string stop_name = tokens[column_index["Stop Name"]];
-        std::string daytime_routes_str = tokens[column_index["Daytime Routes"]];
-        std::string longitude_str = tokens[column_index["GTFS Longitude"]];
-        std::string latitude_str = tokens[column_index["GTFS Latitude"]];
+        std::string gtfs {tokens[column_index["GTFS Stop ID"]]};
+        int complex_id {std::stoi(tokens[column_index["Complex ID"]])};
+        std::string stop_name {tokens[column_index["Stop Name"]]};
+        std::string daytime_routes_str {tokens[column_index["Daytime Routes"]]};
+        std::string longitude_str {tokens[column_index["GTFS Longitude"]]};
+        std::string latitude_str {tokens[column_index["GTFS Latitude"]]};
 
         std::vector<std::string> train_line_tokens = Utils::split(daytime_routes_str, ' ');
         std::vector<TrainLine> train_lines;
@@ -158,7 +158,7 @@ void Subway::add_route(const std::string &route_headsign, std::vector<std::strin
     TrainLine route = trainline_from_string(tokens[0]);
     std::string headsign = tokens[1];
 
-    std::vector<std::string> sequence;
+    std::vector<int> sequence;
     for (const auto &gtfs_id : gtfs_sequence)
     {
         auto it = gtfs_to_id.find(gtfs_id);

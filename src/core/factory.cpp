@@ -93,8 +93,7 @@ std::pair<int, int> Factory::create_stations(const Transit::Map::Path &path)
 
     for (const auto &node : path.nodes)
     {
-        int id = std::stoi(node->id);
-        stations[id] = std::make_unique<Station>(id, node->name, false, node->train_lines);
+        stations[node->id] = std::make_unique<Station>(node->id, node->name, false, node->train_lines);
     }
 
     const Node *start_node{path.nodes.front()};
@@ -158,7 +157,7 @@ void Factory::create_network(const Transit::Map::Path &path, int start, int end)
             ++signal_id;
             ++track_id;
 
-            int station_id = std::stoi(nodes[i]->id);
+            int station_id {nodes[i]->id};
             signals[signal_id] = std::make_unique<Signal>(signal_id, track_id);
             platforms[track_id] = std::make_unique<Platform>(track_id, dwell_time, signals[signal_id].get(), stations[station_id].get(), dir);
             stations[station_id]->add_platform(platforms[track_id].get());

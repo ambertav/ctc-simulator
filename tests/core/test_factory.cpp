@@ -23,14 +23,14 @@ protected:
     {
         factory.clear();
 
-        Transit::Map::Node *one {graph.add_node("1", "Station 1", {SUB::TrainLine::FOUR}, {"1"}, 4.0, 3.0)};
-        Transit::Map::Node *two {graph.add_node("2", "Station 2", {SUB::TrainLine::FOUR}, {"2"}, 3.0, 2.0)};
-        Transit::Map::Node *three {graph.add_node("3", "Station 3", {SUB::TrainLine::FOUR}, {"3"}, 2.0, 2.0)};
+        Transit::Map::Node *one {graph.add_node(1, "Station 1", {SUB::TrainLine::FOUR}, {"1"}, 4.0, 3.0)};
+        Transit::Map::Node *two {graph.add_node(2, "Station 2", {SUB::TrainLine::FOUR}, {"2"}, 3.0, 2.0)};
+        Transit::Map::Node *three {graph.add_node(3, "Station 3", {SUB::TrainLine::FOUR}, {"3"}, 2.0, 2.0)};
 
-        graph.add_edge("1", "2");
-        graph.add_edge("2", "3");
+        graph.add_edge(1, 2);
+        graph.add_edge(2, 3);
 
-        auto path_opt{graph.find_path("1", "3")};
+        auto path_opt{graph.find_path(1, 3)};
         ASSERT_TRUE(path_opt.has_value()) << "No path found in factory test";
         path = *path_opt;
 
@@ -51,11 +51,10 @@ TEST_F(FactoryTest, StationsAndYardsCreatedSuccessfully)
 
     for (const auto &node : path.nodes)
     {
-        int id = std::stoi(node->id);
-        auto it = std::find_if(stations.begin(), stations.end(), [id](Station *s)
-                               { return s->get_id() == id; });
+        auto it = std::find_if(stations.begin(), stations.end(), [&](Station *s)
+                               { return s->get_id() == node->id; });
 
-        EXPECT_NE(it, stations.end()) << "Station with ID " << id << " not found";
+        EXPECT_NE(it, stations.end()) << "Station with ID " << node->id << " not found";
     }
 
     EXPECT_TRUE(std::ranges::any_of(stations, [](Station *s)

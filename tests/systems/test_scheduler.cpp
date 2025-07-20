@@ -15,20 +15,27 @@ protected:
     std::optional<Transit::Map::Path> invalid_path_opt;
     std::string outfile{std::string(DATA_DIRECTORY) + "/test_schedule.csv"};
 
+    std::unordered_map<char, int> name_to_id{
+        {'A', 1},
+        {'B', 2},
+        {'C', 3},
+        {'D', 4}};
+
     double weight{2.0};
 
     void SetUp() override
     {
-        Transit::Map::Node *A = graph.add_node("A", "Station A", {SUB::TrainLine::FOUR}, {"1"});
-        Transit::Map::Node *B = graph.add_node("B", "Station B", {SUB::TrainLine::FOUR}, {"2"});
-        Transit::Map::Node *C = graph.add_node("C", "Station C", {SUB::TrainLine::FOUR}, {"3"});
-        Transit::Map::Node *D = graph.add_node("D", "Station D", {SUB::TrainLine::FOUR}, {"4"});
+
+        Transit::Map::Node *A = graph.add_node(name_to_id['A'], "Station A", {SUB::TrainLine::FOUR}, {"1"});
+        Transit::Map::Node *B = graph.add_node(name_to_id['B'], "Station B", {SUB::TrainLine::FOUR}, {"2"});
+        Transit::Map::Node *C = graph.add_node(name_to_id['C'], "Station C", {SUB::TrainLine::FOUR}, {"3"});
+        Transit::Map::Node *D = graph.add_node(name_to_id['D'], "Station D", {SUB::TrainLine::FOUR}, {"4"});
 
         graph.add_edge(A, B, weight, {SUB::TrainLine::FOUR});
         graph.add_edge(B, C, weight, {SUB::TrainLine::FOUR});
 
-        valid_path_opt = graph.find_path("A", "C");
-        invalid_path_opt = graph.find_path("A", "D");
+        valid_path_opt = graph.find_path(name_to_id['A'],name_to_id['C']);
+        invalid_path_opt = graph.find_path(name_to_id['A'], name_to_id['D']);
     }
 };
 
@@ -41,7 +48,7 @@ TEST_F(SchedulerTest, ThrowsErrorWhenPathIsNull)
 TEST_F(SchedulerTest, CreatesScheduleAndWritesToFileSuccessfully)
 {
     ASSERT_TRUE(valid_path_opt.has_value());
-    auto valid_path {*valid_path_opt};
+    auto valid_path{*valid_path_opt};
 
     scheduler.create_schedule(valid_path);
 

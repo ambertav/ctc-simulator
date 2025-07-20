@@ -383,8 +383,11 @@ inline std::ostream &operator<<(std::ostream &os, const TrainLine &trainline)
 
                    else if constexpr (std::is_same_v<T, Generic::TrainLine>)
                    {
-                    case Generic::TrainLine::DEFAULT: return os << "Generic Default";
-                    default: return os << "unknown generic train line";
+                    switch (line)
+                    {
+                        case Generic::TrainLine::DEFAULT: return os << "Generic Default";
+                        default: return os << "unknown generic train line";
+                    }
                    }
 
                    else

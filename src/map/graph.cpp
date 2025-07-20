@@ -8,11 +8,11 @@
 
 using namespace Transit::Map;
 
-Node *Graph::add_node(const std::string &i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string> &g, double lat, double lon)
+Node *Graph::add_node(int i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string> &g, double lat, double lon)
 {
     if (node_map.count(i) > 0)
     {
-        throw std::invalid_argument("Node with id " + i + " already exists in transit graph");
+        throw std::invalid_argument("Node with id " + std::to_string(i) + " already exists in transit graph");
     }
     auto new_node = std::make_unique<Node>(i, n, t, g, lat, lon);
 
@@ -25,11 +25,11 @@ Node *Graph::add_node(const std::string &i, const std::string &n, const std::vec
     return raw_ptr;
 }
 
-void Graph::remove_node(const std::string &node_id)
+void Graph::remove_node(int node_id)
 {
     if (!adjacency_list.count(node_id))
     {
-        throw std::invalid_argument("Node " + node_id + " is not in transit graph");
+        throw std::invalid_argument("Node " + std::to_string(node_id) + " is not in transit graph");
     }
 
     node_map.erase(node_id);
@@ -76,7 +76,7 @@ void Graph::add_edge(Node *u, Node *v, double w, const std::vector<TrainLine> &t
 {
     if (!node_map.count(u->id) || !node_map.count(v->id))
     {
-        throw std::invalid_argument("Nodes " + u->id + " and " + v->id + " are not in the transit graph");
+        throw std::invalid_argument("Nodes " + std::to_string(u->id) + " and " + std::to_string(v->id) + " are not in the transit graph");
     }
 
     if (u == v)
@@ -99,20 +99,20 @@ void Graph::add_edge(Node *u, Node *v, double w, const std::vector<TrainLine> &t
     ++v->degree;
 }
 
-void Graph::add_edge(const std::string &u, const std::string &v)
+void Graph::add_edge(int u_id, int v_id)
 {
-    if (!node_map.count(u) || !node_map.count(v))
+    if (!node_map.count(u_id) || !node_map.count(v_id))
     {
-        throw std::invalid_argument("Nodes " + u + " and " + v + " are not in the transit graph");
+        throw std::invalid_argument("Nodes " + std::to_string(u_id) + " and " + std::to_string(v_id) + " are not in the transit graph");
     }
 
-    if (u == v)
+    if (u_id == v_id)
     {
         throw std::invalid_argument("Self connections are not allowed in transit graph");
     }
 
-    Node *u_node = node_map[u];
-    Node *v_node = node_map[v];
+    Node *u_node = node_map[u_id];
+    Node *v_node = node_map[v_id];
 
     std::vector<TrainLine> shared_lines;
 
@@ -138,7 +138,7 @@ void Graph::remove_edge(Node *u, Node *v)
 
     if (!node_map.count(u_id) || !node_map.count(v_id))
     {
-        throw std::invalid_argument("Nodes " + u_id + " and " + v_id + " are not in the transit graph");
+        throw std::invalid_argument("Nodes " + std::to_string(u_id) + " and " + std::to_string(v_id) + " are not in the transit graph");
     }
 
     if (u == v)
@@ -161,12 +161,12 @@ void Graph::remove_edge(Node *u, Node *v)
     --v->degree;
 }
 
-void Graph::update_node(const std::string &id, const std::vector<TrainLine> &more_train_lines, const std::vector<std::string> more_gtfs_ids)
+void Graph::update_node(int id, const std::vector<TrainLine> &more_train_lines, const std::vector<std::string> more_gtfs_ids)
 {
     auto it = node_map.find(id);
     if (it == node_map.end())
     {
-        throw std::invalid_argument("Node " + id + " are not in transit graph");
+        throw std::invalid_argument("Node " + std::to_string(id) + " are not in transit graph");
     }
     Node *node = it->second;
 
@@ -174,7 +174,7 @@ void Graph::update_node(const std::string &id, const std::vector<TrainLine> &mor
     node->gtfs_ids.insert(node->gtfs_ids.end(), more_gtfs_ids.begin(), more_gtfs_ids.end());
 }
 
-const Node *Graph::get_node(const std::string &id) const
+const Node *Graph::get_node(int id) const
 {
     auto it = node_map.find(id);
     if (it != node_map.end())
@@ -185,7 +185,7 @@ const Node *Graph::get_node(const std::string &id) const
     return nullptr;
 }
 
-const std::unordered_map<std::string, std::vector<Edge>> &Graph::get_adjacency_list() const
+const std::unordered_map<int, std::vector<Edge>> &Graph::get_adjacency_list() const
 {
     return adjacency_list;
 }
@@ -212,7 +212,7 @@ void Graph::print() const
     }
 }
 
-std::optional<Path> Graph::find_path(const std::string &u_id, const std::string &v_id) const
+std::optional<Path> Graph::find_path(int u_id, int v_id) const
 {
     const Node *u = get_node(u_id);
     const Node *v = get_node(v_id);
@@ -230,9 +230,9 @@ std::optional<Path> Graph::find_path(const std::string &u_id, const std::string 
 
 std::optional<Path> Graph::dijkstra(const Node *u, const Node *v) const
 {
-    std::unordered_map<std::string, double> dist;
-    std::unordered_map<std::string, std::string> prev;
-    std::unordered_set<std::string> visited;
+    std::unordered_map<int, double> dist;
+    std::unordered_map<int, int> prev;
+    std::unordered_set<int> visited;
 
     for (const auto &[id, _] : adjacency_list)
     {
@@ -240,7 +240,7 @@ std::optional<Path> Graph::dijkstra(const Node *u, const Node *v) const
     }
     dist[u->id] = 0.0;
 
-    using PQElement = std::tuple<double /* distance */, std::string /* id */, std::vector<TrainLine>> /* train lines */;
+    using PQElement = std::tuple<double /* distance */, int /* id */, std::vector<TrainLine> /* train lines */>;
     auto comparator = [](const PQElement &a, const PQElement &b)
     {
         return std::get<0>(a) > std::get<0>(b);
@@ -267,7 +267,7 @@ std::optional<Path> Graph::dijkstra(const Node *u, const Node *v) const
 
         for (const auto &edge : adjacency_list.at(node_id))
         {
-            const std::string &neighbor_id{edge.to};
+            const int &neighbor_id{edge.to};
             double weight{edge.weight};
             const std::vector<TrainLine> &edge_lines{edge.train_lines};
 
@@ -297,11 +297,11 @@ std::optional<Path> Graph::dijkstra(const Node *u, const Node *v) const
     return reconstruct_path(u, v, prev);
 }
 
-std::optional<Path> Graph::reconstruct_path(const Node *u, const Node *v, const std::unordered_map<std::string, std::string> &prev) const
+std::optional<Path> Graph::reconstruct_path(const Node *u, const Node *v, const std::unordered_map<int, int> &prev) const
 {
     std::vector<const Node *> path_nodes;
 
-    std::string at = v->id;
+    auto at = v->id;
     while (at != u->id)
     {
         auto it = prev.find(at);
@@ -338,7 +338,7 @@ std::optional<Path> Graph::reconstruct_path(const Node *u, const Node *v, const 
         }
         else
         {
-            throw std::runtime_error("Missing edge between " + path_nodes[i]->id + " and " + path_nodes[i + 1]->id);
+            throw std::runtime_error("Missing edge between " + std::to_string(path_nodes[i]->id) + " and " + std::to_string(path_nodes[i + 1]->id));
         }
     }
 
