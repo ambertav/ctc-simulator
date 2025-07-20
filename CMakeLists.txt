@@ -13,6 +13,23 @@ set(LOG_DIR ${CMAKE_SOURCE_DIR}/logs)
 set(DATA_DIR ${CMAKE_SOURCE_DIR}/data)
 
 # =============================
+# extract, transfer, load (etl)
+# =============================
+
+file(GLOB_RECURSE ETL_SOURCES CONFIGURE_DEPENDS
+    ${CMAKE_SOURCE_DIR}/etl/*.cpp
+)
+add_executable(etl ${ETL_SOURCES})
+target_include_directories(etl PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(etl PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
+target_compile_definitions(etl PRIVATE 
+    LOG_DIR=\"${LOG_DIR}\"
+    DATA_DIR=\"${DATA_DIR}\"
+)
+
+
+# =============================
 # app
 # =============================
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
@@ -26,6 +43,8 @@ target_compile_definitions(app PRIVATE
     LOG_DIR=\"${LOG_DIR}\"
     DATA_DIR=\"${DATA_DIR}\"
 )
+
+add_dependencies(app etl)
 
 
 # =============================
@@ -55,6 +74,8 @@ target_compile_definitions(ctc_tests PRIVATE
     LOG_DIR=\"${LOG_DIR}\"
     DATA_DIR=\"${DATA_DIR}\"
 )
+
+add_dependencies(ctc_tests etl)
 
 include(GoogleTest)
 gtest_discover_tests(ctc_tests)

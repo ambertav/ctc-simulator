@@ -22,7 +22,7 @@ TEST_F(SubwayGraphTest, CreatesNodeStationsSuccessfully)
     using namespace Transit::Map;
 
     int n{10};
-    std::vector<int> expected_ids = extract_random_complex_ids(std::string(DATA_DIRECTORY) + "/mta_subway_stations.csv", n);
+    std::vector<int> expected_ids = extract_random_complex_ids(std::string(DATA_DIRECTORY) + "/clean/subway/stations.csv", n);
     EXPECT_EQ(expected_ids.size(), n);
 
     for (const auto &id : expected_ids)
@@ -100,7 +100,7 @@ std::vector<int> extract_random_complex_ids(const std::string &path, int count)
     int complex_index = -1;
     for (int i = 0; i < headers.size(); ++i)
     {
-        if (headers[i] == "Complex ID")
+        if (headers[i] == "complex_id")
         {
             complex_index = i;
             break;
@@ -109,7 +109,7 @@ std::vector<int> extract_random_complex_ids(const std::string &path, int count)
 
     if (complex_index == -1)
     {
-        throw std::runtime_error("Missing Complex ID column");
+        throw std::runtime_error("Missing complex_id column");
     }
 
     std::vector<int> all_ids;

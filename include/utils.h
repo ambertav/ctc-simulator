@@ -1,6 +1,8 @@
 #pragma once
+
 #include <vector>
 #include <string>
+#include <fstream>
 #include <sstream>
 #include <ranges>
 
@@ -30,6 +32,42 @@ namespace Utils
         }
 
         return tokens;
+    }
+
+    inline bool open_and_parse(const std::string &file_path, const std::vector<std::string> &required_columns, std::function<void(std::ifstream &, const std::unordered_map<std::string, int> &)> callback)
+    {
+        std::ifstream file(file_path);
+        if (!file.is_open())
+        {
+            std::cerr << "failed to open file: " << file_path << "\n";
+            return false;
+        }
+
+        std::string header;
+        if (!std::getline(file, header))
+        {
+            std::cerr << "File is empty or missing header: " << file_path << "\n";
+            return false;
+        }
+
+        auto headers = Utils::split(header, ',');
+        std::unordered_map<std::string, int> column_index;
+        for (int i = 0; i < headers.size(); ++i)
+        {
+            column_index[headers[i]] = i;
+        }
+
+        for (const auto &column : required_columns)
+        {
+            if (column_index.find(column) == column_index.end())
+            {
+                std::cerr << "Missing column " << column << " in file " << file_path << "\n";
+                return false;
+            }
+        }
+
+        callback(file, column_index);
+        return true;
     }
 
     inline std::string to_lower_copy(const std::string &str)

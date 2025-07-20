@@ -65,23 +65,23 @@ namespace Yards
         switch (id)
         {
         case uptown:
-            return "uptown";
+            return "uptown yard";
         case downtown:
-            return "downtown";
+            return "downtown yard";
         case inbound:
-            return "inbound";
+            return "inbound yard";
         case outbound:
-            return "outbound";
+            return "outbound yard";
         case westbound:
-            return "westbound";
+            return "westbound yard";
         case eastbound:
-            return "eastbound";
+            return "eastbound yard";
         case north:
-            return "north";
+            return "north yard";
         case south:
-            return "south";
+            return "south yard";
         default:
-            return "unknown";
+            return "unknown yard";
         }
     }
 }

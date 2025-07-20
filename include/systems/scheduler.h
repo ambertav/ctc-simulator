@@ -15,6 +15,6 @@ private:
     int number_of_trains;
 
 public:
-    Scheduler(const std::string &file_path, int stg = 2, int dt = 2, int nt = 6);
+    Scheduler(const std::string &file_path, int stg = 4, int dt = 2, int nt = 6);
     void create_schedule(const Transit::Map::Path &path);
 };

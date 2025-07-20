@@ -99,8 +99,8 @@ std::pair<int, int> Factory::create_stations(const Transit::Map::Path &path)
     const Node *start_node{path.nodes.front()};
     const Node *end_node{path.nodes.back()};
 
-    std::pair<double, double> from {start_node->coordinates.latitude, start_node->coordinates.longitude};
-    std::pair<double, double> to {end_node->coordinates.latitude, end_node->coordinates.longitude};
+    std::pair<double, double> from{start_node->coordinates.latitude, start_node->coordinates.longitude};
+    std::pair<double, double> to{end_node->coordinates.latitude, end_node->coordinates.longitude};
 
     std::optional<Direction> dir_opt = infer_direction(start_node->train_lines.front(), from, to);
 
@@ -119,7 +119,7 @@ void Factory::create_network(const Transit::Map::Path &path, int start, int end)
     static int track_id{1};
     static int signal_id{1};
 
-    auto build = [&](const std::vector<const Transit::Map::Node *> &nodes, const std::vector<double> &distances, int start, int end, Direction dir)
+    auto build = [&](const std::vector<const Transit::Map::Node *> &nodes, const std::vector<double> &distances, int start, int end, Direction dir, bool is_reversed)
     {
         std::unique_ptr<Track> *prev_track = nullptr;
         std::unique_ptr<Platform> *prev_platform = nullptr;
@@ -136,7 +136,13 @@ void Factory::create_network(const Transit::Map::Path &path, int start, int end)
 
         for (int i = 0; i < nodes.size(); ++i) // connect path nodes
         {
-            int segment_weight = i < distances.size() ? distances[i] : 1;
+            double segment_weight{1.0};
+            if (i < distances.size())
+            {
+                segment_weight = is_reversed
+                                     ? distances[distances.size() - 1 - i]
+                                     : distances[i];
+            }
 
             signals[signal_id] = std::make_unique<Signal>(signal_id, track_id);
             tracks[track_id] = std::make_unique<Track>(track_id, signals[signal_id].get(), segment_weight);
@@ -157,7 +163,7 @@ void Factory::create_network(const Transit::Map::Path &path, int start, int end)
             ++signal_id;
             ++track_id;
 
-            int station_id {nodes[i]->id};
+            int station_id{nodes[i]->id};
             signals[signal_id] = std::make_unique<Signal>(signal_id, track_id);
             platforms[track_id] = std::make_unique<Platform>(track_id, dwell_time, signals[signal_id].get(), stations[station_id].get(), dir);
             stations[station_id]->add_platform(platforms[track_id].get());
@@ -207,8 +213,8 @@ void Factory::create_network(const Transit::Map::Path &path, int start, int end)
     const Transit::Map::Node *start_node{path.nodes.front()};
     const Transit::Map::Node *end_node{path.nodes.back()};
 
-    std::pair<double, double> from {start_node->coordinates.latitude, start_node->coordinates.longitude};
-    std::pair<double, double> to {end_node->coordinates.latitude, end_node->coordinates.longitude};
+    std::pair<double, double> from{start_node->coordinates.latitude, start_node->coordinates.longitude};
+    std::pair<double, double> to{end_node->coordinates.latitude, end_node->coordinates.longitude};
 
     std::optional<Direction> o_opt = infer_direction(start_node->train_lines.front(), from, to);
     std::optional<Direction> r_opt = infer_direction(start_node->train_lines.front(), to, from);
@@ -216,10 +222,9 @@ void Factory::create_network(const Transit::Map::Path &path, int start, int end)
     Direction original{*o_opt};
     Direction reverse{*r_opt};
 
-    build(path.nodes, path.segment_weights, start, end, original);
-
     const std::vector<const Transit::Map::Node *> reversed_path(path.nodes.rbegin(), path.nodes.rend());
     const std::vector<double> reversed_distances(path.segment_weights.rbegin(), path.segment_weights.rend());
 
-    build(reversed_path, reversed_distances, end, start, reverse);
+    build(path.nodes, path.segment_weights, start, end, original, false);
+    build(reversed_path, reversed_distances, end, start, reverse, true);
 }
