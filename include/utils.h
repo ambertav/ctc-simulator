@@ -15,6 +15,15 @@ namespace Utils
 
     constexpr double TRANSFER_EPSILON{0.001};
 
+    inline std::string trim(const std::string &str)
+{
+    const size_t first = str.find_first_not_of(" \t\r\n");
+    if (first == std::string::npos) return "";
+    const size_t last = str.find_last_not_of(" \t\r\n");
+    return str.substr(first, last - first + 1);
+}
+
+
     inline std::vector<std::string> split(const std::string &s, char delimiter)
     {
         std::vector<std::string> tokens;
@@ -23,7 +32,7 @@ namespace Utils
 
         while (std::getline(ss, token, delimiter))
         {
-            tokens.push_back(token);
+            tokens.push_back(trim(token));
         }
 
         if (!s.empty() && s.back() == delimiter)

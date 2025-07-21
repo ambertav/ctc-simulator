@@ -16,6 +16,7 @@ int main()
          std::string(DATA_DIRECTORY) + "/raw/mta_subway_stations.csv",
          std::string(DATA_DIRECTORY) + "/raw/gtfs_subway/trips.txt",
          std::string(DATA_DIRECTORY) + "/raw/gtfs_subway/stop_times.txt",
+         {},
          std::string(DATA_DIRECTORY) + "/clean/subway/stations.csv",
          std::string(DATA_DIRECTORY) + "/clean/subway/routes.csv"},
 
@@ -23,6 +24,7 @@ int main()
          std::string(DATA_DIRECTORY) + "/raw/gtfsmnr/stops.txt",
          std::string(DATA_DIRECTORY) + "/raw/gtfsmnr/trips.txt",
          std::string(DATA_DIRECTORY) + "/raw/gtfsmnr/stop_times.txt",
+         std::string(DATA_DIRECTORY) + "/raw/gtfsmnr/routes.txt",
          std::string(DATA_DIRECTORY) + "/clean/mnr/stations.csv",
          std::string(DATA_DIRECTORY) + "/clean/mnr/routes.csv"},
     };
