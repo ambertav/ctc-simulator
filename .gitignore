@@ -19,7 +19,43 @@ CMakeCache.txt
 cmake_install.cmake
 Makefile
 
+logs/
+data/test_schedule.csv
+
+# processed data files
+data/clean/
+
+#
+data/raw/
+
+
+# binaries
+bin/
+build/
+
+# ide config
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*~
+*.swp
+
+# CMake generated
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
 
 logs/
 data/test_schedule.csv
+
+# raw and processed data files
 data/clean/
+data/raw/
+
+# track zipped files
+!data/zips/*.zip
