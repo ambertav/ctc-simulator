@@ -300,6 +300,7 @@ namespace etl
                 "route_id",
                 "trip_id",
                 "trip_headsign",
+                "direction_id",
                 "peak_offpeak"};
 
             Utils::open_and_parse(trips_file, needed_columns, [&](std::ifstream &file, const std::unordered_map<std::string, int> &column_index)
@@ -322,9 +323,15 @@ namespace etl
             std::string route_id {tokens[column_index.at("route_id")]};
             std::string trip_id {tokens[column_index.at("trip_id")]};
             std::string trip_headsign {tokens[column_index.at("trip_headsign")]};
+            std::string direction_id {tokens[column_index.at("direction_id")]};
             std::string peak {tokens[column_index.at("peak_offpeak")]};
 
             if (peak != "0")
+            {
+                continue;
+            }
+
+            if (direction_id == "1")
             {
                 continue;
             }
