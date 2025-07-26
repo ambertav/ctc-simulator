@@ -54,7 +54,7 @@ namespace Transit::Map
         std::string headsign;
         std::vector<int> sequence;
 
-        Route(const std::string &h, std::vector<int> &s) : headsign(h), sequence(s) {}
+        Route(const std::string& h, const std::vector<int> &s) : headsign(h), sequence(s) {}
     };
 
     struct Path

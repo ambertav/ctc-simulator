@@ -9,12 +9,12 @@
 #include "utils.h"
 #include "map/subway.h"
 
-std::vector<int> extract_random_complex_ids(const std::string &path, int count);
+std::vector<int> extract_random_complex_ids(const std::string &file_path, int count);
 
 class SubwayGraphTest : public ::testing::Test
 {
 protected:
-    Transit::Map::Subway &graph = Transit::Map::Subway::get_instance();
+    Transit::Map::Subway &map = Transit::Map::Subway::get_instance();
 };
 
 TEST_F(SubwayGraphTest, CreatesNodeStationsSuccessfully)
@@ -27,7 +27,7 @@ TEST_F(SubwayGraphTest, CreatesNodeStationsSuccessfully)
 
     for (const auto &id : expected_ids)
     {
-        const Node *node = graph.get_node(id);
+        const Node *node = map.get_node(id);
         EXPECT_NE(node, nullptr);
     }
 }
@@ -43,13 +43,13 @@ TEST_F(SubwayGraphTest, CreatesConnectionsBetweenStationsSuccessfully)
         {325, 326}  // Canal st and Franklin st, 1 line
     };
 
-    auto adj_list = graph.get_adjacency_list();
+    auto adj_list = map.get_adjacency_list();
 
     for (const auto &[u, v] : connected_pairs)
     {
 
-        ASSERT_TRUE(adj_list.count(u)) << "Node " << u << "not found in adjacency list";
-        ASSERT_TRUE(adj_list.count(v)) << "Node " << v << "not found in adjacency list";
+        ASSERT_TRUE(adj_list.count(u)) << "Node " << u << " not found in adjacency list";
+        ASSERT_TRUE(adj_list.count(v)) << "Node " << v << " not found in adjacency list";
 
         const auto &u_neighbors = adj_list.at(u);
         const auto &v_neighbors = adj_list.at(v);
@@ -66,7 +66,7 @@ TEST_F(SubwayGraphTest, CreatesConnectionsBetweenStationsSuccessfully)
 
 TEST_F(SubwayGraphTest, AddsVectorOfRoutesPerTrainLineSuccessfully)
 {
-    const auto &routes = graph.get_routes();
+    const auto &routes = map.get_routes();
 
     for (const auto &[train_line, route_vec] : routes)
     {
@@ -78,26 +78,26 @@ TEST_F(SubwayGraphTest, FindsPathBetweenTwoStationsSuccessfully)
 {
     using namespace Transit::Map;
 
-    auto path_opt {graph.find_path(384, 610)}; // burnside av, grand central
+    auto path_opt{map.find_path(384, 610)}; // burnside av, grand central
     ASSERT_TRUE(path_opt.has_value());
 
-    auto path {*path_opt};
+    auto path{*path_opt};
     EXPECT_FALSE(path.nodes.empty());
 }
 
-std::vector<int> extract_random_complex_ids(const std::string &path, int count)
+std::vector<int> extract_random_complex_ids(const std::string &file_path, int count)
 {
-    std::ifstream file(path);
+    std::ifstream file(file_path);
     if (!file.is_open())
     {
         throw std::runtime_error("Could not open station file");
     }
 
-    std::string header;
+    std::string header{};
     std::getline(file, header);
     auto headers = Utils::split(header, ',');
 
-    int complex_index = -1;
+    int complex_index {-1};
     for (int i = 0; i < headers.size(); ++i)
     {
         if (headers[i] == "complex_id")
@@ -112,8 +112,8 @@ std::vector<int> extract_random_complex_ids(const std::string &path, int count)
         throw std::runtime_error("Missing complex_id column");
     }
 
-    std::vector<int> all_ids;
-    std::string line;
+    std::vector<int> all_ids {};
+    std::string line {};
     while (std::getline(file, line))
     {
         auto tokens = Utils::split(line, ',');

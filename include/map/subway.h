@@ -31,8 +31,6 @@ namespace Transit::Map
         void load_stations(const std::string &csv);
         void load_connections(const std::string &csv);
 
-        void add_route(const std::string &route_headsign, std::vector<std::string> &gtfs_sequence);
-
     public:
         std::unordered_map<TrainLine, std::vector<Route>> get_routes() const;
     };
