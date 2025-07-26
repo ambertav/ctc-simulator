@@ -171,7 +171,7 @@ void Graph::update_node(int id, const std::vector<TrainLine> &more_train_lines, 
     Node *node = it->second;
 
     node->train_lines.insert(node->train_lines.end(), more_train_lines.begin(), more_train_lines.end());
-    node->gtfs_ids.insert(node->gtfs_ids.end(), more_gtfs_ids.begin(), more_gtfs_ids.end());
+    node->codes.insert(node->codes.end(), more_gtfs_ids.begin(), more_gtfs_ids.end());
 }
 
 const Node *Graph::get_node(int id) const

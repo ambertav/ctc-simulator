@@ -38,6 +38,7 @@ void MetroNorth::load_stations(const std::string &csv)
         }
 
         int stop_id {std::stoi(tokens[column_index.at("stop_id")])};
+        std::string stop_code {tokens[column_index.at("stop_code")]};
         std::string stop_name {tokens[column_index.at("stop_name")]};
         std::string lat_str {tokens[column_index.at("latitude")]};
         std::string lon_str {tokens[column_index.at("longitude")]};
@@ -46,7 +47,7 @@ void MetroNorth::load_stations(const std::string &csv)
         double longitude {std::stod(lon_str)};
 
         // will add train lines in load_connections()
-        add_node(stop_id, stop_name, {}, {}, latitude, longitude);
+        add_node(stop_id, stop_name, {}, {stop_code}, latitude, longitude);
     } });
 }
 

@@ -28,12 +28,12 @@ namespace Transit::Map
         int id;
         std::string name;
         std::vector<TrainLine> train_lines;
-        std::vector<std::string> gtfs_ids;
+        std::vector<std::string> codes;
         Coordinate coordinates;
         int degree;
 
         Node(int i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string>& g, const Coordinate& c)
-            : id(i), name(n), train_lines(t), gtfs_ids(g), coordinates(c), degree(0) {}
+            : id(i), name(n), train_lines(t), codes(g), coordinates(c), degree(0) {}
 
         Node(int i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string>& g, double lat, double lon)
             : Node(i, n, t, g, Coordinate{lat, lon}) {}
