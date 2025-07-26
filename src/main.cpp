@@ -6,6 +6,7 @@
 #include "config.h"
 
 #include "map/subway.h"
+#include "map/metro_north.h"
 #include "core/factory.h"
 #include "core/dispatch.h"
 #include "systems/logger.h"
@@ -19,8 +20,11 @@ int main()
     std::string schedule_file{std::string(DATA_DIRECTORY) + "/schedule.csv"};
     std::string logger_file{std::string(LOG_DIRECTORY) + "/sim.txt"};
 
-    Transit::Map::Subway &subway{Transit::Map::Subway::get_instance()};
-    std::optional<Transit::Map::Path> path_opt{subway.find_path(384, 610)};
+    // Transit::Map::Subway &subway{Transit::Map::Subway::get_instance()};
+    // std::optional<Transit::Map::Path> path_opt{subway.find_path(384, 610)};
+
+    Transit::Map::MetroNorth &mnr{Transit::Map::MetroNorth::get_instance()};
+    std::optional<Transit::Map::Path> path_opt{mnr.find_path(56, 114)};
 
     if (!path_opt.has_value())
     {
@@ -38,7 +42,7 @@ int main()
     auto station_ptrs{factory.get_stations()};
     auto signal_ptrs{factory.get_signals()};
     auto platform_ptrs{factory.get_platforms()};
-    auto track_ptrs{factory.get_tracks()};
+    auto track_ptrs{factory.get_tracks()}; 
 
     Logger logger{logger_file};
     Dispatch dispatch{station_ptrs, train_ptrs, track_ptrs, platform_ptrs, signal_ptrs, logger};

@@ -4,6 +4,7 @@
 
 #include "config.h"
 #include "utils.h"
+#include "railroad_constants.h"
 #include "map/metro_north.h"
 
 using namespace Transit::Map;
@@ -91,7 +92,7 @@ void MetroNorth::load_connections(const std::string &csv)
 
                               for (const auto &[route_name, segments] : route_segments)
                               {
-                                  if (route_name == "Harlem" || route_name == "Hudson")
+                                  if (route_name == "Harlem" || route_name == "Hudson" || route_name == "New Haven")
                                   {
                                       TrainLine route{trainline_from_string(route_name)};
                                       auto merged = merge_segments(segments);
@@ -105,25 +106,52 @@ void MetroNorth::load_connections(const std::string &csv)
                                       {
                                           outbound_headsign += "Poughkeepsie";
                                       }
+                                      else if (route_name == "New Haven")
+                                      {
+                                          outbound_headsign += "New Haven-State St";
+                                      }
 
                                       routes[route].emplace_back(outbound_headsign, merged);
 
-                                      std::cout << "Merged route for " << outbound_headsign << ":\n";
-                                      for (int stop : merged)
+                                      for (int i = 1; i < merged.size(); ++i)
                                       {
-                                          std::cout << stop << " ";
-                                      }
+                                          int u{merged[i - 1]};
+                                          int v{merged[i]};
 
-                                      std::cout << std::endl;
+                                          // adds train lines
+                                          update_node(u, {route}, {});
+                                          update_node(v, {route}, {});
+
+                                          add_edge(u, v);
+                                      }
 
                                       std::vector<int> inbound_sequence(merged.rbegin(), merged.rend());
                                       routes[route].emplace_back("Grand Central", inbound_sequence);
                                   }
-                              }
-                              // need to preserve branches of new haven line
+                                  else if (route_name == "New Canaan" || route_name == "Danbury" || route_name == "Waterbury")
+                                  {
+                                      TrainLine route{trainline_from_string(route_name)};
+                                      auto branch_segment = handle_branches(route_name, segments);
 
-                              // need to add edges
-                          });
+                                      routes[route].emplace_back(route_name, branch_segment);
+
+                                      for (int i = 1; i < branch_segment.size(); ++i)
+                                      {
+                                          int u{branch_segment[i - 1]};
+                                          int v{branch_segment[i]};
+
+                                          // adds train lines
+                                          update_node(u, {route}, {});
+                                          update_node(v, {route}, {});
+
+                                          add_edge(u, v);
+                                      }
+
+                                      std::vector<int> inbound_branch(branch_segment.rbegin(), branch_segment.rend());
+
+                                      routes[route].emplace_back(std::string(get_branch_point_name(route_name)), inbound_branch);
+                                  }
+                              } });
 }
 
 std::vector<int> MetroNorth::merge_segments(const std::vector<std::vector<int>> &segments)
@@ -221,4 +249,42 @@ std::vector<int> MetroNorth::k_way_merge(const std::vector<std::vector<int>> &se
     }
 
     return result;
+}
+
+std::vector<int> MetroNorth::handle_branches(const std::string &branch_name, const std::vector<std::vector<int>> &segments)
+{
+    auto full_route = merge_segments(segments);
+
+    int branch_point{get_branch_point(branch_name)};
+    if (branch_point == -1)
+    {
+        return {};
+    }
+
+    auto it = std::find(full_route.begin(), full_route.end(), branch_point);
+    if (it == full_route.end())
+    {
+        return {};
+    }
+
+    std::vector<int> branch{};
+    branch.insert(branch.end(), it, full_route.end());
+    return branch;
+}
+
+int MetroNorth::get_branch_point(std::string_view branch_name) const
+{
+    auto it = MNR::branch_data.find(branch_name);
+    return it != MNR::branch_data.end() ? it->second.stop_id : -1;
+}
+
+std::string_view MetroNorth::get_branch_point_name(std::string_view branch_name) const
+{
+    auto it = MNR::branch_data.find(branch_name);
+    return it != MNR::branch_data.end() ? it->second.name : "Junction";
+}
+
+std::unordered_map<TrainLine, std::vector<Route>> MetroNorth::get_routes() const
+{
+    return routes;
 }
