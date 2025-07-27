@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string_view>
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -15,67 +16,107 @@ namespace Utils
 
     constexpr double TRANSFER_EPSILON{0.001};
 
-    inline std::string trim(const std::string &str)
-{
-    const size_t first = str.find_first_not_of(" \t\r\n");
-    if (first == std::string::npos) return "";
-    const size_t last = str.find_last_not_of(" \t\r\n");
-    return str.substr(first, last - first + 1);
-}
-
-
-    inline std::vector<std::string> split(const std::string &s, char delimiter)
+    inline std::vector<std::string_view> split(std::string_view sv, char delimiter)
     {
-        std::vector<std::string> tokens;
-        std::stringstream ss(s);
-        std::string token;
-
-        while (std::getline(ss, token, delimiter))
+        std::vector<std::string_view> tokens{};
+        size_t start{};
+        while (true)
         {
-            tokens.push_back(trim(token));
-        }
-
-        if (!s.empty() && s.back() == delimiter)
-        {
-            tokens.push_back("");
+            auto pos{sv.find(delimiter, start)};
+            if (pos == std::string_view::npos)
+            {
+                tokens.emplace_back(sv.substr(start));
+                break;
+            }
+            tokens.emplace_back(sv.substr(start, pos - start));
+            start = pos + 1;
         }
 
         return tokens;
     }
 
-    inline bool open_and_parse(const std::string &file_path, const std::vector<std::string> &required_columns, std::function<void(std::ifstream &, const std::unordered_map<std::string, int> &)> callback)
+    inline std::string_view trim(std::string_view sv)
     {
-        std::ifstream file(file_path);
-        if (!file.is_open())
+        const char *begin{sv.data()};
+        const char *end{sv.data() + sv.size()};
+
+        while (begin < end && std::isspace(static_cast<unsigned char>(*begin)))
         {
-            std::cerr << "failed to open file: " << file_path << "\n";
+            ++begin;
+        }
+
+        while (end > begin && std::isspace(static_cast<unsigned char>(*(end - 1))))
+        {
+            --end;
+        }
+
+        if ((end - begin) >= 2 && *begin == '"' && *(end - 1) == '"')
+        {
+            ++begin;
+            --end;
+        }
+
+        return std::string_view(begin, end - begin);
+    }
+
+    inline bool open_and_parse(const std::string &file_path, const std::vector<std::string> &required_columns, const std::function<void(std::string_view, const std::unordered_map<std::string_view, int> &, int)> &callback)
+    {
+        std::ifstream file(file_path, std::ios::binary);
+        if (!file)
+        {
+            std::cerr << "Failed to open: " << file_path << "\n";
             return false;
         }
 
-        std::string header;
-        if (!std::getline(file, header))
+        file.seekg(0, std::ios::end);
+        auto size{file.tellg()};
+        file.seekg(0, std::ios::beg);
+
+        std::string buffer(size, '\0');
+        file.read(buffer.data(), size);
+
+        size_t header_end{buffer.find('\n')};
+        if (header_end == std::string::npos)
         {
-            std::cerr << "File is empty or missing header: " << file_path << "\n";
+            std::cerr << "Missing header in file: " << file_path << "\n";
             return false;
         }
 
-        auto headers = Utils::split(header, ',');
-        std::unordered_map<std::string, int> column_index;
+        std::string_view header(buffer.data(), header_end);
+        auto headers = split(header, ',');
+
+        std::unordered_map<std::string_view, int> column_index{};
         for (int i = 0; i < headers.size(); ++i)
         {
-            column_index[headers[i]] = i;
+            column_index[trim(headers[i])] = i;
         }
 
         for (const auto &column : required_columns)
         {
-            if (column_index.find(column) == column_index.end())
+            if (!column_index.contains(column))
             {
                 std::cerr << "Missing column " << column << " in file " << file_path << "\n";
                 return false;
             }
         }
 
-        callback(file, column_index);
+        size_t line_start{header_end + 1};
+        int line_num{2};
+
+        while (line_start < buffer.size())
+        {
+            size_t line_end{buffer.find('\n', line_start)};
+            if (line_end == std::string::npos)
+            {
+                line_end = buffer.size();
+            }
+
+            std::string_view line(buffer.data() + line_start, line_end - line_start);
+            callback(line, column_index, line_num);
+            line_start = line_end + 1;
+            ++line_num;
+        }
+
         return true;
     }
 
