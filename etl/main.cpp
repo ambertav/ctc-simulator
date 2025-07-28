@@ -6,8 +6,10 @@
 #include "config.h"
 
 #include "processor.h"
-#include "subway_config.h"
-#include "mnr_config.h"
+
+#include "systems/subway_config.h"
+#include "systems/mnr_config.h"
+#include "systems/lirr_config.h"
 
 int main()
 {
@@ -17,7 +19,7 @@ int main()
     std::vector<etl::SystemConfig> systems{
         get_subway_config(),
         get_mnr_config(),
-        // get_lirr_config()
+        get_lirr_config()
     };
 
     for (const auto &system : systems)

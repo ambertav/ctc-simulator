@@ -20,7 +20,10 @@ file(GLOB_RECURSE ETL_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_SOURCE_DIR}/etl/*.cpp
 )
 add_executable(etl ${ETL_SOURCES})
-target_include_directories(etl PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(etl PRIVATE 
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/etl/include
+)
 set_target_properties(etl PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 target_compile_definitions(etl PRIVATE 

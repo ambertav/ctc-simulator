@@ -87,7 +87,7 @@ namespace Utils
         std::unordered_map<std::string_view, int> column_index{};
         for (int i = 0; i < headers.size(); ++i)
         {
-            column_index[headers[i]] = i;
+            column_index[trim(headers[i])] = i;
         }
 
         for (const auto &column : required_columns)

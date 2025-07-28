@@ -39,7 +39,7 @@ SystemConfig create_mnr_config()
             return transformed;
         },
         
-        .multiple_trips = true,
+        .multiple_trips = true
         
     };
 }
