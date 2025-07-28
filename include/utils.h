@@ -16,39 +16,16 @@ namespace Utils
 
     constexpr double TRANSFER_EPSILON{0.001};
 
-    inline std::vector<std::string_view> split(std::string_view sv, char delimiter)
-    {
-        std::vector<std::string_view> tokens{};
-        size_t start{};
-        while (true)
-        {
-            auto pos{sv.find(delimiter, start)};
-            if (pos == std::string_view::npos)
-            {
-                tokens.emplace_back(sv.substr(start));
-                break;
-            }
-            tokens.emplace_back(sv.substr(start, pos - start));
-            start = pos + 1;
-        }
-
-        return tokens;
-    }
-
     inline std::string_view trim(std::string_view sv)
     {
-        const char *begin{sv.data()};
-        const char *end{sv.data() + sv.size()};
+        const char *begin = sv.data();
+        const char *end = sv.data() + sv.size();
 
-        while (begin < end && std::isspace(static_cast<unsigned char>(*begin)))
-        {
+        while (begin < end && (std::isspace(static_cast<unsigned char>(*begin)) || *begin == '\r' || *begin == '\n'))
             ++begin;
-        }
 
-        while (end > begin && std::isspace(static_cast<unsigned char>(*(end - 1))))
-        {
+        while (end > begin && (std::isspace(static_cast<unsigned char>(*(end - 1))) || *(end - 1) == '\r' || *(end - 1) == '\n'))
             --end;
-        }
 
         if ((end - begin) >= 2 && *begin == '"' && *(end - 1) == '"')
         {
@@ -59,7 +36,29 @@ namespace Utils
         return std::string_view(begin, end - begin);
     }
 
-    inline bool open_and_parse(const std::string &file_path, const std::vector<std::string> &required_columns, const std::function<void(std::string_view, const std::unordered_map<std::string_view, int> &, int)> &callback)
+    inline std::vector<std::string_view> split(std::string_view sv, char delimiter)
+    {
+        std::vector<std::string_view> tokens{};
+        size_t start{};
+        while (true)
+        {
+            auto pos{sv.find(delimiter, start)};
+            std::string_view token{};
+            if (pos == std::string_view::npos)
+            {
+                token = sv.substr(start);
+                token = trim(token);
+                tokens.emplace_back(token);
+                break;
+            }
+            tokens.emplace_back(sv.substr(start, pos - start));
+            start = pos + 1;
+        }
+
+        return tokens;
+    }
+
+    inline bool open_and_parse(const std::string &file_path, const std::vector<std::string_view> &required_columns, const std::function<void(std::string_view, const std::unordered_map<std::string_view, int> &, int)> &callback)
     {
         std::ifstream file(file_path, std::ios::binary);
         if (!file)
@@ -88,7 +87,7 @@ namespace Utils
         std::unordered_map<std::string_view, int> column_index{};
         for (int i = 0; i < headers.size(); ++i)
         {
-            column_index[trim(headers[i])] = i;
+            column_index[headers[i]] = i;
         }
 
         for (const auto &column : required_columns)
