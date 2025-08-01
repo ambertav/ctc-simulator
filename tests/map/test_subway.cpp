@@ -119,7 +119,7 @@ std::vector<int> extract_random_complex_ids(const std::string &file_path, int co
         auto tokens = Utils::split(line, ',');
         if (tokens.size() > complex_index)
         {
-            all_ids.push_back(std::stoi(tokens[complex_index]));
+            all_ids.push_back(Utils::string_view_to_numeric<int>(tokens[complex_index]));
         }
     }
 

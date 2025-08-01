@@ -6,6 +6,8 @@
 #include <fstream>
 #include <sstream>
 #include <ranges>
+#include <charconv>
+#include <iostream>
 
 namespace Utils
 {
@@ -119,10 +121,71 @@ namespace Utils
         return true;
     }
 
+    inline std::unordered_map<std::string_view, std::string_view> from_tokens(const std::vector<std::string_view> &tokens, const std::unordered_map<std::string_view, int> &column_index)
+    {
+        std::unordered_map<std::string_view, std::string_view> row{};
+        for (auto &[column, index] : column_index)
+        {
+            if (index < tokens.size())
+            {
+                row[column] = Utils::trim(tokens[index]);
+            }
+        }
+
+        return row;
+    }
+
+    inline void log_malformed_line(const std::string &system_name, const std::string &file_type, int line_num, std::string_view line)
+    {
+        std::cerr << "In " << system_name << " " << file_type << ", malformed line at " << line_num << ": " << line << "\n";
+    }
+
+    inline void log_file_open_error(const std::string &system_name, const std::string &file_type, const std::string &file_path)
+    {
+        std::cerr << "Could not open " << system_name << " " << file_type << "output, file path: " << file_path << "\n";
+    }
+
     inline std::string to_lower_copy(const std::string &str)
     {
         auto result_view = std::views::transform(str, [](unsigned char c)
                                                  { return std::tolower(c); });
         return std::string(result_view.begin(), result_view.end());
+    }
+
+    template <typename T>
+    inline T string_view_to_numeric(std::string_view sv)
+    {
+        if constexpr (std::is_floating_point_v<T>)
+        {
+
+            std::string temp(sv);
+            if constexpr (std::is_same_v<T, float>)
+            {
+                return std::stof(temp);
+            }
+            else if constexpr (std::is_same_v<T, double>)
+            {
+                return std::stod(temp);
+            }
+        }
+        else
+        {
+            T result{};
+            auto [ptr, ec] = std::from_chars(sv.data(), sv.data() + sv.size(), result);
+
+            if (ec != std::errc{})
+            {
+                if (ec == std::errc::invalid_argument)
+                {
+                    throw std::invalid_argument("Invalid numeric format");
+                }
+                else if (ec == std::errc::result_out_of_range)
+                {
+                    throw std::out_of_range("Number out of range");
+                }
+            }
+
+            return result;
+        }
     }
 }

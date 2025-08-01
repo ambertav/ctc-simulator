@@ -121,7 +121,7 @@ std::vector<int> extract_random_ids(const std::string &file_path, int count)
         auto tokens = Utils::split(line, ',');
         if (tokens.size() > id_index)
         {
-            all_ids.push_back(std::stoi(tokens[id_index]));
+            all_ids.push_back(Utils::string_view_to_numeric<int>(tokens[id_index]));
         }
     }
 

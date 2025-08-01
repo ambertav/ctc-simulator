@@ -18,36 +18,12 @@
 namespace etl
 {
 
-    inline void log_malformed_line(const std::string &system_name, const std::string &file_type, int line_num, std::string_view line)
-    {
-        std::cerr << "In " << system_name << " " << file_type << ", malformed line at " << line_num << ": " << line << "\n";
-    }
-
-    inline void log_file_open_error(const std::string &system_name, const std::string &file_type, const std::string &file_path)
-    {
-        std::cerr << "Could not open " << system_name << " " << file_type << "output, file path: " << file_path << "\n";
-    }
-
-    inline std::unordered_map<std::string_view, std::string_view> from_tokens(const std::vector<std::string_view> &tokens, const std::unordered_map<std::string_view, int> &column_index)
-    {
-        std::unordered_map<std::string_view, std::string_view> row{};
-        for (auto &[column, index] : column_index)
-        {
-            if (index < tokens.size())
-            {
-                row[column] = Utils::trim(tokens[index]);
-            }
-        }
-
-        return row;
-    }
-
     inline void process_stations(const SystemConfig &config)
     {
         std::ofstream out(config.station_output_file);
         if (!out.is_open())
         {
-            log_file_open_error(config.name, "stations", config.station_output_file);
+            Utils::log_file_open_error(config.name, "stations", config.station_output_file);
             return;
         }
 
@@ -58,10 +34,11 @@ namespace etl
                 auto tokens = Utils::split(line, ',');
                 if (tokens.size() < column_index.size())
                 {
-                    log_malformed_line(config.name, "stations", line_num, line);
+                    Utils::log_malformed_line(config.name, "stations", line_num, line);
+                    return;
                 }
 
-                auto row {from_tokens(tokens, column_index)};
+                auto row {Utils::from_tokens(tokens, column_index)};
 
                 bool first = true;
             for (const auto& column : config.station_columns)
@@ -88,10 +65,11 @@ namespace etl
             auto tokens = Utils::split(line, ',');
              if (tokens.size() < column_index.size())
                 {
-                    log_malformed_line(config.name, "trips", line_num, line);
+                    Utils::log_malformed_line(config.name, "trips", line_num, line);
+                    return;
                 }
             
-            auto row {from_tokens(tokens, column_index)};
+            auto row {Utils::from_tokens(tokens, column_index)};
 
             if (!config.trip_filter(row))
             {
@@ -119,10 +97,11 @@ namespace etl
             auto tokens = Utils::split(line, ',');
                          if (tokens.size() < column_index.size())
                 {
-                    log_malformed_line(config.name, "stop times", line_num, line);
+                    Utils::log_malformed_line(config.name, "stop times", line_num, line);
+                    return;
                 }
             
-            auto row {from_tokens(tokens, column_index)};
+            auto row {Utils::from_tokens(tokens, column_index)};
 
             std::string trip_id {row.at("trip_id")};
             if (valid_trip_ids.find(trip_id) == valid_trip_ids.end())
@@ -130,7 +109,7 @@ namespace etl
                 return;
             }
 
-            int stop_seq {std::stoi(std::string(row.at("stop_sequence")))};
+            int stop_seq {Utils::string_view_to_numeric<int>(row.at("stop_sequence"))};
 
             trip_to_stops[trip_id].emplace_back(stop_seq, row.at("stop_id")); });
 
@@ -154,12 +133,13 @@ namespace etl
             auto tokens = Utils::split(line, ',');
                                      if (tokens.size() < column_index.size())
                 {
-                    log_malformed_line(config.name, "routes", line_num, line);
+                    Utils::log_malformed_line(config.name, "routes", line_num, line);
+                    return;
                 }
             
-                auto row {from_tokens(tokens, column_index)};
+                auto row {Utils::from_tokens(tokens, column_index)};
 
-                int route_id {std::stoi(std::string(row.at("route_id")))};
+                int route_id {Utils::string_view_to_numeric<int>(row.at("route_id"))};
 
                 route_map[route_id] = row.at("route_long_name"); });
 
@@ -181,7 +161,7 @@ namespace etl
         std::ofstream out(config.routes_output_file);
         if (!out.is_open())
         {
-            log_file_open_error(config.name, "routes", config.routes_output_file);
+            Utils::log_file_open_error(config.name, "routes", config.routes_output_file);
             return;
         }
 

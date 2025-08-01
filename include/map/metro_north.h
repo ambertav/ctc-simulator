@@ -33,7 +33,7 @@ namespace Transit::Map
         std::vector<int> merge_segments(const std::vector<std::vector<int>> &segments);
         std::vector<int> k_way_merge(const std::vector<std::vector<int>> &segments, const std::unordered_map<int, std::unordered_set<int>> &precedence);
 
-        std::vector<int> handle_branches(const std::string& branch_name, const std::vector<std::vector<int>>& segments);
+        std::vector<int> handle_branches(std::string_view branch_name, const std::vector<std::vector<int>>& segments);
         int get_branch_point(std::string_view branch_name) const;
         std::string_view get_branch_point_name(std::string_view branch_name) const;
     public:

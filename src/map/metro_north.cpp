@@ -1,6 +1,4 @@
 #include <queue>
-#include <fstream>
-#include <iostream>
 
 #include "config.h"
 #include "utils.h"
@@ -17,142 +15,132 @@ MetroNorth::MetroNorth()
 
 void MetroNorth::load_stations(const std::string &csv)
 {
-    const std::vector<std::string> needed_columns{
+    const std::vector<std::string_view> needed_columns{
         "stop_id",
+        "stop_code",
         "stop_name",
         "latitude",
         "longitude"};
 
-    Utils::open_and_parse(csv, needed_columns, [&](std::ifstream &file, const std::unordered_map<std::string, int> &column_index)
+    Utils::open_and_parse(csv, needed_columns, [&](std::string_view line, const std::unordered_map<std::string_view, int> &column_index, int line_num)
                           {
-    std::string line;
-    int line_num{};
-    while (std::getline(file, line))
-    {
-        ++line_num;
-        auto tokens = Utils::split(line, ',');
+        auto tokens {Utils::split(line, ',')};
         if (tokens.size() < column_index.size())
         {
-            std::cerr << "In metro north stops.txt, malformed line " << line_num << ": " << line << "\n";
-            continue;
+            Utils::log_malformed_line("metro north", "load stations", line_num, line);
+            return;
         }
 
-        int stop_id {std::stoi(tokens[column_index.at("stop_id")])};
-        std::string stop_code {tokens[column_index.at("stop_code")]};
-        std::string stop_name {tokens[column_index.at("stop_name")]};
-        std::string lat_str {tokens[column_index.at("latitude")]};
-        std::string lon_str {tokens[column_index.at("longitude")]};
+        const auto row {Utils::from_tokens(tokens, column_index)};
 
-        double latitude {std::stod(lat_str)};
-        double longitude {std::stod(lon_str)};
+        int stop_id {Utils::string_view_to_numeric<int>(row.at("stop_id"))};
+        std::string stop_code {row.at("stop_code")};
+        std::string stop_name {row.at("stop_name")};
+        double latitude {Utils::string_view_to_numeric<double>(row.at("latitude"))};
+        double longitude {Utils::string_view_to_numeric<double>(row.at("longitude"))};
 
         // will add train lines in load_connections()
-        add_node(stop_id, stop_name, {}, {stop_code}, latitude, longitude);
-    } });
+        add_node(stop_id, stop_name, {}, {stop_code}, latitude, longitude); });
 }
 
 void MetroNorth::load_connections(const std::string &csv)
 {
-    const std::vector<std::string> needed_columns{
+    const std::vector<std::string_view> needed_columns{
         "route_id",
-        "headsign",
         "ordered_stops"};
 
-    Utils::open_and_parse(csv, needed_columns, [&](std::ifstream &file, const std::unordered_map<std::string, int> &column_index)
+    std::unordered_map<std::string_view, std::vector<std::vector<int>>> route_segments {};
+
+    Utils::open_and_parse(csv, needed_columns, [&](std::string_view line, const std::unordered_map<std::string_view, int> &column_index, int line_num)
                           {
-                              std::unordered_map<std::string, std::vector<std::vector<int>>> route_segments;
 
-                              std::string line{};
-                              int line_num{};
+        auto tokens {Utils::split(line, ',')};
+        if (tokens.size() < column_index.size())
+        {
+            Utils::log_malformed_line("metro north", "load connections", line_num, line);
+            return;
+        }
 
-                              while (std::getline(file, line))
+        const auto row {Utils::from_tokens(tokens, column_index)};
+
+        std::string_view route_sv {row.at("route_id")};
+        std::string_view ordered_stops_sv{row.at("ordered_stops")};
+
+        auto stop_tokens {Utils::split(ordered_stops_sv, ' ')};
+
+        std::vector<int> stop_ids{};
+        stop_ids.reserve(stop_tokens.size());
+        for (const auto &stop_sv : stop_tokens)
+        {
+            stop_ids.push_back(Utils::string_view_to_numeric<int>(stop_sv));
+        }
+        route_segments[route_sv].push_back(std::move(stop_ids));
+    });
+
+        for (const auto &[route_sv, segments] : route_segments)
                               {
-                                  ++line_num;
+            std::string route_str {std::string(route_sv)};
+        if (route_sv == "Harlem" || route_sv == "Hudson" || route_sv == "New Haven")
+        {
+            TrainLine route{trainline_from_string(route_str)};
+            auto merged = merge_segments(segments);
 
-                                  auto tokens = Utils::split(line, ',');
-                                  if (tokens.size() < column_index.size())
-                                  {
-                                      std::cerr << "In metro north load connections, malformed line " << line_num << ": " << line << "\n";
-                                      continue;
-                                  }
+            std::string outbound_headsign{};
+            if (route_sv == "Harlem")
+            {
+                outbound_headsign = "Wassaic";
+            }
+            else if (route_sv == "Hudson")
+            {
+                outbound_headsign = "Poughkeepsie";
+            }
+            else if (route_sv == "New Haven")
+            {
+                outbound_headsign = "New Haven-State St";
+            }
 
-                                  std::string route_str{tokens[column_index.at("route_id")]};
-                                  std::string headsign{tokens[column_index.at("headsign")]};
-                                  std::string ordered_stops{tokens[column_index.at("ordered_stops")]};
+            routes[route].emplace_back(outbound_headsign, merged);
 
-                                  auto stop_tokens = Utils::split(ordered_stops, ' ');
+            for (int i = 1; i < merged.size(); ++i)
+            {
+                int u{merged[i - 1]};
+                int v{merged[i]};
 
-                                  std::vector<int> stop_ids{};
-                                  stop_ids.reserve(stop_tokens.size());
-                                  for (const auto &stop_str : stop_tokens)
-                                  {
-                                      stop_ids.push_back(std::stoi(stop_str));
-                                  }
-                                  route_segments[route_str].push_back(std::move(stop_ids));
-                              }
+                // adds train lines
+                update_node(u, {route}, {});
+                update_node(v, {route}, {});
 
-                              for (const auto &[route_name, segments] : route_segments)
-                              {
-                                  if (route_name == "Harlem" || route_name == "Hudson" || route_name == "New Haven")
-                                  {
-                                      TrainLine route{trainline_from_string(route_name)};
-                                      auto merged = merge_segments(segments);
+                add_edge(u, v);
+            }
 
-                                      std::string outbound_headsign{};
-                                      if (route_name == "Harlem")
-                                      {
-                                          outbound_headsign += "Wassaic";
-                                      }
-                                      else if (route_name == "Hudson")
-                                      {
-                                          outbound_headsign += "Poughkeepsie";
-                                      }
-                                      else if (route_name == "New Haven")
-                                      {
-                                          outbound_headsign += "New Haven-State St";
-                                      }
+            std::vector<int> inbound_sequence(merged.rbegin(), merged.rend());
+            routes[route].emplace_back("Grand Central", inbound_sequence);
+        }
+        else if (route_sv == "New Canaan" || route_sv == "Danbury" || route_sv == "Waterbury")
+        {
+            TrainLine route{trainline_from_string(route_str)};
+            auto branch_segment = handle_branches(route_sv, segments);
 
-                                      routes[route].emplace_back(outbound_headsign, merged);
+            routes[route].emplace_back(route_str, branch_segment);
 
-                                      for (int i = 1; i < merged.size(); ++i)
-                                      {
-                                          int u{merged[i - 1]};
-                                          int v{merged[i]};
+            for (int i = 1; i < branch_segment.size(); ++i)
+            {
+                int u{branch_segment[i - 1]};
+                int v{branch_segment[i]};
 
-                                          // adds train lines
-                                          update_node(u, {route}, {});
-                                          update_node(v, {route}, {});
+                // adds train lines
+                update_node(u, {route}, {});
+                update_node(v, {route}, {});
 
-                                          add_edge(u, v);
-                                      }
+                add_edge(u, v);
+            }
 
-                                      std::vector<int> inbound_sequence(merged.rbegin(), merged.rend());
-                                      routes[route].emplace_back("Grand Central", inbound_sequence);
-                                  }
-                                  else if (route_name == "New Canaan" || route_name == "Danbury" || route_name == "Waterbury")
-                                  {
-                                      TrainLine route{trainline_from_string(route_name)};
-                                      auto branch_segment = handle_branches(route_name, segments);
+            std::vector<int> inbound_branch(branch_segment.rbegin(), branch_segment.rend());
 
-                                      routes[route].emplace_back(route_name, branch_segment);
-
-                                      for (int i = 1; i < branch_segment.size(); ++i)
-                                      {
-                                          int u{branch_segment[i - 1]};
-                                          int v{branch_segment[i]};
-
-                                          // adds train lines
-                                          update_node(u, {route}, {});
-                                          update_node(v, {route}, {});
-
-                                          add_edge(u, v);
-                                      }
-
-                                      std::vector<int> inbound_branch(branch_segment.rbegin(), branch_segment.rend());
-
-                                      routes[route].emplace_back(std::string(get_branch_point_name(route_name)), inbound_branch);
-                                  }
-                              } });
+            std::string branch_point {get_branch_point_name(route_sv)};
+            routes[route].emplace_back(std::move(branch_point), inbound_branch);
+        }
+    }
 }
 
 std::vector<int> MetroNorth::merge_segments(const std::vector<std::vector<int>> &segments)
@@ -252,7 +240,7 @@ std::vector<int> MetroNorth::k_way_merge(const std::vector<std::vector<int>> &se
     return result;
 }
 
-std::vector<int> MetroNorth::handle_branches(const std::string &branch_name, const std::vector<std::vector<int>> &segments)
+std::vector<int> MetroNorth::handle_branches(std::string_view branch_name, const std::vector<std::vector<int>> &segments)
 {
     auto full_route = merge_segments(segments);
 
