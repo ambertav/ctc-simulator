@@ -13,6 +13,28 @@ set(LOG_DIR ${CMAKE_SOURCE_DIR}/logs)
 set(DATA_DIR ${CMAKE_SOURCE_DIR}/data)
 
 # =============================
+# zip extractor
+# =============================
+set(RUST_EXTRACTOR_DIR ${CMAKE_SOURCE_DIR}/zip_extractor)
+
+add_custom_command(
+    OUTPUT ${RUST_EXTRACTOR_DIR}/target/release/zip_extractor
+    COMMAND cargo build --release --manifest-path ${RUST_EXTRACTOR_DIR}/Cargo.toml
+    WORKING_DIRECTORY ${RUST_EXTRACTOR_DIR}
+    COMMENT "building rust zip extractor..."
+)
+
+add_custom_target(build_zip_extractor DEPENDS ${RUST_EXTRACTOR_DIR}/target/release/zip_extractor)
+
+add_custom_target(unzip_data ALL
+    COMMAND ${RUST_EXTRACTOR_DIR}/target/release/zip_extractor
+    DEPENDS build_zip_extractor
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "running rust zip extractor..."
+)
+
+
+# =============================
 # extract, transfer, load (etl)
 # =============================
 
@@ -31,6 +53,13 @@ target_compile_definitions(etl PRIVATE
     DATA_DIR=\"${DATA_DIR}\"
 )
 
+add_custom_target(run_preprocessing ALL
+    COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/etl
+    DEPENDS etl unzip_data
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "running c++ etl preprocessing..."
+)
+
 
 # =============================
 # app
@@ -47,7 +76,7 @@ target_compile_definitions(app PRIVATE
     DATA_DIR=\"${DATA_DIR}\"
 )
 
-add_dependencies(app etl)
+add_dependencies(app run_preprocessing)
 
 
 # =============================
@@ -78,7 +107,7 @@ target_compile_definitions(ctc_tests PRIVATE
     DATA_DIR=\"${DATA_DIR}\"
 )
 
-add_dependencies(ctc_tests etl)
+add_dependencies(ctc_tests run_preprocessing)
 
 include(GoogleTest)
 gtest_discover_tests(ctc_tests)
