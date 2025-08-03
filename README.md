@@ -1,12 +1,14 @@
 # Centralized Traffic Control Simulator
 
-A Centralized Traffic Control simulator that models realistic train movement, signal logic, and schedule management using MTA data. The current version allows for the selection of any two NYC Subway stations, from which the simulator creates a schedule, instantiates all necessary objects, and manages the simulation through the dispatcher. The schedule and runtime logs are available in `data/schedule.csv` and `logs/sim.txt` respectively.
+A Centralized Traffic Control simulator that models realistic train movement, signal logic, and schedule management using MTA data. The current version allows for the selection of any two NYC Subway, Metro North, or Long Island Railroad stations, from which the simulator creates a schedule, instantiates all necessary objects, and manages the simulation through the dispatcher. The schedule and runtime logs are available in `data/schedule.csv` and `logs/sim.txt` respectively.
 
 ### Data Sources
-- [MTA NYC Subway Stations](https://data.ny.gov/Transportation/MTA-Subway-Stations/39hk-dx4f/about_data)
 - [Static GTFS Data](https://www.mta.info/developers)
+- [MTA NYC Subway Stations](https://data.ny.gov/Transportation/MTA-Subway-Stations/39hk-dx4f/about_data)
 
 For details about the data files, see the [data folder documentation](data/DATA.md)
+
+For details about the data preprocessing pipeline, see the [data_pipeline folder documentation](data_pipeline/DATA_PIPELINE.md)
 
 ## Table of Contents
 
@@ -30,6 +32,7 @@ For details about the data files, see the [data folder documentation](data/DATA.
 - `tests/` - unit and integration tests
 - `bin/` - compiled output binaries (set by CMake)
 - `data/` - input data files (e.g schedules, map config)
+- `data_pipeline/` - data preprocessing pipeline
 - `logs/` - runtime log outputs
 
 ## Build Instructions
@@ -60,7 +63,7 @@ make
 ./bin/app
 ```
 
-The simulator runs with no additional configuration required. It automatically reads subway map data from files provided by the MTA located in the `data/` directory to construct the NYC Subway System for simulation. All simulation details are logged to `logs/sim.txt`.
+The simulator runs with no additional configuration required. It automatically preprocesses raw data archives for the NYC Subway, Metro North, and Long Island Railroad systems by unzipping and cleaning files into the `data/` directory. Using these processed files, the simulation constructs detailed transit graphs for each rail system. All simulation events are logged to `logs/sim.txt`.
 
 ### Run with Docker
 ```bash
@@ -103,16 +106,12 @@ ctest
 
 ## Roadmap
 
-### Version 2.0 (Current)
-- Pathfinding between any two NYC Subway stations
+### Version 2.5 (Current)
+- Pathfinding between any two NYC Subway, Metro North, or Long Island Railroad stations
 - Schedule construction based on path
 - Train movement simulation
 - Signal logic and block safety
 - Command line execution
-
-### Version 2.5 (Upcoming)
-- Simulation compatibility with Metro-North
-- Simulation compatibility with LIRR
 
 ### Version 3.0 (Upcoming)
 - Randomized delays for trains to simulate real-world unpredictability
