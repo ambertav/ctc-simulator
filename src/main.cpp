@@ -7,6 +7,7 @@
 
 #include "map/subway.h"
 #include "map/metro_north.h"
+#include "map/lirr.h"
 #include "core/factory.h"
 #include "core/dispatch.h"
 #include "systems/logger.h"
@@ -23,8 +24,11 @@ int main()
     // Transit::Map::Subway &subway{Transit::Map::Subway::get_instance()};
     // std::optional<Transit::Map::Path> path_opt{subway.find_path(384, 610)};
 
-    Transit::Map::MetroNorth &mnr{Transit::Map::MetroNorth::get_instance()};
-    std::optional<Transit::Map::Path> path_opt{mnr.find_path(56, 114)};
+    // Transit::Map::MetroNorth &mnr{Transit::Map::MetroNorth::get_instance()};
+    // std::optional<Transit::Map::Path> path_opt{mnr.find_path(56, 114)};
+
+    Transit::Map::LongIslandRailroad &lirr{Transit::Map::LongIslandRailroad::get_instance()};
+    std::optional<Transit::Map::Path> path_opt{lirr.find_path(11, 237)};
 
     if (!path_opt.has_value())
     {
