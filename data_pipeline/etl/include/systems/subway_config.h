@@ -28,6 +28,11 @@ SystemConfig create_subway_config()
         {
             return row.at("service_id") == "Saturday" && (!row.at("route_id").empty() && row.at("route_id").back() != 'X');
         },
+
+        /**
+         * strips last character (direction suffix) from gtfs_id for proper mapping to complex_id
+         * e.g "123N" and "123S" become "123"
+         */
         .transform_sequence = [](const std::vector<std::pair<int, std::string>>& stops)
         {
             std::vector<std::string> transformed{};

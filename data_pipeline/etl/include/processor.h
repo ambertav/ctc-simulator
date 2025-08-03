@@ -40,14 +40,15 @@ namespace etl
 
                 auto row {Utils::from_tokens(tokens, column_index)};
 
+                // write out row values in column order in config
                 bool first = true;
-            for (const auto& column : config.station_columns)
-            {
-                if (!first) out << ",";
-                out << row[column];
-                first = false;
-            }
-            out << "\n"; });
+                for (const auto& column : config.station_columns)
+                {
+                    if (!first) out << ",";
+                    out << row[column];
+                    first = false;
+                }
+                out << "\n"; });
 
         out.flush();
         out.close();
@@ -55,7 +56,14 @@ namespace etl
 
     inline void process_routes(const SystemConfig &config)
     {
-        auto extract_headsign_to_trip = [](const SystemConfig &config)
+
+        /**
+         * extract a mapping from "route|headsign" to vector of trip ids
+         *
+         * @param config system specific configuration
+         * @return map where key is "route_id|trip_headsign" and value is vector of trip ids
+         */
+        auto extract_headsign_to_trip = [](const SystemConfig &config) -> std::unordered_map<std::string /* route|headsign */, std::vector<std::string /* trip_id */>>
         {
             std::unordered_map<std::string, std::vector<std::string>> headsign_to_trip{};
 
@@ -88,7 +96,15 @@ namespace etl
             return headsign_to_trip;
         };
 
-        auto extract_trip_to_stops = [](const SystemConfig &config, std::unordered_set<std::string> &valid_trip_ids)
+        /**
+         * extract a mapping from trip id to ordered list of stops
+         * note: stop_id is a string and changed to int later to properly handle subway data
+         *
+         * @param config system specific configuration
+         * @param valid_trip_ids set of trip ids to filter trips from file
+         * @return map where key is trip id and value is a vector of pairs (stop_sequence, stop_id)
+         */
+        auto extract_trip_to_stops = [](const SystemConfig &config, std::unordered_set<std::string> &valid_trip_ids) -> std::unordered_map<std::string /* trip id */, std::vector<std::pair<int /* stop_sequence */, std::string /* stop_id */>>>
         {
             std::unordered_map<std::string, std::vector<std::pair<int, std::string>>> trip_to_stops{};
 
@@ -116,7 +132,13 @@ namespace etl
             return trip_to_stops;
         };
 
-        auto extract_route_map = [](const SystemConfig &config)
+        /**
+         * extract a mapping from route id to the route long name
+         *
+         * @param config system specific configuration
+         * @return map where key is route_id and value is route_long_name
+         */
+        auto extract_route_map = [](const SystemConfig &config) -> std::unordered_map<int /* route_id */, std::string /* route_long_name */>
         {
             std::unordered_map<int, std::string> route_map{};
 
@@ -211,7 +233,7 @@ namespace etl
             }
 
             std::ranges::sort(sorted_stops);
-            auto sequence = config.transform_sequence(sorted_stops);
+            auto sequence = config.transform_sequence(sorted_stops); // see system specific config for more details
 
             auto tokens = Utils::split(route_headsign, '|');
             if (tokens.size() < 2)

@@ -24,7 +24,9 @@ SystemConfig create_lirr_config()
         .route_columns = std::vector<std::string_view>{"route_id", "route_long_name"},
 
         .trip_filter = [](const auto &row)
-        { return row.at("peak_offpeak") == "0" && row.at("direction_id") == "1"; },
+        { 
+            return row.at("peak_offpeak") == "0" && row.at("direction_id") == "1"; 
+        },
         .transform_sequence = [](const std::vector<std::pair<int, std::string>> &stops)
         {
             std::vector<std::string> transformed{};
@@ -33,7 +35,8 @@ SystemConfig create_lirr_config()
             {
                 transformed.push_back(stop.second);
             }
-            return transformed; },
+            return transformed; 
+        },
 
         .multiple_trips = true};
 }

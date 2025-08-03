@@ -15,7 +15,7 @@ set(DATA_DIR ${CMAKE_SOURCE_DIR}/data)
 # =============================
 # zip extractor
 # =============================
-set(RUST_EXTRACTOR_DIR ${CMAKE_SOURCE_DIR}/zip_extractor)
+set(RUST_EXTRACTOR_DIR ${CMAKE_SOURCE_DIR}/data_pipeline/zip_extractor)
 
 add_custom_command(
     OUTPUT ${RUST_EXTRACTOR_DIR}/target/release/zip_extractor
@@ -39,12 +39,12 @@ add_custom_target(unzip_data ALL
 # =============================
 
 file(GLOB_RECURSE ETL_SOURCES CONFIGURE_DEPENDS
-    ${CMAKE_SOURCE_DIR}/etl/*.cpp
+    ${CMAKE_SOURCE_DIR}/data_pipeline/etl/*.cpp
 )
 add_executable(etl ${ETL_SOURCES})
 target_include_directories(etl PRIVATE 
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/etl/include
+    ${CMAKE_SOURCE_DIR}/data_pipeline/etl/include
 )
 set_target_properties(etl PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
