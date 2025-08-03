@@ -1,15 +1,10 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include <fstream>
-#include <random>
-#include <algorithm>
-
 #include "config.h"
 #include "utils.h"
+#include "test_utils.h"
 #include "map/metro_north.h"
-
-std::vector<int> extract_random_ids(const std::string &file_path, int count);
 
 class MetroNorthGraphTest : public ::testing::Test
 {
@@ -22,7 +17,17 @@ TEST_F(MetroNorthGraphTest, CreatesNodeStationsSuccessfully)
     using namespace Transit::Map;
 
     int n{10};
-    std::vector<int> expected_ids = extract_random_ids(std::string(DATA_DIRECTORY) + "/clean/mnr/stations.csv", n);
+    std::vector<int> expected_ids{};
+
+    try
+    {
+        expected_ids = TestUtils::extract_random_ids(std::string(DATA_DIRECTORY) + "/clean/mnr/stations.csv", "stop_id", n);
+    }
+    catch (const std::runtime_error &e)
+    {
+        FAIL() << "In MetroNorth tests, runtime error extractiing random ids: " << e.what();
+    }
+
     EXPECT_EQ(expected_ids.size(), n);
 
     for (const auto &id : expected_ids)
@@ -45,7 +50,7 @@ TEST_F(MetroNorthGraphTest, CreatesConnectionsBetweenStationsSuccessfully)
         {169, 170}, // Seymour and Beacon Falls, Waterbury branch
     };
 
-    auto adj_list{map.get_adjacency_list()};
+    const auto &adj_list{map.get_adjacency_list()};
 
     for (const auto &[u, v] : connected_pairs)
     {
@@ -84,49 +89,4 @@ TEST_F(MetroNorthGraphTest, FindsPathBetweenTwoStationsSuccessfully)
 
     auto path{*path_opt};
     EXPECT_FALSE(path.nodes.empty());
-}
-
-std::vector<int> extract_random_ids(const std::string &file_path, int count)
-{
-    std::ifstream file(file_path);
-    if (!file.is_open())
-    {
-        throw std::runtime_error("Could not open station file");
-    }
-
-    std::string header{};
-    std::getline(file, header);
-    auto headers = Utils::split(header, ',');
-
-    int id_index{-1};
-    for (int i = 0; i < headers.size(); ++i)
-    {
-        if (headers[i] == "stop_id")
-        {
-            id_index = i;
-            break;
-        }
-    }
-
-    if (id_index == -1)
-    {
-        throw std::runtime_error("Missing stop_id column");
-    }
-
-    std::vector<int> all_ids{};
-    std::string line{};
-
-    while (std::getline(file, line))
-    {
-        auto tokens = Utils::split(line, ',');
-        if (tokens.size() > id_index)
-        {
-            all_ids.push_back(Utils::string_view_to_numeric<int>(tokens[id_index]));
-        }
-    }
-
-    std::shuffle(all_ids.begin(), all_ids.end(), std::mt19937{std::random_device{}()});
-    all_ids.resize(std::min((int)all_ids.size(), count));
-
-    return all_ids;
 }
