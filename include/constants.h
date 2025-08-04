@@ -7,16 +7,16 @@
 
 namespace Yards
 {
-    constexpr int uptown{1000};
-    constexpr int downtown{1001};
-    constexpr int outbound{2000};
-    constexpr int inbound{2001};
-    constexpr int westbound{3000};
-    constexpr int eastbound{3001};
-    constexpr int north{4000};
-    constexpr int south{4001};
+    inline constexpr int uptown{1000};
+    inline constexpr int downtown{1001};
+    inline constexpr int outbound{2000};
+    inline constexpr int inbound{2001};
+    inline constexpr int westbound{3000};
+    inline constexpr int eastbound{3001};
+    inline constexpr int north{4000};
+    inline constexpr int south{4001};
 
-    constexpr std::array<int, 8> ids = {1000, 1001, 2000, 2001, 3000, 3001, 4000, 4001};
+    inline constexpr std::array<int, 8> ids = {1000, 1001, 2000, 2001, 3000, 3001, 4000, 4001};
 
     constexpr std::pair<int, int> get_yard_id_by_direction(const Direction &direction)
     {
