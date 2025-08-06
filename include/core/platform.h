@@ -1,3 +1,8 @@
+/**
+ * for details on design, see:
+ * docs/platform.md
+ */
+
 #pragma once
 
 #include "core/track.h"
@@ -14,12 +19,10 @@ private:
     Direction direction;
 
 public:
-    Platform(int i, int dw, Signal *si, const Station *st, Direction dir);
+    Platform(int i, Signal *si, const Station *st, Direction dir, int dw = 2, std::unordered_set<TrainLine> lines = {});
 
     const Station *get_station() const;
-    virtual const Direction& get_direction() const;
+    virtual const Direction &get_direction() const;
 
     bool is_platform() const override;
-
-    void set_direction(Direction dir);
 };

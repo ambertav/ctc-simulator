@@ -5,12 +5,26 @@
 #include <fstream>
 #include <random>
 #include <algorithm>
+#include <thread>
+#include <chrono>
 
 #include "utils.h"
 
 namespace TestUtils
 {
-    inline std::vector<int> extract_random_ids(const std::string& file_path, const std::string& column_name, int count)
+    inline std::mt19937 &rng()
+    {
+        thread_local static std::mt19937 gen{std::random_device{}()};
+        return gen;
+    }
+
+    inline bool coin_flip(double p = 0.5)
+    {
+        std::bernoulli_distribution dist(p);
+        return dist(rng());
+    }
+
+    inline std::vector<int> extract_random_ids(const std::string &file_path, const std::string &column_name, int count)
     {
         std::ifstream file(file_path);
         if (!file.is_open())
@@ -20,9 +34,9 @@ namespace TestUtils
 
         std::string header{};
         std::getline(file, header);
-        auto headers {Utils::split(header, ',')};
+        auto headers{Utils::split(header, ',')};
 
-        int id_index {-1};
+        int id_index{-1};
         for (int i = 0; i < headers.size(); ++i)
         {
             if (headers[i] == column_name)
@@ -41,7 +55,7 @@ namespace TestUtils
         std::string line{};
         while (std::getline(file, line))
         {
-            auto tokens {Utils::split(line, ',')};
+            auto tokens{Utils::split(line, ',')};
             if (tokens.size() > id_index)
             {
                 all_ids.push_back(Utils::string_view_to_numeric<int>(tokens[id_index]));
@@ -52,5 +66,56 @@ namespace TestUtils
         all_ids.resize(std::min((int)all_ids.size(), count));
 
         return all_ids;
+    }
+
+    template <typename W, typename R>
+    void run_concurrency_write_read(W writer, R reader, int writer_count = 50, int reader_count = 10, int duration_ms = 500)
+    {
+        std::vector<std::thread> writer_threads{};
+        std::vector<std::thread> reader_threads{};
+
+        writer_threads.reserve(writer_count);
+        reader_threads.reserve(reader_count);
+
+        std::atomic<bool> done{false};
+
+        for (int i = 0; i < writer_count; ++i)
+        {
+            writer_threads.emplace_back([&, i]()
+                                        {
+            try
+            {
+                writer(i, done);
+            } catch (const std::exception& e)
+            {
+                FAIL() << "Writer thread " << i << " threw exception: " << e.what(); 
+            } });
+        }
+
+        for (int i = 0; i < reader_count; ++i)
+        {
+            reader_threads.emplace_back([&, i]()
+                                        {
+            try
+            {
+                reader(i, done);
+            } catch (const std::exception& e)
+            {
+                FAIL() << "Reader thread " << i << " threw exception: " << e.what(); 
+            } });
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(duration_ms));
+        done.store(true, std::memory_order_release);
+
+        for (auto &t : writer_threads)
+        {
+            t.join();
+        }
+
+        for (auto &t : reader_threads)
+        {
+            t.join();
+        }
     }
 }

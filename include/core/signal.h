@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include "enums/signal_state.h"
 
 class Track;
@@ -9,7 +11,7 @@ class Signal
 {
 private:
     const int id;
-    SignalState state;
+    std::atomic<SignalState> state;
     const int target_id;
 
 public:
@@ -22,5 +24,6 @@ public:
     bool is_yellow() const;
     virtual bool is_green() const;
 
-    bool change_state(SignalState state);
+    SignalState get_state() const;
+    bool change_state(SignalState new_state);
 };

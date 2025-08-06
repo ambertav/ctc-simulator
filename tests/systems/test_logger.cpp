@@ -89,8 +89,8 @@ TEST_F(LoggerTest, LogsSingleMessageToFileSuccessfully)
 
 TEST_F(LoggerTest, HandlesConcurrentLoggingWithoutRaceConditions)
 {
-    const int number_of_threads{10};
-    const int logs_per_thread{50};
+    constexpr int number_of_threads{10};
+    constexpr int logs_per_thread{50};
 
     auto log_function = [this, logs_per_thread](int thread_id)
     {
