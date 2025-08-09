@@ -33,8 +33,8 @@ private:
     std::vector<Track *> next_tracks;
     std::vector<Track *> prev_tracks;
 
-    std::vector<Switch *> outbound_switches;
-    std::vector<Switch *> inbound_switches;
+    std::atomic<Switch *> outbound_switch;
+    std::atomic<Switch *> inbound_switch;
 
 public:
     Track(int i, Signal *s, int d = 1, std::unordered_set<TrainLine> lines = {});
@@ -46,13 +46,15 @@ public:
 
     const std::vector<Track *> &get_next_tracks() const;
     const std::vector<Track *> &get_prev_tracks() const;
-    const std::vector<Switch *> &get_outbound_switches() const;
-    const std::vector<Switch *> &get_inbound_switches() const;
+    Switch *get_outbound_switch() const;
+    Switch *get_inbound_switch() const;
 
     bool is_occupied() const;
     virtual bool supports_train_line(TrainLine line) const;
     virtual bool is_platform() const;
 
+    Track *get_next_track(TrainLine line) const;
+    Track *get_prev_track(TrainLine line) const;
     bool try_entry(Train *train);
     void release_train();
 
@@ -66,6 +68,6 @@ public:
 
     void add_outbound_switch(Switch *sw);
     void add_inbound_switch(Switch *sw);
-    void remove_outbound_switch(Switch *sw);
-    void remove_inbound_switch(Switch *sw);
+    void remove_outbound_switch();
+    void remove_inbound_switch();
 };

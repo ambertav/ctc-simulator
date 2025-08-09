@@ -23,7 +23,7 @@ protected:
     class MockSwitch : public Switch
     {
     public:
-        MockSwitch() = default;
+        MockSwitch(int i) : Switch(i) {}
     };
 
     class MockTrain : public Train
@@ -39,7 +39,6 @@ protected:
 
 TEST_F(TrackTest, ConstructorInitializesCorrectly)
 {
-
     EXPECT_EQ(track.get_id(), 1);
     EXPECT_EQ(track.get_signal(), &mock_signal);
     EXPECT_EQ(track.get_duration(), 5);
@@ -85,7 +84,7 @@ TEST_F(TrackTest, TryEntryFailsWHenSignalRed)
     EXPECT_FALSE(track.try_entry(&mock_train));
 }
 
-TEST_F(TrackTest, TryEntryThreadSafety)
+TEST_F(TrackTest, ThreadSafetyOfTryEntry)
 {
     EXPECT_CALL(mock_signal, is_green()).WillRepeatedly(testing::Return(true));
 
@@ -256,99 +255,22 @@ TEST_F(TrackTest, ThreadSafetyOfWriteAndReadForTrackConnections)
 
 TEST_F(TrackTest, HandleOutboundSwitches)
 {
-    MockSwitch outbound_sw{};
-    EXPECT_TRUE(track.get_outbound_switches().empty());
-
+    MockSwitch outbound_sw{1};
+    
     track.add_outbound_switch(&outbound_sw);
-    auto switches{track.get_outbound_switches()};
-    EXPECT_EQ(switches.size(), 1);
-    EXPECT_TRUE(std::ranges::find(switches, &outbound_sw) != switches.end());
+    EXPECT_EQ(track.get_outbound_switch(), &outbound_sw);
 
-    track.remove_outbound_switch(&outbound_sw);
-    EXPECT_TRUE(track.get_outbound_switches().empty());
+    track.remove_outbound_switch();
+    EXPECT_EQ(track.get_outbound_switch(), nullptr);
 }
 
 TEST_F(TrackTest, HandleInboundSwitches)
 {
-    MockSwitch inbound_sw{};
-    EXPECT_TRUE(track.get_inbound_switches().empty());
+    MockSwitch inbound_sw{1};
 
     track.add_inbound_switch(&inbound_sw);
-    auto switches{track.get_inbound_switches()};
-    EXPECT_EQ(switches.size(), 1);
-    EXPECT_TRUE(std::ranges::find(switches, &inbound_sw) != switches.end());
+    EXPECT_EQ(track.get_inbound_switch(), &inbound_sw);
 
-    track.remove_inbound_switch(&inbound_sw);
-    EXPECT_TRUE(track.get_inbound_switches().empty());
-}
-
-TEST_F(TrackTest, IgnoresAddingDuplicateSwitches)
-{
-    MockSwitch sw{};
-
-    track.add_outbound_switch(&sw);
-    track.add_outbound_switch(&sw);
-    EXPECT_EQ(track.get_outbound_switches().size(), 1);
-
-    track.add_inbound_switch(&sw);
-    track.add_inbound_switch(&sw);
-    EXPECT_EQ(track.get_inbound_switches().size(), 1);
-}
-
-TEST_F(TrackTest, ThreadSafetyOfWriteAndReadForSwitches)
-{
-    std::vector<std::unique_ptr<Switch>> switches{};
-
-    for (int i = 0; i < 100; ++i)
-    {
-        switches.emplace_back(std::make_unique<Switch>());
-    }
-
-    auto writer = [&](int i, std::atomic<bool> &done)
-    {
-        Switch *sw1{switches[i * 2].get()};
-        Switch *sw2{switches[i * 2 + 1].get()};
-
-        while (!done.load(std::memory_order_acquire))
-        {
-            track.add_outbound_switch(sw1);
-            track.add_inbound_switch(sw2);
-
-            if (TestUtils::coin_flip())
-            {
-                track.remove_outbound_switch(sw1);
-            }
-
-            if (TestUtils::coin_flip())
-            {
-                track.remove_inbound_switch(sw2);
-            }
-        }
-    };
-
-    auto reader = [&](int i, std::atomic<bool> &done)
-    {
-        while (!done.load(std::memory_order_acquire))
-        {
-            auto outbound_switches{track.get_outbound_switches()};
-            for (auto *sw : outbound_switches)
-            {
-                ASSERT_NE(sw, nullptr) << "Null switch found in outbound_switches";
-                ASSERT_TRUE(std::find_if(switches.begin(), switches.end(), [&](const auto &ptr)
-                                         { return ptr.get() == sw; }) != switches.end())
-                    << "Invalid switch in outbound_switches";
-            }
-
-            auto inbound_switches{track.get_inbound_switches()};
-            for (auto *sw : inbound_switches)
-            {
-                ASSERT_NE(sw, nullptr) << "Null switch found in inbound_switches";
-                ASSERT_TRUE(std::find_if(switches.begin(), switches.end(), [&](const auto &ptr)
-                                         { return ptr.get() == sw; }) != switches.end())
-                    << "Invalid switch in inbound_switches";
-            }
-        }
-    };
-
-    TestUtils::run_concurrency_write_read(writer, reader);
+    track.remove_inbound_switch();
+    EXPECT_EQ(track.get_inbound_switch(), nullptr);
 }

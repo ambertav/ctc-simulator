@@ -10,7 +10,7 @@
 #include "core/track.h"
 
 Track::Track(int i, Signal *s, int d, std::unordered_set<TrainLine> lines)
-    : id(i), duration(std::max(1, d)), occupied(false), signal(s), current_train(nullptr), train_lines(std::move(lines)) {}
+    : id(i), duration(std::max(1, d)), occupied(false), signal(s), current_train(nullptr), train_lines(std::move(lines)), outbound_switch(nullptr), inbound_switch(nullptr) {}
 
 int Track::get_id() const
 {
@@ -44,16 +44,14 @@ const std::vector<Track *> &Track::get_prev_tracks() const
     return prev_tracks;
 }
 
-const std::vector<Switch *> &Track::get_outbound_switches() const
+Switch *Track::get_outbound_switch() const
 {
-    std::shared_lock lock(mutex);
-    return outbound_switches;
+    return outbound_switch.load(std::memory_order_acquire);
 }
 
-const std::vector<Switch *> &Track::get_inbound_switches() const
+Switch *Track::get_inbound_switch() const
 {
-    std::shared_lock lock(mutex);
-    return inbound_switches;
+    return inbound_switch.load(std::memory_order_acquire);
 }
 
 bool Track::is_occupied() const
@@ -69,6 +67,36 @@ bool Track::supports_train_line(TrainLine line) const
 bool Track::is_platform() const
 {
     return false;
+}
+
+Track *Track::get_next_track(TrainLine line) const
+{
+    std::shared_lock lock(mutex);
+
+    for (auto *next : next_tracks)
+    {
+        if (next->supports_train_line(line))
+        {
+            return next;
+        }
+    }
+
+    return nullptr;
+}
+
+Track *Track::get_prev_track(TrainLine line) const
+{
+    std::shared_lock lock(mutex);
+
+    for (auto *prev : prev_tracks)
+    {
+        if (prev->supports_train_line(line))
+        {
+            return prev;
+        }
+    }
+
+    return nullptr;
 }
 
 bool Track::try_entry(Train *train)
@@ -160,12 +188,7 @@ void Track::add_outbound_switch(Switch *sw)
         return;
     }
 
-    std::unique_lock lock(mutex);
-
-    if (std::ranges::find(outbound_switches, sw) == outbound_switches.end())
-    {
-        outbound_switches.push_back(sw);
-    }
+    outbound_switch.store(sw, std::memory_order_release);
 }
 
 void Track::add_inbound_switch(Switch *sw)
@@ -175,22 +198,15 @@ void Track::add_inbound_switch(Switch *sw)
         return;
     }
 
-    std::unique_lock lock(mutex);
-
-    if (std::ranges::find(inbound_switches, sw) == inbound_switches.end())
-    {
-        inbound_switches.push_back(sw);
-    }
+    inbound_switch.store(sw, std::memory_order_release);
 }
 
-void Track::remove_outbound_switch(Switch *sw)
+void Track::remove_outbound_switch()
 {
-    std::unique_lock lock(mutex);
-    std::erase(outbound_switches, sw);
+    outbound_switch.store(nullptr, std::memory_order_release);
 }
 
-void Track::remove_inbound_switch(Switch *sw)
+void Track::remove_inbound_switch()
 {
-    std::unique_lock lock(mutex);
-    std::erase(inbound_switches, sw);
+    inbound_switch.store(nullptr, std::memory_order_release);
 }
