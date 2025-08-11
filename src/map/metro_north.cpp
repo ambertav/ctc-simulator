@@ -49,7 +49,7 @@ void MetroNorth::load_connections(const std::string &csv)
         "route_id",
         "ordered_stops"};
 
-    std::unordered_map<std::string_view, std::vector<std::vector<int>>> route_segments {};
+    std::unordered_map<std::string_view, std::vector<std::vector<int>>> route_segments{};
 
     Utils::open_and_parse(csv, needed_columns, [&](std::string_view line, const std::unordered_map<std::string_view, int> &column_index, int line_num)
                           {
@@ -74,12 +74,11 @@ void MetroNorth::load_connections(const std::string &csv)
         {
             stop_ids.push_back(Utils::string_view_to_numeric<int>(stop_sv));
         }
-        route_segments[route_sv].push_back(std::move(stop_ids));
-    });
+        route_segments[route_sv].push_back(std::move(stop_ids)); });
 
-        for (const auto &[route_sv, segments] : route_segments)
-                              {
-            std::string route_str {std::string(route_sv)};
+    for (const auto &[route_sv, segments] : route_segments)
+    {
+        std::string route_str{std::string(route_sv)};
         if (route_sv == "Harlem" || route_sv == "Hudson" || route_sv == "New Haven")
         {
             TrainLine route{trainline_from_string(route_str)};
@@ -99,7 +98,7 @@ void MetroNorth::load_connections(const std::string &csv)
                 outbound_headsign = "New Haven-State St";
             }
 
-            routes[route].emplace_back(outbound_headsign, merged);
+            add_route(route, outbound_headsign, merged);
 
             for (int i = 1; i < merged.size(); ++i)
             {
@@ -114,14 +113,14 @@ void MetroNorth::load_connections(const std::string &csv)
             }
 
             std::vector<int> inbound_sequence(merged.rbegin(), merged.rend());
-            routes[route].emplace_back("Grand Central", inbound_sequence);
+            add_route(route, "Grand Central", inbound_sequence);
         }
         else if (route_sv == "New Canaan" || route_sv == "Danbury" || route_sv == "Waterbury")
         {
             TrainLine route{trainline_from_string(route_str)};
             auto branch_segment = handle_branches(route_sv, segments);
 
-            routes[route].emplace_back(route_str, branch_segment);
+            add_route(route, route_str, branch_segment);
 
             for (int i = 1; i < branch_segment.size(); ++i)
             {
@@ -137,8 +136,8 @@ void MetroNorth::load_connections(const std::string &csv)
 
             std::vector<int> inbound_branch(branch_segment.rbegin(), branch_segment.rend());
 
-            std::string branch_point {get_branch_point_name(route_sv)};
-            routes[route].emplace_back(std::move(branch_point), inbound_branch);
+            std::string branch_point{get_branch_point_name(route_sv)};
+            add_route(route, branch_point, inbound_branch);
         }
     }
 }
@@ -271,9 +270,4 @@ std::string_view MetroNorth::get_branch_point_name(std::string_view branch_name)
 {
     auto it = MNR::branch_data.find(branch_name);
     return it != MNR::branch_data.end() ? it->second.name : "Junction";
-}
-
-std::unordered_map<TrainLine, std::vector<Route>> MetroNorth::get_routes() const
-{
-    return routes;
 }

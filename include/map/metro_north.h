@@ -24,8 +24,6 @@ namespace Transit::Map
         MetroNorth &operator=(const MetroNorth &) = delete;
 
     private:
-        std::unordered_map<TrainLine, std::vector<Route>> routes;
-
         MetroNorth();
         void load_stations(const std::string &csv);
         void load_connections(const std::string &csv);
@@ -36,8 +34,5 @@ namespace Transit::Map
         std::vector<int> handle_branches(std::string_view branch_name, const std::vector<std::vector<int>> &segments);
         int get_branch_point(std::string_view branch_name) const;
         std::string_view get_branch_point_name(std::string_view branch_name) const;
-
-    public:
-        std::unordered_map<TrainLine, std::vector<Route>> get_routes() const;
     };
 }

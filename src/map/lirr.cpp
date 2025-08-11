@@ -131,7 +131,7 @@ void LongIslandRailroad::load_connections(const std::string &csv)
             std::vector<int> westbound_sequence(merged.begin(), merged.begin() + branch_point_position + 1);
             westbound_sequence.push_back(merged[position]);
 
-            routes[route].emplace_back(std::move(city_headsign), westbound_sequence);
+            add_route(route, city_headsign, westbound_sequence);
 
             for (int j = 1; j < westbound_sequence.size(); ++j)
             {
@@ -147,7 +147,7 @@ void LongIslandRailroad::load_connections(const std::string &csv)
             std::vector<int> eastbound_sequence(westbound_sequence.rbegin(), westbound_sequence.rend());
             std::string li_headsign{LIRR::li_terminal_stations.at(merged[0])};
 
-            routes[route].emplace_back(std::move(li_headsign), eastbound_sequence);
+            add_route(route, li_headsign, eastbound_sequence);
         }
     }
 }

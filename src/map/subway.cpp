@@ -119,10 +119,5 @@ void Subway::load_connections(const std::string &csv)
             add_edge(u, v);
         }
 
-        routes[route].emplace_back(headsign, sequence); });
-}
-
-std::unordered_map<TrainLine, std::vector<Route>> Subway::get_routes() const
-{
-    return routes;
+        add_route(route, headsign, sequence); });
 }

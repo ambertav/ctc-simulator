@@ -32,10 +32,10 @@ namespace Transit::Map
         Coordinate coordinates;
         int degree;
 
-        Node(int i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string>& g, const Coordinate& c)
+        Node(int i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string> &g, const Coordinate &c)
             : id(i), name(n), train_lines(t), codes(g), coordinates(c), degree(0) {}
 
-        Node(int i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string>& g, double lat, double lon)
+        Node(int i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string> &g, double lat, double lon)
             : Node(i, n, t, g, Coordinate{lat, lon}) {}
     };
 
@@ -52,20 +52,21 @@ namespace Transit::Map
     struct Route
     {
         std::string headsign;
+        Direction direction;
         std::vector<int> sequence;
 
-        Route(const std::string& h, const std::vector<int> &s) : headsign(h), sequence(s) {}
+        Route(const std::string &h, Direction dir, const std::vector<int> &s) : headsign(h), direction(dir), sequence(std::move(s)) {}
     };
 
     struct Path
     {
-        std::vector<const Node*> nodes;
+        std::vector<const Node *> nodes;
         std::vector<double> segment_weights;
         double total_weight = 0.0;
 
         Path() = default;
 
-        Path(const std::vector<const Node*> &n, const std::vector<double> &sw) : nodes(n), segment_weights(sw)
+        Path(const std::vector<const Node *> &n, const std::vector<double> &sw) : nodes(n), segment_weights(sw)
         {
             total_weight = std::accumulate(sw.begin(), sw.end(), 0.0);
         }
@@ -77,11 +78,12 @@ namespace Transit::Map
         std::vector<std::unique_ptr<Node>> nodes;
         std::unordered_map<int, Node *> node_map;
         std::unordered_map<int, std::vector<Edge>> adjacency_list;
+        std::unordered_map<TrainLine, std::vector<Route>> routes;
 
     public:
         Graph() = default;
 
-        Node *add_node(int i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string>& g, double lat = 0.0, double lon = 0.0);
+        Node *add_node(int i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string> &g, double lat = 0.0, double lon = 0.0);
         void remove_node(int node_id);
         void remove_node(Node *u);
 
@@ -96,12 +98,14 @@ namespace Transit::Map
         void print() const;
 
         std::optional<Path> find_path(int u_id, int v_id) const;
+        std::unordered_map<TrainLine, std::vector<Route>> get_routes() const;
+        void add_route(TrainLine route, const std::string& headsign, const std::vector<int>& sequence);
 
     protected:
         std::optional<Path> dijkstra(const Node *u, const Node *v) const;
         std::optional<Path> reconstruct_path(const Node *u, const Node *v, const std::unordered_map<int, int> &prev) const;
 
-        double haversine_distance(const Coordinate& from, const Coordinate& to);
+        double haversine_distance(const Coordinate &from, const Coordinate &to);
         bool requires_transfer(const std::vector<TrainLine> &a, const std::vector<TrainLine> &b) const;
     };
 }

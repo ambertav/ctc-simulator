@@ -228,6 +228,23 @@ std::optional<Path> Graph::find_path(int u_id, int v_id) const
     }
 }
 
+std::unordered_map<TrainLine, std::vector<Route>> Graph::get_routes() const
+{
+    return routes;
+}
+
+void Graph::add_route(TrainLine route, const std::string& headsign, const std::vector<int> &sequence)
+{
+    const Node *from_node{graph.get_node(sequence.front())};
+    const Node *to_node{graph.get_node(sequence.back())};
+
+    std::pair<double, double> from{from_node->coordinates.latitude, from_node->coordinates.longitude};
+    std::pair<double, double> to{to_node->coordinates.latitude, to_node->coordinates.longitude};
+    Direction direction{infer_direction(route, from, to)};
+
+    routes[route].emplace_back(headsign, direction, sequence);
+}
+
 std::optional<Path> Graph::dijkstra(const Node *u, const Node *v) const
 {
     std::unordered_map<int, double> dist;
