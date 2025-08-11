@@ -3,8 +3,8 @@
 #include <iostream>
 
 #include "config.h"
-#include "utils.h"
-#include "railroad_constants.h"
+#include "utils/utils.h"
+#include "constants/railroad_constants.h"
 
 #include "map/lirr.h"
 

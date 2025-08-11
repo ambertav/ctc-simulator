@@ -2,8 +2,8 @@
 #include <gmock/gmock.h>
 
 #include "config.h"
-#include "utils.h"
-#include "test_utils.h"
+#include "utils/utils.h"
+#include "utils/test_utils.h"
 #include "map/subway.h"
 
 class SubwayGraphTest : public ::testing::Test

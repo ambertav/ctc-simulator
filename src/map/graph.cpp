@@ -4,7 +4,7 @@
 #include <limits>
 #include <cmath>
 
-#include "utils.h"
+#include "constants/constants.h"
 
 using namespace Transit::Map;
 
@@ -293,7 +293,7 @@ std::optional<Path> Graph::dijkstra(const Node *u, const Node *v) const
                 continue;
             }
 
-            double transfer_penalty{requires_transfer(prev_lines, edge_lines) ? Utils::TRANSFER_EPSILON : 0.0};
+            double transfer_penalty{requires_transfer(prev_lines, edge_lines) ? Constants::TRANSFER_EPSILON : 0.0};
             double new_dist = current_dist + weight + transfer_penalty;
 
             if (new_dist < dist[neighbor_id])
@@ -364,7 +364,7 @@ std::optional<Path> Graph::reconstruct_path(const Node *u, const Node *v, const 
 
 double Graph::haversine_distance(const Coordinate &from, const Coordinate &to)
 {
-    using namespace Utils;
+    using namespace Constants;
 
     double from_lat_rad{from.latitude * DEG_TO_RAD};
     double from_lon_rad{from.longitude * DEG_TO_RAD};
