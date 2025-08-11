@@ -4,6 +4,7 @@
 #include <optional>
 #include <ranges>
 #include <string>
+#include <sstream>
 #include <unordered_map>
 #include <iostream>
 
@@ -12,7 +13,8 @@ namespace SUB
     enum class Direction
     {
         UPTOWN,
-        DOWNTOWN
+        DOWNTOWN,
+        COUNT
     };
     enum class TrainLine
     {
@@ -42,7 +44,8 @@ namespace SUB
         GS,
         FS,
         H,
-        SI
+        SI,
+        COUNT
     };
 }
 
@@ -51,13 +54,15 @@ namespace MNR
     enum class Direction
     {
         INBOUND,
-        OUTBOUND
+        OUTBOUND,
+        COUNT
     };
     enum class TrainLine
     {
         HARLEM,
         HUDSON,
-        NEW_HAVEN
+        NEW_HAVEN,
+        COUNT
     };
 }
 
@@ -66,7 +71,8 @@ namespace LIRR
     enum class Direction
     {
         EASTBOUND,
-        WESTBOUND
+        WESTBOUND,
+        COUNT
     };
     enum class TrainLine
     {
@@ -80,7 +86,8 @@ namespace LIRR
         PORT_JEFFERSON,
         PORT_WASHINGTON,
         RONKONKOMA,
-        WEST_HEMPSTEAD
+        WEST_HEMPSTEAD,
+        COUNT
     };
 }
 
@@ -89,12 +96,14 @@ namespace Generic
     enum class Direction
     {
         DEFAULT_A,
-        DEFAULT_B
+        DEFAULT_B,
+        COUNT
     };
 
     enum class TrainLine
     {
-        DEFAULT
+        DEFAULT,
+        COUNT
     };
 }
 
@@ -358,9 +367,9 @@ inline std::ostream &operator<<(std::ostream &os, const TrainLine &trainline)
                    {
                        switch (line)
                        {
-                        case MNR::TrainLine::HARLEM: return os << "Harlem Line";
-                        case MNR::TrainLine::HUDSON: return os << "Hudson Line";
-                        case MNR::TrainLine::NEW_HAVEN: return os << "New Haven Line";
+                        case MNR::TrainLine::HARLEM: return os << "Harlem";
+                        case MNR::TrainLine::HUDSON: return os << "Hudson";
+                        case MNR::TrainLine::NEW_HAVEN: return os << "New Haven";
                         default: return os << "unknown metro north train line";
                        }
                    }
@@ -369,17 +378,17 @@ inline std::ostream &operator<<(std::ostream &os, const TrainLine &trainline)
                    {
                        switch (line)
                        {
-                       case LIRR::TrainLine::BABYLON: return os << "Babylon Branch";
-                       case LIRR::TrainLine::CITY_TERMINAL: return os << "City Terminal Zone";
-                       case LIRR::TrainLine::FAR_ROCKAWAY: return os << "Far Rockaway Branch";
-                       case LIRR::TrainLine::HEMPSTEAD: return os << "Hempstead Branch";
-                       case LIRR::TrainLine::LONG_BEACH: return os << "Long Beach Branch";
-                       case LIRR::TrainLine::MONTAUK: return os << "Montauk Branch";
-                       case LIRR::TrainLine::OYSTER_BAY: return os << "Oyster Bay Branch";
-                       case LIRR::TrainLine::PORT_JEFFERSON: return os << "Port Jefferson Branch";
-                       case LIRR::TrainLine::PORT_WASHINGTON: return os << "Port Washington Branch";
-                       case LIRR::TrainLine::RONKONKOMA: return os << "Ronkonkoma Branch";
-                       case LIRR::TrainLine::WEST_HEMPSTEAD: return os << "West Hempstead Branch";
+                       case LIRR::TrainLine::BABYLON: return os << "Babylon";
+                       case LIRR::TrainLine::CITY_TERMINAL: return os << "City Terminal";
+                       case LIRR::TrainLine::FAR_ROCKAWAY: return os << "Far Rockaway";
+                       case LIRR::TrainLine::HEMPSTEAD: return os << "Hempstead";
+                       case LIRR::TrainLine::LONG_BEACH: return os << "Long Beach";
+                       case LIRR::TrainLine::MONTAUK: return os << "Montauk";
+                       case LIRR::TrainLine::OYSTER_BAY: return os << "Oyster Bay";
+                       case LIRR::TrainLine::PORT_JEFFERSON: return os << "Port Jefferson";
+                       case LIRR::TrainLine::PORT_WASHINGTON: return os << "Port Washington";
+                       case LIRR::TrainLine::RONKONKOMA: return os << "Ronkonkoma";
+                       case LIRR::TrainLine::WEST_HEMPSTEAD: return os << "West Hempstead";
                        default: return os << "unknown long island railroad train line";
                        }
                    }
@@ -398,4 +407,19 @@ inline std::ostream &operator<<(std::ostream &os, const TrainLine &trainline)
                        return os << "unknown train line variant type";
                    } },
                       trainline);
+}
+
+
+inline std::string trainline_to_string(const TrainLine &trainline)
+{
+    std::ostringstream oss;
+    oss << trainline;
+    return oss.str();
+}
+
+inline std::string direction_to_string(const Direction& direction)
+{
+    std::ostringstream oss;
+    oss << direction;
+    return oss.str();
 }

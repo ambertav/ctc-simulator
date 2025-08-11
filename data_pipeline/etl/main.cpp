@@ -7,9 +7,9 @@
 
 #include "processor.h"
 
-#include "systems/subway_config.h"
-#include "systems/mnr_config.h"
-#include "systems/lirr_config.h"
+#include "rail_systems/subway_config.h"
+#include "rail_systems/mnr_config.h"
+#include "rail_systems/lirr_config.h"
 
 int main()
 {

@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "enums/transit_types.h"
+#include "enum/transit_types.h"
 #include "map/graph.h"
 
 namespace Transit::Map

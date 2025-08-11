@@ -8,10 +8,10 @@
 #include "map/subway.h"
 #include "map/metro_north.h"
 #include "map/lirr.h"
-#include "core/factory.h"
+#include "system/factory.h"
 #include "core/dispatch.h"
-#include "systems/logger.h"
-#include "systems/scheduler.h"
+#include "system/logger.h"
+#include "system/scheduler.h"
 
 int main()
 {

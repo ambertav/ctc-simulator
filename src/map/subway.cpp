@@ -5,8 +5,8 @@
 #include <algorithm>
 
 #include "map/subway.h"
-#include "utils.h"
-#include "enums/transit_types.h"
+#include "utils/utils.h"
+#include "enum/transit_types.h"
 #include "config.h"
 
 using namespace Transit::Map;

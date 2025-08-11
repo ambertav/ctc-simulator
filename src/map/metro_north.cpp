@@ -1,8 +1,8 @@
 #include <queue>
 
 #include "config.h"
-#include "utils.h"
-#include "railroad_constants.h"
+#include "utils/utils.h"
+#include "constants/railroad_constants.h"
 #include "map/metro_north.h"
 
 using namespace Transit::Map;

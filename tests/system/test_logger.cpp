@@ -8,7 +8,7 @@
 #include <thread>
 
 #include "config.h"
-#include "systems/logger.h"
+#include "system/logger.h"
 
 class LoggerTest : public testing::Test
 {

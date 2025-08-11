@@ -1,4 +1,4 @@
-#include "systems/logger.h"
+#include "system/logger.h"
 
 Logger::Logger(const std::string &file_path)
     : outfile(file_path, std::ios::out | std::ios::trunc)

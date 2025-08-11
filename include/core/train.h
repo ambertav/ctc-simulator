@@ -1,8 +1,8 @@
 #pragma once
 
-#include "enums/transit_types.h"
-#include "enums/service_type.h"
-#include "enums/train_status.h"
+#include "enum/transit_types.h"
+#include "enum/service_type.h"
+#include "enum/train_status.h"
 
 #include "core/track.h"
 #include "core/platform.h"

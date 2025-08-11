@@ -8,9 +8,9 @@
 #include <memory>
 #include <optional>
 
-#include "enums/transit_types.h"
-#include "constants.h"
-#include "enums/service_type.h"
+#include "constants/constants.h"
+#include "enum/transit_types.h"
+#include "enum/service_type.h"
 
 namespace Transit::Map
 {

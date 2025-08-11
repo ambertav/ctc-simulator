@@ -6,7 +6,7 @@
 #pragma once
 
 #include "core/track.h"
-#include "enums/transit_types.h"
+#include "enum/transit_types.h"
 
 class Station;
 class Train;

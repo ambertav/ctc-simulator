@@ -4,7 +4,7 @@
 #include <atomic>
 #include <thread>
 
-#include "test_utils.h"
+#include "utils/test_utils.h"
 #include "core/switch.h"
 #include "core/signal.h"
 #include "core/train.h"

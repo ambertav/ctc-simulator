@@ -2,7 +2,7 @@
 
 #include <atomic>
 
-#include "enums/signal_state.h"
+#include "enum/signal_state.h"
 
 class Track;
 class Platform;

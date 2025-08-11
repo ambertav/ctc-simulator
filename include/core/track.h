@@ -12,7 +12,7 @@
 #include <shared_mutex>
 #include <atomic>
 
-#include "enums/transit_types.h"
+#include "enum/transit_types.h"
 
 class Train;
 class Platform;
