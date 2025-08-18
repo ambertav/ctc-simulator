@@ -235,8 +235,8 @@ std::unordered_map<TrainLine, std::vector<Route>> Graph::get_routes() const
 
 void Graph::add_route(TrainLine route, const std::string& headsign, const std::vector<int> &sequence)
 {
-    const Node *from_node{graph.get_node(sequence.front())};
-    const Node *to_node{graph.get_node(sequence.back())};
+    const Node *from_node{get_node(sequence.front())};
+    const Node *to_node{get_node(sequence.back())};
 
     std::pair<double, double> from{from_node->coordinates.latitude, from_node->coordinates.longitude};
     std::pair<double, double> to{to_node->coordinates.latitude, to_node->coordinates.longitude};

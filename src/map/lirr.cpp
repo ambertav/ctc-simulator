@@ -248,8 +248,3 @@ std::vector<int> LongIslandRailroad::k_way_merge(const std::vector<std::vector<i
 
     return result;
 }
-
-std::unordered_map<TrainLine, std::vector<Route>> LongIslandRailroad::get_routes() const
-{
-    return routes;
-}
