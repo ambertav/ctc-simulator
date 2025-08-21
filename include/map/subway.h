@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 
+#include "constants/constants.h"
 #include "map/graph.h"
 #include "enum/transit_types.h"
 
@@ -24,6 +25,8 @@ namespace Transit::Map
         Subway &operator=(const Subway &) = delete;
 
     private:
+        double weight_scale_factor {Constants::SUBWAY_SCALE_FACTOR};
+
         struct StringHash
         {
             using is_transparent = void;

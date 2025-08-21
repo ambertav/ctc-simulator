@@ -15,10 +15,15 @@ namespace Constants
 
     inline constexpr int TRAINS_PER_LINE{10};
     inline constexpr int STATION_DWELL_TIME{2};
+    inline constexpr int DEFAULT_TRAVEL_TIME{2};
     inline constexpr int YARD_DEPARTURE_GAP{2};
+
+    inline constexpr double SUBWAY_SCALE_FACTOR{0.5};
+    inline constexpr double METRO_NORTH_SCALE_FACTOR{1.8};
+    inline constexpr double LIRR_SCALE_FACTOR{1.4};
 
     inline constexpr std::array<std::pair<const char *, int>, 3> SYSTEMS{{
         {"subway", 1},
-        {"metro north", 2},
-        {"long island", 3}}};
+        {"metro_north", 2},
+        {"lirr", 3}}};
 }

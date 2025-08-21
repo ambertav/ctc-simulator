@@ -111,13 +111,17 @@ void Subway::load_connections(const std::string &csv)
 
         std::vector<int> sequence {sequence_view.begin(), sequence_view.end()};
 
+        std::vector<int> distances{};
+        distances.reserve(sequence.size() - 1);
+
         for (int i = 1; i < sequence.size(); ++i)
         {
             int u {sequence[i - 1]};
             int v {sequence[i]};
 
-            add_edge(u, v);
+            auto* edge {add_edge(u, v)};
+            distances.push_back(static_cast<int>(std::ceil(edge->weight)));
         }
 
-        add_route(route, headsign, sequence); });
+        add_route(route, headsign, sequence, distances); });
 }

@@ -54,8 +54,9 @@ namespace Transit::Map
         std::string headsign;
         Direction direction;
         std::vector<int> sequence;
+        std::vector<int> distances;
 
-        Route(const std::string &h, Direction dir, const std::vector<int> &s) : headsign(h), direction(dir), sequence(std::move(s)) {}
+        Route(const std::string &h, Direction dir, const std::vector<int> &s, const std::vector<int>& d) : headsign(h), direction(dir), sequence(std::move(s)), distances(std::move(d)) {}
     };
 
     struct Path
@@ -79,6 +80,7 @@ namespace Transit::Map
         std::unordered_map<int, Node *> node_map;
         std::unordered_map<int, std::vector<Edge>> adjacency_list;
         std::unordered_map<TrainLine, std::vector<Route>> routes;
+        double weight_scale_factor {1.0};
 
     public:
         Graph() = default;
@@ -87,14 +89,16 @@ namespace Transit::Map
         void remove_node(int node_id);
         void remove_node(Node *u);
 
-        void add_edge(Node *u, Node *v, double w, const std::vector<TrainLine> &t);
-        void add_edge(int u_id, int v_id);
+        Edge* add_edge(Node *u, Node *v, double w, const std::vector<TrainLine> &t);
+        Edge* add_edge(int u_id, int v_id);
         void remove_edge(Node *u, Node *v);
 
         void update_node(int id, const std::vector<TrainLine> &more_train_lines, const std::vector<std::string> more_gtfs_ids);
 
         const Node *get_node(int id) const;
+        const Edge *get_edge(int u_id, int v_id) const;
         const std::unordered_map<int, std::vector<Edge>> &get_adjacency_list() const;
+
         void print() const;
 
         std::optional<Path> find_path(int u_id, int v_id) const;

@@ -98,7 +98,8 @@ void MetroNorth::load_connections(const std::string &csv)
                 outbound_headsign = "New Haven-State St";
             }
 
-            add_route(route, outbound_headsign, merged);
+            std::vector<int> outbound_distances{};
+            outbound_distances.reserve(merged.size() - 1);
 
             for (int i = 1; i < merged.size(); ++i)
             {
@@ -109,18 +110,23 @@ void MetroNorth::load_connections(const std::string &csv)
                 update_node(u, {route}, {});
                 update_node(v, {route}, {});
 
-                add_edge(u, v);
+                auto* edge {add_edge(u, v)};
+                outbound_distances.push_back(static_cast<int>(std::ceil(edge->weight)));
             }
 
+            add_route(route, outbound_headsign, merged, outbound_distances);
+
             std::vector<int> inbound_sequence(merged.rbegin(), merged.rend());
-            add_route(route, "Grand Central", inbound_sequence);
+            std::vector<int> inbound_distances(outbound_distances.rbegin(), outbound_distances.rend());
+            add_route(route, "Grand Central", inbound_sequence, inbound_distances);
         }
         else if (route_sv == "New Canaan" || route_sv == "Danbury" || route_sv == "Waterbury")
         {
             TrainLine route{trainline_from_string(route_str)};
             auto branch_segment = handle_branches(route_sv, segments);
 
-            add_route(route, route_str, branch_segment);
+            std::vector<int> outbound_distances{};
+            outbound_distances.reserve(branch_segment.size() - 1);
 
             for (int i = 1; i < branch_segment.size(); ++i)
             {
@@ -131,13 +137,19 @@ void MetroNorth::load_connections(const std::string &csv)
                 update_node(u, {route}, {});
                 update_node(v, {route}, {});
 
-                add_edge(u, v);
+                auto* edge {add_edge(u, v)};
+                outbound_distances.push_back(static_cast<int>(std::ceil(edge->weight)));
             }
 
+            add_route(route, route_str, branch_segment, outbound_distances);
+
+
             std::vector<int> inbound_branch(branch_segment.rbegin(), branch_segment.rend());
+            std::vector<int> inbound_distances(outbound_distances.rbegin(), outbound_distances.rend());
+
 
             std::string branch_point{get_branch_point_name(route_sv)};
-            add_route(route, branch_point, inbound_branch);
+            add_route(route, branch_point, inbound_branch, inbound_distances);
         }
     }
 }

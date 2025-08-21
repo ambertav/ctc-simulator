@@ -72,16 +72,16 @@ void Graph::remove_node(Node *u)
     remove_node(u->id);
 }
 
-void Graph::add_edge(Node *u, Node *v, double w, const std::vector<TrainLine> &t)
+Edge* Graph::add_edge(Node *u, Node *v, double w, const std::vector<TrainLine> &t)
 {
-    if (!node_map.count(u->id) || !node_map.count(v->id))
-    {
-        throw std::invalid_argument("Nodes " + std::to_string(u->id) + " and " + std::to_string(v->id) + " are not in the transit graph");
-    }
-
     if (u == v)
     {
         throw std::invalid_argument("Self connections are not allowed in transit graph");
+    }
+
+    if (!node_map.count(u->id) || !node_map.count(v->id))
+    {
+        throw std::invalid_argument("Nodes " + std::to_string(u->id) + " and " + std::to_string(v->id) + " are not in the transit graph");
     }
 
     for (const auto &edge : adjacency_list[u->id])
@@ -97,9 +97,12 @@ void Graph::add_edge(Node *u, Node *v, double w, const std::vector<TrainLine> &t
 
     ++u->degree;
     ++v->degree;
+
+    Edge* forward_edge {&adjacency_list[u->id].back()};
+    return forward_edge;
 }
 
-void Graph::add_edge(int u_id, int v_id)
+Edge* Graph::add_edge(int u_id, int v_id)
 {
     if (!node_map.count(u_id) || !node_map.count(v_id))
     {
@@ -127,8 +130,10 @@ void Graph::add_edge(int u_id, int v_id)
     }
 
     double weight{haversine_distance(u_node->coordinates, v_node->coordinates)};
+    double scaled_weight{weight * weight_scale_factor};
 
-    add_edge(u_node, v_node, weight, shared_lines);
+    Edge* forward_edge {add_edge(u_node, v_node, scaled_weight, shared_lines)};
+    return forward_edge;
 }
 
 void Graph::remove_edge(Node *u, Node *v)
@@ -185,6 +190,27 @@ const Node *Graph::get_node(int id) const
     return nullptr;
 }
 
+const Edge *Graph::get_edge(int u_id, int v_id) const
+{
+    if (!node_map.count(u_id) || !node_map.count(v_id))
+    {
+        throw std::invalid_argument("Nodes " + std::to_string(u_id) + " and " + std::to_string(v_id) + " are not in the transit graph");
+    }
+
+    auto &edges{adjacency_list.at(u_id)};
+
+    auto it{std::ranges::find(edges, v_id, &Edge::to)};
+
+    if (it == edges.end())
+    {
+        return nullptr;
+    }
+    else
+    {
+        return &*it; // pointer to Edge
+    }
+}
+
 const std::unordered_map<int, std::vector<Edge>> &Graph::get_adjacency_list() const
 {
     return adjacency_list;
@@ -233,7 +259,7 @@ std::unordered_map<TrainLine, std::vector<Route>> Graph::get_routes() const
     return routes;
 }
 
-void Graph::add_route(TrainLine route, const std::string& headsign, const std::vector<int> &sequence)
+void Graph::add_route(TrainLine route, const std::string &headsign, const std::vector<int> &sequence)
 {
     const Node *from_node{get_node(sequence.front())};
     const Node *to_node{get_node(sequence.back())};

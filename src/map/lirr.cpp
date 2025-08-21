@@ -131,7 +131,8 @@ void LongIslandRailroad::load_connections(const std::string &csv)
             std::vector<int> westbound_sequence(merged.begin(), merged.begin() + branch_point_position + 1);
             westbound_sequence.push_back(merged[position]);
 
-            add_route(route, city_headsign, westbound_sequence);
+            std::vector<int> westbound_distances{};
+            westbound_distances.reserve(merged.size() - 1);
 
             for (int j = 1; j < westbound_sequence.size(); ++j)
             {
@@ -141,13 +142,18 @@ void LongIslandRailroad::load_connections(const std::string &csv)
                 update_node(u, {route}, {});
                 update_node(v, {route}, {});
 
-                add_edge(u, v);
+                auto edge* {add_edge(u, v)};
+                westbound_distances.push_back(static_cast<int>(std::ceil(edge->weight)));
             }
 
-            std::vector<int> eastbound_sequence(westbound_sequence.rbegin(), westbound_sequence.rend());
-            std::string li_headsign{LIRR::li_terminal_stations.at(merged[0])};
 
-            add_route(route, li_headsign, eastbound_sequence);
+            add_route(route, city_headsign, westbound_sequence, westbound_distances);
+
+            std::vector<int> eastbound_sequence(westbound_sequence.rbegin(), westbound_sequence.rend());
+            std::vector<int> eastbound_distances(westbound_distances.rbegin(), westbound_distances.rend());
+
+            std::string li_headsign{LIRR::li_terminal_stations.at(merged[0])};
+            add_route(route, li_headsign, eastbound_sequence, eastbound_distances);
         }
     }
 }

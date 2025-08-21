@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "constants/constants.h"
 #include "enum/transit_types.h"
 #include "map/graph.h"
 
@@ -24,6 +25,8 @@ namespace Transit::Map
         LongIslandRailroad &operator=(const LongIslandRailroad &) = delete;
 
     private:
+        double weight_scale_factor {Constants::LIRR_SCALE_FACTOR};
+        
         LongIslandRailroad();
         void load_stations(const std::string &csv);
         void load_connections(const std::string &csv);
