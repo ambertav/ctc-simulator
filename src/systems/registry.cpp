@@ -96,7 +96,8 @@ void Registry::build_registry()
 {
     for (const auto &[name, system] : Constants::SYSTEMS)
     {
-        int code{static_cast<int>(code)};
+        int code{static_cast<int>(system)};
+
         int tl_count{};
         int dir_count{};
 

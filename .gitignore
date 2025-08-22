@@ -32,4 +32,4 @@ data/raw/
 
 # simulation generated files
 logs/
-data/test_schedule.csv
+schedule/

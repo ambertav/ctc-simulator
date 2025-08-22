@@ -1,80 +1,177 @@
-#include <optional>
+#include <string>
 #include <fstream>
 
 #include "config.h"
-#include "constants.h"
-#include "systems/scheduler.h"
-#include "enums/transit_types.h"
+#include "constants/constants.h"
+#include "enum/transit_types.h"
+#include "system/scheduler.h"
 
-Scheduler::Scheduler(const std::string &file_path, int stg, int dt, int nt) : outfile(file_path, std::ios::out | std::ios::trunc), spawn_tick_gap(stg), dwell_time(dt), number_of_trains(nt) {}
-
-void Scheduler::create_schedule(const Transit::Map::Path &path)
+void Scheduler::write_schedule(const Transit::Map::Graph &graph, const Registry &registry, const std::string &outfile_subfolder, int system_code)
 {
-    if (path.nodes.empty() || !path.nodes.front() || !path.nodes.back())
+    using json = nlohmann::json;
+
+    json output{};
+    output["train_lines"] = json::object();
+
+    std::string file_path{std::string(SCHED_DIRECTORY) + "/" + outfile_subfolder + "/schedule.json"};
+
+    try
     {
-        throw std::logic_error("Path is empty or has null nodes");
-    }
+        process_system(output["train_lines"], graph, registry, system_code);
 
-    if (!outfile.is_open())
-    {
-        std::cerr << "Failed to open schedule.csv for writing.\n";
-        return;
-    }
-
-    outfile << "train_id,station_id,station_name,direction,arrival_tick,departure_tick\n";
-
-    static int train_id{1};
-
-    auto write_schedule = [&](const std::vector<const Transit::Map::Node *> &stations, const std::vector<double>& distances, Direction dir)
-    {
-        for (int i = 0; i < number_of_trains / 2; ++i)
+        std::ofstream outfile(file_path, std::ios::out | std::ios::trunc);
+        if (!outfile.is_open())
         {
-            int tick = i * spawn_tick_gap;
-            
-            auto [start_yard, end_yard] = Yards::get_yard_id_by_direction(dir);
-
-            outfile << train_id << "," << start_yard << "," << Yards::get_yard_name(start_yard) << "," << dir << "," << -1 << "," << tick << "\n";
-
-            for (int i = 0; i < stations.size(); ++i)
-            {
-                const Transit::Map::Node *node = stations[i];
-                int arrival = ++tick;
-                int departure = arrival + dwell_time;
-
-                outfile << train_id << "," << node->id << "," << node->name << "," << dir << "," << arrival << "," << departure << "\n";
-
-                tick = departure;
-
-                if (i < stations.size() - 1)
-                {
-                    tick += distances[i];
-                }
-            }
-
-            outfile << train_id << "," << end_yard << "," << Yards::get_yard_name(end_yard) << "," << dir << "," << tick + 1 << "," << "-1\n";
-
-            ++train_id;
+            throw std::runtime_error("Failed to open output file: " + file_path);
         }
+
+        outfile << output.dump(2);
+        outfile.flush();
+        outfile.close();
+    }
+    catch (const std::exception &e)
+    {
+        throw std::runtime_error("Failed to create schedule for system: " + std::to_string(system_code) + ", " + outfile_subfolder + std::string(e.what()));
+    }
+}
+
+void Scheduler::process_system(nlohmann::json &train_lines_json, const Transit::Map::Graph &graph, const Registry &registry, int system_code)
+{
+    using json = nlohmann::json;
+
+    std::vector<int> train_registry{registry.get_train_registry(system_code)};
+    std::vector<std::pair<int, int>> yard_registry{registry.get_yard_registry(system_code)};
+
+    const auto &routes_map{graph.get_routes()};
+
+    for (const auto &[train_line, routes] : routes_map)
+    {
+        std::string line_name{trainline_to_string(train_line)};
+        train_lines_json[line_name] = json::object();
+        train_lines_json[line_name]["trains"] = json::array();
+    }
+
+    // TO-DO: prepares trainline to yard pair mapping, consider this being default in registry
+    std::unordered_map<TrainLine, std::pair<int, int>> yard_map{};
+    for (const auto &yard_pair : yard_registry)
+    {
+        Info yard_info{registry.decode(yard_pair.first)};
+        yard_map[yard_info.train_line] = yard_pair;
+    }
+
+    for (int i{0}; i < train_registry.size(); ++i)
+    {
+        int train_id{train_registry[i]};
+        Info train_info{registry.decode(train_id)};
+
+        auto yard_map_it{yard_map.find(train_info.train_line)};
+        if (yard_map_it == yard_map.end())
+        {
+            continue;
+        }
+
+        Info first_yard_info{registry.decode(yard_map_it->second.first)};   // uptown and manhattan
+        Info second_yard_info{registry.decode(yard_map_it->second.second)}; // downtown and away from manhattan
+
+        Info origin_yard_info{};
+        Info destination_yard_info{};
+
+        if (directions_equal(train_info.direction, second_yard_info.direction))
+        {
+            origin_yard_info = first_yard_info;
+            destination_yard_info = second_yard_info;
+        }
+        else
+        {
+            origin_yard_info = second_yard_info;
+            destination_yard_info = first_yard_info;
+        }
+
+        auto routes_it{routes_map.find(train_info.train_line)};
+        if (routes_it == routes_map.end())
+        {
+            continue;
+        }
+
+        const Transit::Map::Route *matching_route{nullptr};
+        for (const auto &route : routes_it->second)
+        {
+            if (directions_equal(route.direction, train_info.direction))
+            {
+                matching_route = &route;
+                break;
+            }
+        }
+
+        if (matching_route == nullptr)
+        {
+            continue;
+        }
+
+        json trains_json{};
+        trains_json["train_id"] = train_id;
+        trains_json["direction"] = direction_to_string( train_info.direction);
+        trains_json["headsign"] = matching_route->headsign;
+        trains_json["schedule"] = json::array();
+
+        generate_train_schedule(trains_json["schedule"], graph, *matching_route, train_info, origin_yard_info, destination_yard_info);
+
+        std::string line_name{trainline_to_string(train_info.train_line)};
+        train_lines_json[line_name]["trains"].push_back(trains_json);
+    }
+}
+
+void Scheduler::generate_train_schedule(nlohmann::json &schedule_json, const Transit::Map::Graph &graph, const Transit::Map::Route &route, const Info &train_info, const Info &origin_yard_info, const Info &destination_yard_info)
+{
+    using json = nlohmann::json;
+
+    auto generate_yard_name = [](const Info &yard) -> std::string
+    {
+        return direction_to_string(yard.direction) + " " + trainline_to_string(yard.train_line) + " Yard";
     };
 
-    const Transit::Map::Node* start_node { path.nodes.front() };
-    const Transit::Map::Node* end_node { path.nodes.back() };
+    int current_tick{train_info.instance * Constants::YARD_DEPARTURE_GAP};
 
-    std::pair<double, double> from {start_node->coordinates.latitude, start_node->coordinates.longitude};
-    std::pair<double, double> to {end_node->coordinates.latitude, end_node->coordinates.longitude};
+    json origin{};
+    origin["station_id"] = origin_yard_info.id;
+    origin["station_name"] = generate_yard_name(origin_yard_info);
+    origin["arrival_tick"] = -1;
+    origin["departure_tick"] = current_tick;
+    schedule_json.push_back(origin);
 
-    std::optional<Direction> o_opt = infer_direction(start_node->train_lines.front(), from, to);
-    std::optional<Direction> r_opt = infer_direction(start_node->train_lines.front(), to, from);
-    
-    Direction original {*o_opt};
-    Direction reverse {*r_opt};
+    current_tick += Constants::DEFAULT_TRAVEL_TIME;
 
-    write_schedule(path.nodes, path.segment_weights, original);
+    for (int i{0}; i < route.sequence.size(); ++i)
+    {
+        const Transit::Map::Node *node{graph.get_node(route.sequence[i])};
+        if (!node)
+        {
+            continue;
+        }
 
-    const std::vector<const Transit::Map::Node *> reversed_path(path.nodes.rbegin(), path.nodes.rend());
-    const std::vector<double> reversed_distances(path.segment_weights.rbegin(), path.segment_weights.rend());
+        json stop;
+        stop["station_id"] = node->id;
+        stop["station_name"] = node->name;
+        stop["arrival_tick"] = current_tick;
 
-    write_schedule(reversed_path, reversed_distances, reverse);
+        current_tick += Constants::STATION_DWELL_TIME;
+        stop["departure_tick"] = current_tick;
+        schedule_json.push_back(stop);
 
-    outfile.flush();
+        if (i < route.distances.size())
+        {
+            current_tick += route.distances[i];
+        }
+        else
+        {
+            current_tick += Constants::DEFAULT_TRAVEL_TIME;
+        }
+    }
+
+    json end{};
+    end["station_id"] = destination_yard_info.id;
+    end["station_name"] = generate_yard_name(destination_yard_info);
+    end["arrival_tick"] = current_tick;
+    end["departure_tick"] = -1;
+    schedule_json.push_back(end);
 }
