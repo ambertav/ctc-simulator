@@ -56,7 +56,7 @@ namespace Transit::Map
         std::vector<int> sequence;
         std::vector<int> distances;
 
-        Route(const std::string &h, Direction dir, const std::vector<int> &s, const std::vector<int>& d) : headsign(h), direction(dir), sequence(std::move(s)), distances(std::move(d)) {}
+        Route(const std::string &h, Direction dir, const std::vector<int> &s, const std::vector<int> &d) : headsign(h), direction(dir), sequence(s), distances(d) {}
     };
 
     struct Path
@@ -80,7 +80,7 @@ namespace Transit::Map
         std::unordered_map<int, Node *> node_map;
         std::unordered_map<int, std::vector<Edge>> adjacency_list;
         std::unordered_map<TrainLine, std::vector<Route>> routes;
-        double weight_scale_factor {1.0};
+        double weight_scale_factor{1.0};
 
     public:
         Graph() = default;
@@ -89,8 +89,8 @@ namespace Transit::Map
         void remove_node(int node_id);
         void remove_node(Node *u);
 
-        Edge* add_edge(Node *u, Node *v, double w, const std::vector<TrainLine> &t);
-        Edge* add_edge(int u_id, int v_id);
+        const Edge *add_edge(Node *u, Node *v, double w, const std::vector<TrainLine> &t);
+        const Edge *add_edge(int u_id, int v_id);
         void remove_edge(Node *u, Node *v);
 
         void update_node(int id, const std::vector<TrainLine> &more_train_lines, const std::vector<std::string> more_gtfs_ids);
@@ -103,7 +103,7 @@ namespace Transit::Map
 
         std::optional<Path> find_path(int u_id, int v_id) const;
         std::unordered_map<TrainLine, std::vector<Route>> get_routes() const;
-        void add_route(TrainLine route, const std::string& headsign, const std::vector<int>& sequence);
+        void add_route(TrainLine route, const std::string &headsign, const std::vector<int> &sequence, const std::vector<int> &distances);
 
     protected:
         std::optional<Path> dijkstra(const Node *u, const Node *v) const;

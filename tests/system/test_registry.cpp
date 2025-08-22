@@ -19,8 +19,10 @@ protected:
 
 TEST_F(RegistryTest, ConstructorBuildsRegistryForTrainsAndYards)
 {
-    for (const auto &[name, code] : Constants::SYSTEMS)
+    for (const auto &[name, system] : Constants::SYSTEMS)
     {
+        int code {static_cast<int>(system)};
+        
         auto trains{registry.get_train_registry(code)};
         auto yards{registry.get_yard_registry(code)};
 

@@ -1,3 +1,8 @@
+/**
+ * for details on design, see:
+ * docs/registry.md
+ */
+
 #include "system/registry.h"
 #include "constants/constants.h"
 
@@ -43,7 +48,7 @@ Info Registry::decode(int encoded_id) const
     int system_code{(encoded_id >> 28) & 0xF};
     int train_line_code{(encoded_id >> 20) & 0xFF};
     int direction_code{(encoded_id >> 8) & 0xFFF};
-    int order{encoded_id & 0xFF};
+    int instance{encoded_id & 0xFF};
 
     TrainLine train_line{};
     Direction direction{};
@@ -74,7 +79,7 @@ Info Registry::decode(int encoded_id) const
     }
     }
 
-    return {system_code, train_line, direction, order};
+    return {encoded_id, system_code, train_line, direction, instance};
 }
 
 void Registry::reset_train_registry()
@@ -89,8 +94,9 @@ void Registry::reset_yard_registry()
 
 void Registry::build_registry()
 {
-    for (const auto &[name, code] : Constants::SYSTEMS)
+    for (const auto &[name, system] : Constants::SYSTEMS)
     {
+        int code{static_cast<int>(code)};
         int tl_count{};
         int dir_count{};
 
@@ -147,10 +153,22 @@ void Registry::generate_yards(int system_code, int tl_count)
 {
     yard_registry[system_code].reserve(tl_count);
 
+    Constants::System sys{static_cast<Constants::System>(system_code)};
+
+    auto it{std::find_if(Constants::SYSTEM_DIRECTION_ORDER.begin(), Constants::SYSTEM_DIRECTION_ORDER.end(), [&](const auto &entry)
+                         { return entry.first == sys; })};
+
+    if (it == Constants::SYSTEM_DIRECTION_ORDER.end())
+    {
+        throw std::runtime_error("Unknown system in generate_yards");
+    }
+
+    auto directions{it->second};
+
     for (int i{0}; i < tl_count; ++i)
     {
         yard_registry[system_code].emplace_back(
-            encode(system_code, i /* TrainLine enumeration */, 0 /* Direction enumeration */, 0 /* instance */),
-            encode(system_code, i /* TrainLine enumeration */, 1 /* Direction enumeration */, 0 /* instance */));
+            encode(system_code, i /* TrainLine enumeration */, directions[0] /* Direction enumeration */, 0 /* instance */),
+            encode(system_code, i /* TrainLine enumeration */, directions[1] /* Direction enumeration */, 0 /* instance */));
     }
 }

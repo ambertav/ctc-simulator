@@ -72,7 +72,7 @@ void Graph::remove_node(Node *u)
     remove_node(u->id);
 }
 
-Edge* Graph::add_edge(Node *u, Node *v, double w, const std::vector<TrainLine> &t)
+const Edge *Graph::add_edge(Node *u, Node *v, double w, const std::vector<TrainLine> &t)
 {
     if (u == v)
     {
@@ -88,7 +88,7 @@ Edge* Graph::add_edge(Node *u, Node *v, double w, const std::vector<TrainLine> &
     {
         if (edge.to == v->id)
         {
-            return;
+            return &edge;
         }
     }
 
@@ -98,11 +98,11 @@ Edge* Graph::add_edge(Node *u, Node *v, double w, const std::vector<TrainLine> &
     ++u->degree;
     ++v->degree;
 
-    Edge* forward_edge {&adjacency_list[u->id].back()};
+    Edge *forward_edge{&adjacency_list[u->id].back()};
     return forward_edge;
 }
 
-Edge* Graph::add_edge(int u_id, int v_id)
+const Edge *Graph::add_edge(int u_id, int v_id)
 {
     if (!node_map.count(u_id) || !node_map.count(v_id))
     {
@@ -132,7 +132,7 @@ Edge* Graph::add_edge(int u_id, int v_id)
     double weight{haversine_distance(u_node->coordinates, v_node->coordinates)};
     double scaled_weight{weight * weight_scale_factor};
 
-    Edge* forward_edge {add_edge(u_node, v_node, scaled_weight, shared_lines)};
+    const Edge *forward_edge{add_edge(u_node, v_node, scaled_weight, shared_lines)};
     return forward_edge;
 }
 
@@ -259,7 +259,7 @@ std::unordered_map<TrainLine, std::vector<Route>> Graph::get_routes() const
     return routes;
 }
 
-void Graph::add_route(TrainLine route, const std::string &headsign, const std::vector<int> &sequence)
+void Graph::add_route(TrainLine route, const std::string &headsign, const std::vector<int> &sequence, const std::vector<int> &distances)
 {
     const Node *from_node{get_node(sequence.front())};
     const Node *to_node{get_node(sequence.back())};
@@ -268,7 +268,7 @@ void Graph::add_route(TrainLine route, const std::string &headsign, const std::v
     std::pair<double, double> to{to_node->coordinates.latitude, to_node->coordinates.longitude};
     Direction direction{infer_direction(route, from, to)};
 
-    routes[route].emplace_back(headsign, direction, sequence);
+    routes[route].emplace_back(headsign, direction, sequence, distances);
 }
 
 std::optional<Path> Graph::dijkstra(const Node *u, const Node *v) const

@@ -22,8 +22,21 @@ namespace Constants
     inline constexpr double METRO_NORTH_SCALE_FACTOR{1.8};
     inline constexpr double LIRR_SCALE_FACTOR{1.4};
 
-    inline constexpr std::array<std::pair<const char *, int>, 3> SYSTEMS{{
-        {"subway", 1},
-        {"metro_north", 2},
-        {"lirr", 3}}};
+    enum class System
+    {
+        SUBWAY = 1,
+        METRO_NORTH = 2,
+        LIRR = 3
+    };
+
+    inline constexpr std::array<std::pair<const char *, System>, 3> SYSTEMS{{
+        {"subway", System::SUBWAY},
+        {"metro_north", System::METRO_NORTH},
+        {"lirr", System::LIRR}}};
+
+    inline constexpr std::array<std::pair<System, std::array<int, 2>>, 3> SYSTEM_DIRECTION_ORDER{{
+        {System::SUBWAY, {static_cast<int>(SUB::Direction::UPTOWN), static_cast<int>(SUB::Direction::DOWNTOWN)}},
+        {System::METRO_NORTH, {static_cast<int>(MNR::Direction::INBOUND), static_cast<int>(MNR::Direction::OUTBOUND)}},
+        {System::LIRR, {static_cast<int>(LIRR::Direction::WESTBOUND), static_cast<int>(LIRR::Direction::EASTBOUND)}}}};
+
 }

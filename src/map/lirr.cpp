@@ -142,10 +142,9 @@ void LongIslandRailroad::load_connections(const std::string &csv)
                 update_node(u, {route}, {});
                 update_node(v, {route}, {});
 
-                auto edge* {add_edge(u, v)};
+                auto *edge{add_edge(u, v)};
                 westbound_distances.push_back(static_cast<int>(std::ceil(edge->weight)));
             }
-
 
             add_route(route, city_headsign, westbound_sequence, westbound_distances);
 

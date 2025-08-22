@@ -70,8 +70,8 @@ namespace LIRR
 {
     enum class Direction
     {
-        EASTBOUND,
         WESTBOUND,
+        EASTBOUND,
         COUNT
     };
     enum class TrainLine

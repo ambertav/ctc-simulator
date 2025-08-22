@@ -1,3 +1,8 @@
+/**
+ * for details on design, see:
+ * docs/registry.md
+ */
+
 #pragma once
 
 #include <vector>
@@ -6,6 +11,7 @@
 
 struct Info
 {
+    int id;
     int system_code;
     TrainLine train_line;
     Direction direction;
