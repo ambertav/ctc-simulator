@@ -41,15 +41,8 @@ void Scheduler::process_system(nlohmann::json &train_lines_json, const Transit::
 
     std::vector<int> train_registry{registry.get_train_registry(system_code)};
     std::vector<std::pair<int, int>> yard_registry{registry.get_yard_registry(system_code)};
-
+    
     const auto &routes_map{graph.get_routes()};
-
-    for (const auto &[train_line, routes] : routes_map)
-    {
-        std::string line_name{trainline_to_string(train_line)};
-        train_lines_json[line_name] = json::object();
-        train_lines_json[line_name]["trains"] = json::array();
-    }
 
     // TO-DO: prepares trainline to yard pair mapping, consider this being default in registry
     std::unordered_map<TrainLine, std::pair<int, int>> yard_map{};
@@ -110,7 +103,7 @@ void Scheduler::process_system(nlohmann::json &train_lines_json, const Transit::
 
         json trains_json{};
         trains_json["train_id"] = train_id;
-        trains_json["direction"] = direction_to_string( train_info.direction);
+        trains_json["direction"] = direction_to_string(train_info.direction);
         trains_json["headsign"] = matching_route->headsign;
         trains_json["schedule"] = json::array();
 
@@ -127,7 +120,7 @@ void Scheduler::generate_train_schedule(nlohmann::json &schedule_json, const Tra
 
     auto generate_yard_name = [](const Info &yard) -> std::string
     {
-        return direction_to_string(yard.direction) + " " + trainline_to_string(yard.train_line) + " Yard";
+        return direction_to_string(yard.direction) + " " + trainline_to_string(yard.train_line) + " yard";
     };
 
     int current_tick{train_info.instance * Constants::YARD_DEPARTURE_GAP};
