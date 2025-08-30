@@ -39,8 +39,8 @@ void Scheduler::process_system(nlohmann::json &train_lines_json, const Transit::
 {
     using json = nlohmann::json;
 
-    std::vector<int> train_registry{registry.get_train_registry(system_code)};
-    std::vector<std::pair<int, int>> yard_registry{registry.get_yard_registry(system_code)};
+    const auto& train_registry{registry.get_train_registry(system_code)};
+    const auto& yard_registry{registry.get_yard_registry(system_code)};
     
     const auto &routes_map{graph.get_routes()};
 
@@ -118,16 +118,11 @@ void Scheduler::generate_train_schedule(nlohmann::json &schedule_json, const Tra
 {
     using json = nlohmann::json;
 
-    auto generate_yard_name = [](const Info &yard) -> std::string
-    {
-        return direction_to_string(yard.direction) + " " + trainline_to_string(yard.train_line) + " yard";
-    };
-
     int current_tick{train_info.instance * Constants::YARD_DEPARTURE_GAP};
 
     json origin{};
     origin["station_id"] = origin_yard_info.id;
-    origin["station_name"] = generate_yard_name(origin_yard_info);
+    origin["station_name"] = Utils::generate_yard_name(origin_yard_info);
     origin["arrival_tick"] = -1;
     origin["departure_tick"] = current_tick;
     schedule_json.push_back(origin);
@@ -163,7 +158,7 @@ void Scheduler::generate_train_schedule(nlohmann::json &schedule_json, const Tra
 
     json end{};
     end["station_id"] = destination_yard_info.id;
-    end["station_name"] = generate_yard_name(destination_yard_info);
+    end["station_name"] = Utils::generate_yard_name(destination_yard_info);
     end["arrival_tick"] = current_tick;
     end["departure_tick"] = -1;
     schedule_json.push_back(end);

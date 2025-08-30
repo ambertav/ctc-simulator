@@ -6,6 +6,7 @@
 #include <nlohmann/json.hpp>
 
 #include "map/graph.h"
+#include "utils/utils.h"
 #include "system/registry.h"
 
 class Scheduler

@@ -34,9 +34,23 @@ namespace Constants
         {"metro_north", System::METRO_NORTH},
         {"lirr", System::LIRR}}};
 
-    inline constexpr std::array<std::pair<System, std::array<int, 2>>, 3> SYSTEM_DIRECTION_ORDER{{
-        {System::SUBWAY, {static_cast<int>(SUB::Direction::UPTOWN), static_cast<int>(SUB::Direction::DOWNTOWN)}},
-        {System::METRO_NORTH, {static_cast<int>(MNR::Direction::INBOUND), static_cast<int>(MNR::Direction::OUTBOUND)}},
-        {System::LIRR, {static_cast<int>(LIRR::Direction::WESTBOUND), static_cast<int>(LIRR::Direction::EASTBOUND)}}}};
+    inline constexpr std::array<std::pair<System, std::array<Direction, 2>>, 3> SYSTEM_DIRECTION_ORDER{{
+        {System::SUBWAY, {SUB::Direction::UPTOWN, SUB::Direction::DOWNTOWN}},
+        {System::METRO_NORTH, {MNR::Direction::INBOUND, MNR::Direction::OUTBOUND}},
+        {System::LIRR, {LIRR::Direction::WESTBOUND, LIRR::Direction::EASTBOUND}}}};
 
+    inline std::array<Direction, 2> get_directions_by_system_code(int system_code)
+    {
+        System sys{static_cast<System>(system_code)};
+
+        auto it{std::find_if(SYSTEM_DIRECTION_ORDER.begin(), SYSTEM_DIRECTION_ORDER.end(), [&](const auto &entry)
+                             { return entry.first == sys; })};
+
+        if (it == SYSTEM_DIRECTION_ORDER.end())
+        {
+            throw std::runtime_error("Unknown system encountered when getting directions");
+        }
+
+        return it->second;
+    }
 }

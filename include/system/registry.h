@@ -30,8 +30,8 @@ public:
     Registry(const Registry &) = delete;
     Registry &operator=(const Registry &) = delete;
 
-    std::vector<int> get_train_registry(int system_code) const;
-    std::vector<std::pair<int, int>> get_yard_registry(int system_code) const;
+    const std::vector<int>& get_train_registry(int system_code) const;
+    const std::vector<std::pair<int, int>>& get_yard_registry(int system_code) const;
 
     //[ system (4 bits) | train_line_code (8 bits) | direction_code (12 bits) | instance (8 bits) ]
     int encode(int system_code, int train_line_code, int direction_code, int instance);

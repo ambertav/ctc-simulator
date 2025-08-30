@@ -11,7 +11,7 @@ Registry::Registry()
     build_registry();
 }
 
-std::vector<int> Registry::get_train_registry(int system_code) const
+const std::vector<int> &Registry::get_train_registry(int system_code) const
 {
     auto it{train_registry.find(system_code)};
     if (it == train_registry.end())
@@ -24,7 +24,7 @@ std::vector<int> Registry::get_train_registry(int system_code) const
     }
 }
 
-std::vector<std::pair<int, int>> Registry::get_yard_registry(int system_code) const
+const std::vector<std::pair<int, int>> &Registry::get_yard_registry(int system_code) const
 {
     auto it{yard_registry.find(system_code)};
     if (it == yard_registry.end())
@@ -154,22 +154,14 @@ void Registry::generate_yards(int system_code, int tl_count)
 {
     yard_registry[system_code].reserve(tl_count);
 
-    Constants::System sys{static_cast<Constants::System>(system_code)};
-
-    auto it{std::find_if(Constants::SYSTEM_DIRECTION_ORDER.begin(), Constants::SYSTEM_DIRECTION_ORDER.end(), [&](const auto &entry)
-                         { return entry.first == sys; })};
-
-    if (it == Constants::SYSTEM_DIRECTION_ORDER.end())
-    {
-        throw std::runtime_error("Unknown system in generate_yards");
-    }
-
-    auto directions{it->second};
+    auto directions{Constants::get_directions_by_system_code(system_code)};
+    int dir_one{std::visit([](auto d) { return static_cast<int>(d); }, directions[0])};
+    int dir_two{std::visit([](auto d) { return static_cast<int>(d); }, directions[1])};
 
     for (int i{0}; i < tl_count; ++i)
     {
         yard_registry[system_code].emplace_back(
-            encode(system_code, i /* TrainLine enumeration */, directions[0] /* Direction enumeration */, 0 /* instance */),
-            encode(system_code, i /* TrainLine enumeration */, directions[1] /* Direction enumeration */, 0 /* instance */));
+            encode(system_code, i /* TrainLine enumeration */, dir_one /* Direction enumeration */, 0 /* instance */),
+            encode(system_code, i /* TrainLine enumeration */, dir_two /* Direction enumeration */, 0 /* instance */));
     }
 }

@@ -182,4 +182,9 @@ namespace Utils
             return result;
         }
     }
+
+    inline std::string generate_yard_name(const Info& yard)
+    {
+        return direction_to_string(yard.direction) + " " + trainline_to_string(yard.train_line) + " yard";
+    }
 }
