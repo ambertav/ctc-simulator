@@ -9,6 +9,8 @@
 #include <charconv>
 #include <iostream>
 
+#include "system/registry.h"
+
 namespace Utils
 {
 

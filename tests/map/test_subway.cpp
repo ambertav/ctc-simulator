@@ -16,7 +16,7 @@ TEST_F(SubwayGraphTest, CreatesNodeStationsSuccessfully)
 {
     using namespace Transit::Map;
 
-    int n{10};
+    size_t n{10};
     std::vector<int> expected_ids{};
 
     try

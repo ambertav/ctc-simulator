@@ -49,8 +49,8 @@ std::optional<Platform *> Station::select_platform(Direction dir, TrainLine line
 {
     std::shared_lock lock(mutex);
 
-    auto it {std::ranges::find_if(platforms, [&](Platform *p)
-                                   { return directions_equal(p->get_direction(), dir) && p->supports_train_line(line); })};
+    auto it{std::ranges::find_if(platforms, [&](Platform *p)
+                                 { return directions_equal(p->get_direction(), dir) && p->supports_train_line(line); })};
 
     if (it != platforms.end())
     {

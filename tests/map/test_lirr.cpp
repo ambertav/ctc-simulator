@@ -8,8 +8,6 @@
 #include "utils/test_utils.h"
 #include "map/lirr.h"
 
-std::vector<int> extract_random_ids(const std::string &file_path, int count);
-
 class LongIslandGraphTest : public ::testing::Test
 {
 protected:

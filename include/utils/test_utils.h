@@ -9,6 +9,7 @@
 #include <chrono>
 
 #include "utils.h"
+#include "map/graph.h"
 
 namespace TestUtils
 {
@@ -24,7 +25,7 @@ namespace TestUtils
         return dist(rng());
     }
 
-    inline std::vector<int> extract_random_ids(const std::string &file_path, const std::string &column_name, int count)
+    inline std::vector<int> extract_random_ids(const std::string &file_path, const std::string &column_name, size_t count)
     {
         std::ifstream file(file_path);
         if (!file.is_open())
@@ -62,10 +63,38 @@ namespace TestUtils
             }
         }
 
-        std::shuffle(all_ids.begin(), all_ids.end(), std::mt19937{std::random_device{}()});
-        all_ids.resize(std::min((int)all_ids.size(), count));
+        std::shuffle(all_ids.begin(), all_ids.end(), rng());
+        all_ids.resize(std::min(all_ids.size(), count));
 
         return all_ids;
+    }
+
+    inline std::vector<int> extract_random_ids(Transit::Map::Graph &graph, size_t count)
+    {
+        const auto &adj_list{graph.get_adjacency_list()};
+        std::vector<int> all_ids{};
+        all_ids.reserve(adj_list.size());
+
+        for (const auto &[id, _] : adj_list)
+        {
+            all_ids.push_back(id);
+        }
+
+        std::shuffle(all_ids.begin(), all_ids.end(), rng());
+        all_ids.resize(std::min(all_ids.size(), count));
+
+        return all_ids;
+    }
+
+    inline std::size_t random_index(std::size_t size)
+    {
+        if (size == 0)
+        {
+            throw std::invalid_argument("TestUtil::random_index called with size 0");
+        }
+
+        std::uniform_int_distribution<std::size_t> dist(0, size - 1);
+        return dist(rng());
     }
 
     template <typename W, typename R>
