@@ -8,7 +8,7 @@
 
 using namespace Transit::Map;
 
-Node *Graph::add_node(int i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string> &g, double lat, double lon)
+Node *Graph::add_node(int i, const std::string &n, const std::unordered_set<TrainLine> &t, const std::vector<std::string> &g, double lat, double lon)
 {
     if (node_map.count(i) > 0)
     {
@@ -72,7 +72,7 @@ void Graph::remove_node(Node *u)
     remove_node(u->id);
 }
 
-const Edge *Graph::add_edge(Node *u, Node *v, double w, const std::vector<TrainLine> &t)
+const Edge *Graph::add_edge(Node *u, Node *v, double w, const std::unordered_set<TrainLine> &t)
 {
     if (u == v)
     {
@@ -117,7 +117,7 @@ const Edge *Graph::add_edge(int u_id, int v_id)
     Node *u_node = node_map[u_id];
     Node *v_node = node_map[v_id];
 
-    std::vector<TrainLine> shared_lines;
+    std::unordered_set<TrainLine> shared_lines;
 
     std::unordered_set<TrainLine> u_lines(u_node->train_lines.begin(), u_node->train_lines.end());
 
@@ -125,7 +125,7 @@ const Edge *Graph::add_edge(int u_id, int v_id)
     {
         if (u_lines.count(line))
         {
-            shared_lines.push_back(line);
+            shared_lines.insert(line);
         }
     }
 
@@ -166,7 +166,7 @@ void Graph::remove_edge(Node *u, Node *v)
     --v->degree;
 }
 
-void Graph::update_node(int id, const std::vector<TrainLine> &more_train_lines, const std::vector<std::string> more_gtfs_ids)
+void Graph::update_node(int id, const std::unordered_set<TrainLine> &more_train_lines, const std::vector<std::string> more_gtfs_ids)
 {
     auto it = node_map.find(id);
     if (it == node_map.end())
@@ -175,7 +175,7 @@ void Graph::update_node(int id, const std::vector<TrainLine> &more_train_lines, 
     }
     Node *node = it->second;
 
-    node->train_lines.insert(node->train_lines.end(), more_train_lines.begin(), more_train_lines.end());
+    node->train_lines.insert(more_train_lines.begin(), more_train_lines.end());
     node->codes.insert(node->codes.end(), more_gtfs_ids.begin(), more_gtfs_ids.end());
 }
 
@@ -283,7 +283,7 @@ std::optional<Path> Graph::dijkstra(const Node *u, const Node *v) const
     }
     dist[u->id] = 0.0;
 
-    using PQElement = std::tuple<double /* distance */, int /* id */, std::vector<TrainLine> /* train lines */>;
+    using PQElement = std::tuple<double /* distance */, int /* id */, std::unordered_set<TrainLine> /* train lines */>;
     auto comparator = [](const PQElement &a, const PQElement &b)
     {
         return std::get<0>(a) > std::get<0>(b);
@@ -312,7 +312,7 @@ std::optional<Path> Graph::dijkstra(const Node *u, const Node *v) const
         {
             const int &neighbor_id{edge.to};
             double weight{edge.weight};
-            const std::vector<TrainLine> &edge_lines{edge.train_lines};
+            const std::unordered_set<TrainLine> &edge_lines{edge.train_lines};
 
             if (visited.contains(neighbor_id))
             {
@@ -410,7 +410,7 @@ double Graph::haversine_distance(const Coordinate &from, const Coordinate &to)
     return EARTH_RADIUS_KM * c;
 }
 
-bool Graph::requires_transfer(const std::vector<TrainLine> &a, const std::vector<TrainLine> &b) const
+bool Graph::requires_transfer(const std::unordered_set<TrainLine> &a, const std::unordered_set<TrainLine> &b) const
 {
     for (const auto &line_a : a)
     {

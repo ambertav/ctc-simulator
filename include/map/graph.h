@@ -27,15 +27,15 @@ namespace Transit::Map
     {
         int id;
         std::string name;
-        std::vector<TrainLine> train_lines;
+        std::unordered_set<TrainLine> train_lines;
         std::vector<std::string> codes;
         Coordinate coordinates;
         int degree;
 
-        Node(int i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string> &g, const Coordinate &c)
+        Node(int i, const std::string &n, const std::unordered_set<TrainLine> &t, const std::vector<std::string> &g, const Coordinate &c)
             : id(i), name(n), train_lines(t), codes(g), coordinates(c), degree(0) {}
 
-        Node(int i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string> &g, double lat, double lon)
+        Node(int i, const std::string &n, const std::unordered_set<TrainLine> &t, const std::vector<std::string> &g, double lat, double lon)
             : Node(i, n, t, g, Coordinate{lat, lon}) {}
     };
 
@@ -43,9 +43,9 @@ namespace Transit::Map
     {
         int to;
         double weight;
-        std::vector<TrainLine> train_lines;
+        std::unordered_set<TrainLine> train_lines;
 
-        Edge(int to, double w, const std::vector<TrainLine> &t)
+        Edge(int to, double w, const std::unordered_set<TrainLine> &t)
             : to(to), weight(w), train_lines(t) {}
     };
 
@@ -85,15 +85,15 @@ namespace Transit::Map
     public:
         Graph() = default;
 
-        Node *add_node(int i, const std::string &n, const std::vector<TrainLine> &t, const std::vector<std::string> &g, double lat = 0.0, double lon = 0.0);
+        Node *add_node(int i, const std::string &n, const std::unordered_set<TrainLine> &t, const std::vector<std::string> &g, double lat = 0.0, double lon = 0.0);
         void remove_node(int node_id);
         void remove_node(Node *u);
 
-        const Edge *add_edge(Node *u, Node *v, double w, const std::vector<TrainLine> &t);
+        const Edge *add_edge(Node *u, Node *v, double w, const std::unordered_set<TrainLine> &t);
         const Edge *add_edge(int u_id, int v_id);
         void remove_edge(Node *u, Node *v);
 
-        void update_node(int id, const std::vector<TrainLine> &more_train_lines, const std::vector<std::string> more_gtfs_ids);
+        void update_node(int id, const std::unordered_set<TrainLine> &more_train_lines, const std::vector<std::string> more_gtfs_ids);
 
         const Node *get_node(int id) const;
         const Edge *get_edge(int u_id, int v_id) const;
@@ -110,6 +110,6 @@ namespace Transit::Map
         std::optional<Path> reconstruct_path(const Node *u, const Node *v, const std::unordered_map<int, int> &prev) const;
 
         double haversine_distance(const Coordinate &from, const Coordinate &to);
-        bool requires_transfer(const std::vector<TrainLine> &a, const std::vector<TrainLine> &b) const;
+        bool requires_transfer(const std::unordered_set<TrainLine> &a, const std::unordered_set<TrainLine> &b) const;
     };
 }

@@ -23,17 +23,17 @@ private:
     const int id;
     const std::string name;
     const bool yard;
-    std::vector<TrainLine> train_lines;
+    std::unordered_set<TrainLine> train_lines;
     std::vector<Platform*> platforms;
 
     mutable std::shared_mutex mutex;
 
 public:
-    Station(int i, const std::string &n, bool y, const std::vector<TrainLine> &l);
+    Station(int i, const std::string &n, bool y, const std::unordered_set<TrainLine> &l);
 
     int get_id() const;
     const std::string &get_name() const;
-    const std::vector<TrainLine> &get_train_lines() const;
+    const std::unordered_set<TrainLine> &get_train_lines() const;
     const std::vector<Platform *>& get_platforms() const;
 
     bool is_yard() const;

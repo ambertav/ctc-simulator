@@ -46,12 +46,12 @@ void Subway::load_stations(const std::string &csv)
         double longitude {Utils::string_view_to_numeric<double>(row.at("longitude"))};
 
         auto train_line_tokens {Utils::split(train_lines_sv, ' ')};
-        std::vector<TrainLine> train_lines{};
+        std::unordered_set<TrainLine> train_lines{};
         train_lines.reserve(train_line_tokens.size());
 
         for (const auto &token : train_line_tokens)
         {
-            train_lines.emplace_back(trainline_from_string(std::string(token)));
+            train_lines.insert(trainline_from_string(std::string(token)));
         }
 
         try

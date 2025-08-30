@@ -9,7 +9,7 @@
 #include <ranges>
 #include <algorithm>
 
-Station::Station(int i, const std::string &n, bool y, const std::vector<TrainLine> &l)
+Station::Station(int i, const std::string &n, bool y, const std::unordered_set<TrainLine> &l)
     : id(i), name(n), yard(y), train_lines(l) {}
 
 int Station::get_id() const
@@ -22,7 +22,7 @@ const std::string &Station::get_name() const
     return name;
 }
 
-const std::vector<TrainLine> &Station::get_train_lines() const
+const std::unordered_set<TrainLine> &Station::get_train_lines() const
 {
     std::shared_lock lock(mutex);
     return train_lines;
