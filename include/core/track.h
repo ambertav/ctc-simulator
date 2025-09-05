@@ -8,9 +8,6 @@
 #include <vector>
 #include <unordered_set>
 #include <memory>
-#include <mutex>
-#include <shared_mutex>
-#include <atomic>
 
 #include "enum/transit_types.h"
 
@@ -24,17 +21,16 @@ class Track
 private:
     const int id;
     int duration;
-    std::atomic<bool> occupied;
-    std::atomic<Train *> current_train;
+    bool occupied;
+    Train *current_train;
     Signal *const signal;
     std::unordered_set<TrainLine> train_lines;
 
-    mutable std::shared_mutex mutex;
     std::vector<Track *> next_tracks;
     std::vector<Track *> prev_tracks;
 
-    std::atomic<Switch *> outbound_switch;
-    std::atomic<Switch *> inbound_switch;
+    Switch *outbound_switch;
+    Switch *inbound_switch;
 
 public:
     Track(int i, Signal *s, int d = 1, std::unordered_set<TrainLine> lines = {});
@@ -55,7 +51,7 @@ public:
 
     Track *get_next_track(TrainLine line) const;
     Track *get_prev_track(TrainLine line) const;
-    bool try_entry(Train *train);
+    bool accept_entry(Train *train);
     void release_train();
 
     void add_train_line(TrainLine line);

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <atomic>
-
 #include "enum/signal_state.h"
 
 class Track;
@@ -11,7 +9,7 @@ class Signal
 {
 private:
     const int id;
-    std::atomic<SignalState> state;
+    SignalState state;
     const int target_id;
 
 public:

@@ -10,7 +10,6 @@
 #include <unordered_set>
 #include <span>
 #include <optional>
-#include <mutex>
 
 #include "enum/transit_types.h"
 
@@ -25,8 +24,6 @@ private:
     const bool yard;
     std::unordered_set<TrainLine> train_lines;
     std::vector<Platform*> platforms;
-
-    mutable std::shared_mutex mutex;
 
 public:
     Station(int i, const std::string &n, bool y, const std::unordered_set<TrainLine> &l);

@@ -7,8 +7,6 @@
 
 #include <vector>
 #include <unordered_map>
-#include <mutex>
-#include <shared_mutex>
 
 class Signal;
 class Track;
@@ -21,9 +19,7 @@ private:
     std::vector<Track *> departure_tracks;
 
     std::unordered_map<Track *, Track *> links;
-    std::atomic<bool> in_progress;
-
-    mutable std::shared_mutex mutex;
+    bool in_progress;
 
 public:
     Switch(int i);

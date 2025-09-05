@@ -24,13 +24,11 @@ const std::string &Station::get_name() const
 
 const std::unordered_set<TrainLine> &Station::get_train_lines() const
 {
-    std::shared_lock lock(mutex);
     return train_lines;
 }
 
 const std::vector<Platform *> &Station::get_platforms() const
 {
-    std::shared_lock lock(mutex);
     return platforms;
 }
 
@@ -41,14 +39,11 @@ bool Station::is_yard() const
 
 void Station::add_platform(Platform *platform)
 {
-    std::unique_lock lock(mutex);
     platforms.push_back(platform);
 }
 
 std::optional<Platform *> Station::select_platform(Direction dir, TrainLine line) const
 {
-    std::shared_lock lock(mutex);
-
     auto it{std::ranges::find_if(platforms, [&](Platform *p)
                                  { return directions_equal(p->get_direction(), dir) && p->supports_train_line(line); })};
 

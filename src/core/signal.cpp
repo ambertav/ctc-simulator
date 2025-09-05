@@ -14,26 +14,27 @@ int Signal::get_target() const
 
 bool Signal::is_red() const
 {
-    return state.load(std::memory_order_acquire) == SignalState::RED;
+    return state == SignalState::RED;
 }
 
 bool Signal::is_yellow() const
 {
-    return state.load(std::memory_order_acquire) == SignalState::YELLOW;
+    return state == SignalState::YELLOW;
 }
 
 bool Signal::is_green() const
 {
-    return state.load(std::memory_order_acquire) == SignalState::GREEN;
+    return state == SignalState::GREEN;
 }
 
 SignalState Signal::get_state() const
 {
-    return state.load(std::memory_order_acquire);
+    return state;
 }
 
 bool Signal::change_state(SignalState new_state)
 {
-    SignalState old_state {state.exchange(new_state, std::memory_order_acq_rel)};
-    return old_state != new_state;
+    bool changed {state != new_state};
+    state = new_state;
+    return changed;
 }

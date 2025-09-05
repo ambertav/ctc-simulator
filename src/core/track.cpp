@@ -29,34 +29,32 @@ Signal *Track::get_signal() const
 
 const Train *Track::get_occupying_train() const
 {
-    return current_train.load(std::memory_order_acquire);
+    return current_train;
 }
 
 const std::vector<Track *> &Track::get_next_tracks() const
 {
-    std::shared_lock lock(mutex);
     return next_tracks;
 }
 
 const std::vector<Track *> &Track::get_prev_tracks() const
 {
-    std::shared_lock lock(mutex);
     return prev_tracks;
 }
 
 Switch *Track::get_outbound_switch() const
 {
-    return outbound_switch.load(std::memory_order_acquire);
+    return outbound_switch;
 }
 
 Switch *Track::get_inbound_switch() const
 {
-    return inbound_switch.load(std::memory_order_acquire);
+    return inbound_switch;
 }
 
 bool Track::is_occupied() const
 {
-    return occupied.load(std::memory_order_acquire);
+    return occupied;
 }
 
 bool Track::supports_train_line(TrainLine line) const
@@ -71,8 +69,6 @@ bool Track::is_platform() const
 
 Track *Track::get_next_track(TrainLine line) const
 {
-    std::shared_lock lock(mutex);
-
     for (auto *next : next_tracks)
     {
         if (next->supports_train_line(line))
@@ -86,8 +82,6 @@ Track *Track::get_next_track(TrainLine line) const
 
 Track *Track::get_prev_track(TrainLine line) const
 {
-    std::shared_lock lock(mutex);
-
     for (auto *prev : prev_tracks)
     {
         if (prev->supports_train_line(line))
@@ -99,43 +93,36 @@ Track *Track::get_prev_track(TrainLine line) const
     return nullptr;
 }
 
-bool Track::try_entry(Train *train)
+bool Track::accept_entry(Train *train)
 {
-    if (train == nullptr || signal == nullptr)
+    if (train == nullptr)
     {
         return false;
     }
 
-    if (!signal->is_green())
+    if (occupied || !signal->is_green())
     {
         return false;
     }
 
-    bool expected{false};
-    if (!occupied.compare_exchange_strong(expected, true, std::memory_order_acq_rel))
-    {
-        return false;
-    }
-
-    current_train.store(train, std::memory_order_release);
+    occupied = true;
+    current_train = train;
     return true;
 }
 
 void Track::release_train()
 {
-    current_train.store(nullptr, std::memory_order_release);
-    occupied.store(false, std::memory_order_release);
+    current_train = nullptr;
+    occupied = false;
 }
 
 void Track::add_train_line(TrainLine line)
 {
-    std::unique_lock lock(mutex);
     train_lines.insert(line);
 }
 
 void Track::remove_train_line(TrainLine line)
 {
-    std::unique_lock lock(mutex);
     train_lines.erase(line);
 }
 
@@ -145,8 +132,6 @@ void Track::add_next_track(Track *next)
     {
         return;
     }
-
-    std::unique_lock lock(mutex);
 
     if (std::ranges::find(next_tracks, next) == next_tracks.end())
     {
@@ -161,8 +146,6 @@ void Track::add_prev_track(Track *prev)
         return;
     }
 
-    std::unique_lock lock(mutex);
-
     if (std::ranges::find(prev_tracks, prev) == prev_tracks.end())
     {
         prev_tracks.push_back(prev);
@@ -171,13 +154,11 @@ void Track::add_prev_track(Track *prev)
 
 void Track::remove_next_track(Track *next)
 {
-    std::unique_lock lock(mutex);
     std::erase(next_tracks, next);
 }
 
 void Track::remove_prev_track(Track *prev)
 {
-    std::unique_lock lock(mutex);
     std::erase(prev_tracks, prev);
 }
 
@@ -188,7 +169,7 @@ void Track::add_outbound_switch(Switch *sw)
         return;
     }
 
-    outbound_switch.store(sw, std::memory_order_release);
+    outbound_switch = sw;
 }
 
 void Track::add_inbound_switch(Switch *sw)
@@ -198,15 +179,15 @@ void Track::add_inbound_switch(Switch *sw)
         return;
     }
 
-    inbound_switch.store(sw, std::memory_order_release);
+    inbound_switch = sw;
 }
 
 void Track::remove_outbound_switch()
 {
-    outbound_switch.store(nullptr, std::memory_order_release);
+    outbound_switch = nullptr
 }
 
 void Track::remove_inbound_switch()
 {
-    inbound_switch.store(nullptr, std::memory_order_release);
+    inbound_switch = nullptr;
 }
