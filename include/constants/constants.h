@@ -22,6 +22,9 @@ namespace Constants
     inline constexpr double METRO_NORTH_SCALE_FACTOR{1.8};
     inline constexpr double LIRR_SCALE_FACTOR{1.4};
 
+    inline constexpr int MAX_EVENT_SEARCH_DEPTH{10};
+    inline constexpr int EVENT_TIMEOUT{15};
+
     enum class System
     {
         SUBWAY = 1,

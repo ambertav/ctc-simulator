@@ -1,32 +1,36 @@
 #include "core/train.h"
 
-#include <iostream>
-
-Train::Train(int i, TrainLine l, ServiceType t, Track *ct) : id(i), delay(0), line(l), type(t), current_track(ct), status(TrainStatus::IDLE), destination(nullptr) {}
+Train::Train(int i, TrainLine l, ServiceType t, Direction d)
+    : id(i), dwell_timer(0), punctuality_delta(0), train_line(l), service_type(t), status(TrainStatus::IDLE), direction(d), current_track(nullptr) {}
 
 int Train::get_id() const
 {
     return id;
 }
 
-int Train::get_delay() const
+int Train::get_dwell() const
 {
-    return delay;
+    return dwell_timer;
 }
 
-TrainLine Train::get_line() const
+int Train::get_lateness() const
 {
-    return line;
+    return punctuality_delta;
 }
 
-ServiceType Train::get_type() const
+std::string_view Train::get_headsign() const noexcept
 {
-    return type;
+    return headsign;
 }
 
-Track *Train::get_current_track() const
+TrainLine Train::get_train_line() const
 {
-    return current_track;
+    return train_line;
+}
+
+ServiceType Train::get_service_type() const
+{
+    return service_type;
 }
 
 TrainStatus Train::get_status() const
@@ -34,87 +38,119 @@ TrainStatus Train::get_status() const
     return status;
 }
 
-Platform *Train::get_destination() const
+Direction Train::get_direction() const
 {
-    return destination;
+    return direction;
 }
 
-bool Train::is_active() const 
+Track *Train::get_current_track() const
+{
+    return current_track;
+}
+
+void Train::set_lateness(int delta)
+{
+    punctuality_delta = delta;
+}
+
+void Train::add_headsign(std::string trip_headsign)
+{
+    headsign = trip_headsign;
+}
+
+void Train::add_dwell(int additional_dwell)
+{
+    if (additional_dwell > 0)
+    {
+        dwell_timer += additional_dwell;
+    }
+}
+
+bool Train::is_idle() const
+{
+    return status == TrainStatus::IDLE;
+}
+
+bool Train::is_active() const
 {
     return status != TrainStatus::IDLE && status != TrainStatus::OUTOFSERVICE;
 }
 
-void Train::add_delay(int additional_delay)
+bool Train::is_arriving() const
 {
-    if (additional_delay > 0)
-    {
-        delay += additional_delay;
-    }
+    return status == TrainStatus::ARRIVING;
+}
+
+bool Train::is_departing() const
+{
+    return status == TrainStatus::DEPARTING;
+}
+
+bool Train::is_late() const
+{
+    return punctuality_delta > 0;
 }
 
 bool Train::request_movement()
 {
-    if (delay <= 0)
+    if (dwell_timer <= 0)
     {
         return true;
     }
     else
     {
-        --delay;
+        --dwell_timer;
         return false;
     }
 }
 
-bool Train::move_to_track()
+bool Train::move_to_track(Track *to)
 {
-    Track *next = current_track ? current_track->get_next() : nullptr;
-    if (!next)
+    if (to == nullptr)
     {
-        std::cerr << "Invalid, train " << id << " cannot move to nullptr\n";
         return false;
     }
-    else if (!next->allow_entry())
+    
+    Track *from{current_track};
+
+    bool moved {to->accept_entry(this)};
+    if (!moved)
     {
-        std::cerr << "Train " << id << " cannot move to track " << next->get_id() << "\n";
         return false;
+    }
+
+    if (from)
+    {
+        from->release_train();
+    }
+
+    current_track = to;
+
+    if (to->is_platform())
+    {
+        status = TrainStatus::ARRIVING;
+    }
+    else if (from && from->is_platform())
+    {
+        status = TrainStatus::DEPARTING;
     }
     else
     {
-        if (current_track)
-        {
-            current_track->release_train();
-        }
-
-        Track *from = current_track;
-        current_track = next;
-        current_track->accept_entry(this);
-
-        if (current_track->is_platform())
-        {
-            status = TrainStatus::ARRIVING;
-            Platform *platform = static_cast<Platform *>(current_track);
-        }
-        else if (from && from->is_platform())
-        {
-            status = TrainStatus::DEPARTING;
-            Platform *platform = static_cast<Platform *>(from);
-        }
-        else
-        {
-            status = TrainStatus::MOVING;
-        }
-
-        delay = current_track->get_duration();
-
-        return true;
+        status = TrainStatus::MOVING;
     }
+
+    dwell_timer = to->get_duration();
+    return true;
 }
 
 void Train::spawn(Platform *yard)
 {
-    current_track = yard;
-    yard->accept_entry(this);
-    status = TrainStatus::READY;
+    bool spawned{yard->accept_entry(this)};
+    if (spawned)
+    {
+        current_track = yard;
+        status = TrainStatus::READY;
+    }
 }
 
 void Train::despawn()
@@ -122,14 +158,4 @@ void Train::despawn()
     current_track->release_train();
     current_track = nullptr;
     status = TrainStatus::OUTOFSERVICE;
-}
-
-void Train::update_status(TrainStatus status)
-{
-    this->status = status;
-}
-
-void Train::update_destination(Platform *destination)
-{
-    this->destination = destination;
 }

@@ -1,22 +1,24 @@
+/**
+ * for details on design, see:
+ * docs/dispatch.md
+ */
+
 #pragma once
 
 #include <vector>
 #include <unordered_map>
+#include <optional>
 #include <queue>
+#include <memory>
 
+#include "enum/event_type.h"
 #include "core/train.h"
 #include "core/track.h"
 #include "core/platform.h"
-#include "core/signal.h"
 #include "core/station.h"
 #include "system/logger.h"
 
-enum class EventType
-{
-    ARRIVAL,
-    DEPARTURE,
-    SIGNAL
-};
+class CentralControl;
 
 struct Event
 {
@@ -28,7 +30,6 @@ struct Event
 
     Event(int t, int t_id, int s_id, Direction dir, EventType ty) : tick(t), train_id(t_id), station_id(s_id), direction(dir), type(ty) {}
 
-    // for min-heap, earliest on top
     bool operator<(const Event &other) const
     {
         return tick > other.tick;
@@ -45,30 +46,35 @@ class Dispatch
 {
 private:
     std::unordered_map<int, Station *> stations;
+    std::vector<Station *> yards;
     std::vector<Train *> trains;
-    std::vector<Track *> segments;
-    std::vector<Signal *> signals;
+    std::vector<std::pair<Train *, Track *>> authorized;
 
     std::unordered_map<int, EventQueues> schedule;
 
-    Logger &logger;
+    CentralControl *central_control;
+    Logger *logger;
+    TrainLine train_line;
 
 public:
-    Dispatch(const std::vector<Station *> &st, const std::vector<Train *> &tn, const std::vector<Track *> &tk, const std::vector<Platform *> &p, const std::vector<Signal *> &si, Logger &log);
+    Dispatch(CentralControl *cc, TrainLine tl, const std::vector<Station *> &st, const std::vector<Train *> &tn, Logger *log);
 
+    TrainLine get_train_line() const;
     const std::unordered_map<int, Station *> &get_stations() const;
     const std::vector<Train *> &get_trains() const;
-    const std::vector<Signal *> &get_signals() const;
     const std::vector<Track *> &get_segments() const;
+    const std::unordered_map<int, EventQueues> &get_station_schedules() const;
 
-    const std::unordered_map<int, EventQueues> &get_schedule() const;
-
-    void load_schedule(const std::string &csv_file);
-    void update(int tick);
+    void load_schedule();
+    void authorize(int tick);
+    void execute(int tick);
 
 private:
-    bool authorize(int tick, Train* train);
+    std::optional<Event> process_event(int tick, std::priority_queue &queue, Train *train);
+    
     void handle_spawns(int tick);
-    void spawn_train(int tick, Event event);
-    void despawn_train(Train *train, int yard_id);
+    void spawn_train(int tick, const Event &event);
+    void despawn_train(int tick, const Event &event, Train *train, int yard_id);
+
+    int calculate_switch_priority(int tick, Train *train);
 };

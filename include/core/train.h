@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <string_view>
+
 #include "enum/transit_types.h"
 #include "enum/service_type.h"
 #include "enum/train_status.h"
@@ -15,33 +18,41 @@ class Train
 {
 private:
     const int id;
-    int delay;
-    const TrainLine line;
-    ServiceType type;
-    Track *current_track;
+    int dwell_timer;
+    int punctuality_delta;
+    std::string headsign;
+    const TrainLine train_line;
+    ServiceType service_type;
     TrainStatus status;
-    Platform *destination;
+    Direction direction;
+    Track *current_track;
 
 public:
-    Train(int i, TrainLine l, ServiceType t, Track *ct);
+    Train(int i, TrainLine l, ServiceType t, Direction d);
 
     int get_id() const;
-    int get_delay() const;
-    TrainLine get_line() const;
-    ServiceType get_type() const;
-    Track *get_current_track() const;
+    int get_dwell() const;
+    int get_lateness() const;
+    std::string_view get_headsign() const;
+    TrainLine get_train_line() const;
+    ServiceType get_service_type() const;
     TrainStatus get_status() const;
-    Platform *get_destination() const;
+    Direction get_direction() const;
+    Track *get_current_track() const;
 
+    void set_lateness(int delta);
+    void add_headsign(std::string trip_headsign);
+    void add_dwell(int additional_dwell);
+
+    bool is_idle() const;
     bool is_active() const;
-    void add_delay(int additional_delay);
+    bool is_arriving() const;
+    bool is_departing() const;
+    bool is_late() const;
 
     bool request_movement();
-    bool move_to_track();
+    bool move_to_track(Track* to);
 
     void spawn(Platform *yard);
     void despawn();
-
-    void update_status(TrainStatus status);
-    void update_destination(Platform *destination);
 };
