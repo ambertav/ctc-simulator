@@ -37,7 +37,9 @@ public:
     void build_network(const Transit::Map::Graph &graph, const Registry &registry, int system_code);
 
     std::vector<Train *> get_trains() const;
+    std::vector<Train *> get_trains(TrainLine train_line) const;
     std::vector<Station *> get_stations() const;
+    std::vector<Station *> get_stations(TrainLine train_line) const;
     std::vector<Signal *> get_signals() const;
     std::vector<Platform *> get_platforms() const;
     std::vector<Track *> get_tracks() const;

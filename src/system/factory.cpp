@@ -89,6 +89,21 @@ std::vector<Train *> Factory::get_trains() const
     return output;
 }
 
+std::vector<Train *> Factory::get_trains(TrainLine train_line) const
+{
+    std::vector<Train *> output{};
+    output.reserve(trains.size());
+
+    for (auto &[id, train] : trains)
+    {
+        if (trainlines_equal(train->get_train_line(), train_line))
+        {
+            output.push_back(train.get());
+        }
+    }
+    return output;
+}
+
 std::vector<Station *> Factory::get_stations() const
 {
     std::vector<Station *> output{};
@@ -97,6 +112,21 @@ std::vector<Station *> Factory::get_stations() const
     std::ranges::transform(stations, std::back_inserter(output), [](const auto &pair)
                            { return pair.second.get(); });
 
+    return output;
+}
+
+std::vector<Station *> Factory::get_stations(TrainLine train_line) const
+{
+    std::vector<Station *> output{};
+    output.reserve(stations.size());
+
+    for (auto &[id, station] : stations)
+    {
+        if (trainlines_equal(station->get_train_line(), train_line))
+        {
+            output.push_back(station.get());
+        }
+    }
     return output;
 }
 
@@ -183,7 +213,7 @@ void Factory::create_trains(const Registry &registry, int system_code)
                 info.id,
                 info.train_line,
                 ServiceType::BOTH,
-                nullptr));
+                info.direction));
     }
 }
 
