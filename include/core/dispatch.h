@@ -8,7 +8,7 @@
 #include <vector>
 #include <unordered_map>
 #include <optional>
-#include <queue>
+#include <map>
 #include <memory>
 
 #include "enum/event_type.h"
@@ -38,8 +38,8 @@ struct Event
 
 struct EventQueues
 {
-    std::priority_queue<Event> arrivals;
-    std::priority_queue<Event> departures;
+    std::multimap<int /* tick */, Event> arrivals;
+    std::multimap<int /* tick */, Event> departures;
 };
 
 class Dispatch
@@ -70,7 +70,7 @@ public:
     void execute(int tick);
 
 private:
-    std::optional<Event> process_event(int tick, std::priority_queue &queue, Train *train);
+    std::optional<Event> process_event(int tick, std::multimap<int, Event> &queue, Train *train);
     
     void handle_spawns(int tick);
     void spawn_train(int tick, const Event &event);
