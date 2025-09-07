@@ -122,7 +122,7 @@ std::vector<Station *> Factory::get_stations(TrainLine train_line) const
 
     for (auto &[id, station] : stations)
     {
-        if (trainlines_equal(station->get_train_line(), train_line))
+        if (station->get_train_lines().contains(train_line))
         {
             output.push_back(station.get());
         }
@@ -207,6 +207,7 @@ void Factory::create_trains(const Registry &registry, int system_code)
     for (const auto &encoded : train_registry)
     {
         Info info{registry.decode(encoded)};
+
         trains.emplace(
             info.id,
             std::make_unique<Train>(

@@ -184,7 +184,7 @@ void Track::add_inbound_switch(Switch *sw)
 
 void Track::remove_outbound_switch()
 {
-    outbound_switch = nullptr
+    outbound_switch = nullptr;
 }
 
 void Track::remove_inbound_switch()

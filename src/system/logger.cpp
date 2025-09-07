@@ -1,8 +1,20 @@
+#include <filesystem>
+#include <fstream>
+#include <stdexcept>
+
 #include "system/logger.h"
 
 Logger::Logger(const std::string &file_path)
-    : outfile(file_path, std::ios::out | std::ios::trunc)
 {
+    std::filesystem::path p(file_path);
+    std::filesystem::path dir{p.parent_path()};
+
+    if (!std::filesystem::exists(dir))
+    {
+        std::filesystem::create_directories(dir);
+    }
+
+    outfile.open(file_path, std::ios::out | std::ios::trunc);
     if (!outfile.is_open())
     {
         throw std::runtime_error("Failed to open log file: " + file_path);
@@ -36,7 +48,7 @@ void Logger::log_departure(int actual_tick, int planned_tick, Train *train, Plat
 void Logger::log_signal_change(int tick, Signal *signal)
 {
     log("Signal " + std::to_string(signal->get_id()) +
-        " changed state to " + signal->get_state() +
+        " changed state to " + signal_state_to_string(signal->get_state()) +
         " at tick " + std::to_string(tick));
 }
 

@@ -53,6 +53,6 @@ public:
     bool request_movement();
     bool move_to_track(Track* to);
 
-    void spawn(Platform *yard);
+    void spawn(Platform *yard_platform);
     void despawn();
 };

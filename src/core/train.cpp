@@ -18,7 +18,7 @@ int Train::get_lateness() const
     return punctuality_delta;
 }
 
-std::string_view Train::get_headsign() const noexcept
+std::string_view Train::get_headsign() const
 {
     return headsign;
 }
@@ -143,12 +143,12 @@ bool Train::move_to_track(Track *to)
     return true;
 }
 
-void Train::spawn(Platform *yard)
+void Train::spawn(Platform *yard_platform)
 {
-    bool spawned{yard->accept_entry(this)};
+    bool spawned{yard_platform->accept_entry(this)};
     if (spawned)
     {
-        current_track = yard;
+        current_track = yard_platform;
         status = TrainStatus::READY;
     }
 }
