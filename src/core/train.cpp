@@ -1,3 +1,8 @@
+/**
+ * for details on design, see:
+ * docs/train.md
+ */
+
 #include "core/train.h"
 
 Train::Train(int i, TrainLine l, ServiceType t, Direction d)
@@ -53,7 +58,7 @@ void Train::set_lateness(int delta)
     punctuality_delta = delta;
 }
 
-void Train::add_headsign(std::string trip_headsign)
+void Train::set_headsign(std::string trip_headsign)
 {
     headsign = trip_headsign;
 }

@@ -18,6 +18,21 @@ std::string CentralControl::get_system_name() const
     return system_name;
 }
 
+Dispatch *CentralControl::get_dispatch(TrainLine train_line) const
+{
+    auto it{std::ranges::find_if(dispatchers, [train_line](auto &dispatch)
+                                 { return trainlines_equal(dispatch->get_train_line(), train_line); })};
+
+    if (it != dispatchers.end())
+    {
+        return it->get();
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
 std::vector<std::pair<Train *, Track *>> CentralControl::get_granted_links(Dispatch *dispatch)
 {
     auto it{granted_links.find(dispatch)};
@@ -51,6 +66,7 @@ void CentralControl::run(int tick)
 void CentralControl::request_switch(Train *train, Switch *sw, Track *from, Track *to, int priority, int tick, Dispatch *dispatch)
 {
     auto existing{train_to_request.find(train)};
+
     if (existing != train_to_request.end())
     {
         auto &[existing_sw, request_it] = existing->second;
@@ -71,6 +87,11 @@ void CentralControl::request_switch(Train *train, Switch *sw, Track *from, Track
         else
         {
             switch_requests[existing_sw].erase(request_it);
+            if (switch_requests[existing_sw].empty())
+            {
+                switch_requests.erase(existing_sw);
+            }
+            train_to_request.erase(existing);
         }
     }
 

@@ -1,327 +1,185 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <iostream>
+#include <ranges>
+#include <algorithm>
 
-#include "config.h"
-#include "constants.h"
+#include "utils/test_utils.h"
+#include "constants/constants.h"
+#include "system/registry.h"
+#include "map/metro_north.h"
+#include "core/central_control.h"
 #include "core/dispatch.h"
 
-class DispatchTest : public testing::Test
+class DispatchTest : public ::testing::Test
 {
 protected:
-    class MockTrain : public Train
+    class MockCentralControl : public CentralControl
     {
-    public:
-        MockTrain(int i, TrainLine l, ServiceType t, Track *ct) : Train(i, l, t, ct) {}
-    };
-    class MockTrack : public Track
-    {
-    public:
-        MockTrack(int i, Signal *s, int d = 1) : Track(i, s, d) {}
-    };
-    class MockPlatform : public Platform
-    {
-    public:
-        MockPlatform(int i, int dw, Signal *si, const Station *st, Direction dir) : Platform(i, dw, si, st, dir) {}
-    };
-    class MockSignal : public Signal
-    {
-    public:
-        MockSignal(int i, int t) : Signal(i, t) {}
-    };
-    class MockStation : public Station
-    {
-    public:
-        MockStation(int i, const std::string &n, bool y, const std::vector<TrainLine> &l) : Station(i, n, y, l) {}
+        MockCentralControl(Constants::System sc, const std::string &sn, const Transit::Map::Graph &g, const Registry &r) : CentralControl(sc, sn, g, r) {}
     };
 
-    std::unique_ptr<MockTrain> mock_train_1;
-    std::unique_ptr<MockTrain> mock_train_2;
-    std::unique_ptr<MockStation> mock_yard_1, mock_station, mock_yard_2;
-    std::unique_ptr<MockPlatform> mock_platform_yard_1, mock_platform_station, mock_platform_yard_2;
-    std::unique_ptr<MockTrack> mock_track_1, mock_track_2;
-    std::unique_ptr<MockSignal> mock_signal_yard_1, mock_signal_track_1, mock_signal_station, mock_signal_track_2, mock_signal_yard_2;
-    std::unique_ptr<Dispatch> dispatch;
+    std::unique_ptr<CentralControl> cc{};
+    Transit::Map::MetroNorth &mnr{Transit::Map::MetroNorth::get_instance()};
+    Registry &registry{Registry::get_instance()};
 
-    std::string test_file{std::string(LOG_DIRECTORY) + "/test_sim.txt"};
-    std::string test_schedule{std::string(DATA_DIRECTORY) + "/dispatch_test_schedule.csv"};
-    Logger logger{test_file};
-
-    void build_objects()
-    {
-        auto lines = std::vector<TrainLine>{SUB::TrainLine::FOUR};
-
-        mock_train_1 = std::make_unique<MockTrain>(1, SUB::TrainLine::FOUR, ServiceType::EXPRESS, nullptr);
-        mock_train_2 = std::make_unique<MockTrain>(2, SUB::TrainLine::FOUR, ServiceType::EXPRESS, nullptr);
-
-        mock_yard_1 = std::make_unique<MockStation>(Yards::north, "yard 1", true, lines);
-        mock_signal_yard_1 = std::make_unique<MockSignal>(1, 1);
-        mock_platform_yard_1 = std::make_unique<MockPlatform>(1, 1, mock_signal_yard_1.get(), mock_yard_1.get(), SUB::Direction::DOWNTOWN);
-
-        mock_signal_track_1 = std::make_unique<MockSignal>(2, 2);
-        mock_track_1 = std::make_unique<MockTrack>(2, mock_signal_track_1.get());
-
-        mock_station = std::make_unique<MockStation>(2, "station", false, lines);
-        mock_signal_station = std::make_unique<MockSignal>(3, 3);
-        mock_platform_station = std::make_unique<MockPlatform>(3, 1, mock_signal_station.get(), mock_station.get(), SUB::Direction::DOWNTOWN);
-
-        mock_signal_track_2 = std::make_unique<MockSignal>(4, 4);
-        mock_track_2 = std::make_unique<MockTrack>(4, mock_signal_track_2.get());
-
-        mock_yard_2 = std::make_unique<MockStation>(Yards::south, "yard 2", true, lines);
-        mock_signal_yard_2 = std::make_unique<MockSignal>(5, 5);
-        mock_platform_yard_2 = std::make_unique<MockPlatform>(5, 1, mock_signal_yard_2.get(), mock_yard_2.get(), SUB::Direction::DOWNTOWN);
-
-        mock_yard_1->add_platform(mock_platform_yard_1.get());
-        mock_station->add_platform(mock_platform_station.get());
-        mock_yard_2->add_platform(mock_platform_yard_2.get());
-    }
-
-    void build_network()
-    {
-        // build network
-        // yard 1 platform --- track 1
-        mock_platform_yard_1->set_next(mock_track_1.get());
-        mock_track_1->set_prev(mock_platform_yard_1.get());
-
-        // track 1 --- station platform
-        mock_track_1->set_next(mock_platform_station.get());
-        mock_platform_station->set_prev(mock_track_1.get());
-
-        // station platform --- track 2
-        mock_platform_station->set_next(mock_track_2.get());
-        mock_track_2->set_prev(mock_platform_station.get());
-
-        // track 2 -- yard 2 platform
-        mock_track_2->set_next(mock_platform_yard_2.get());
-        mock_platform_yard_2->set_prev(mock_track_2.get());
-    }
+    Dispatch *dispatch{};
+    MNR::TrainLine train_line{MNR::TrainLine::HUDSON};
 
     void SetUp() override
     {
-        std::ofstream file(test_file, std::ios::trunc);
-        file.close();
-        /*
-        constructs:
-        1 train, 2 yards, 1 station, 3 platforms, 2 tracks, 5 signals
+        Constants::System code{Constants::System::METRO_NORTH};
+        auto it{std::ranges::find_if(Constants::SYSTEMS, [code](const auto &entry)
+                                     { return entry.second == code; })};
+        ASSERT_NE(it, Constants::SYSTEMS.end()) << "Invalid system code";
 
-        arranges  network:
-            Yard 1 (platform + signal)
-                |
-            Track 1 (signal)
-                |
-            Station (platform + signal)
-                |
-            Track 2 (signal)
-                |
-            Yard 2 (platform + signal)
-        */
-
-        build_objects();
-        build_network();
-
-        EXPECT_EQ(mock_platform_yard_1->get_next(), mock_track_1.get());
-        EXPECT_EQ(mock_track_1->get_next(), mock_platform_station.get());
-        EXPECT_EQ(mock_platform_station->get_next(), mock_track_2.get());
-        EXPECT_EQ(mock_track_2->get_next(), mock_platform_yard_2.get());
-
-        // construct dispatch
-        std::vector<Train *> trains{mock_train_1.get()};
-        std::vector<Station *> stations{mock_yard_1.get(), mock_station.get(), mock_yard_2.get()};
-        std::vector<Platform *> platforms{mock_platform_yard_1.get(), mock_platform_station.get(), mock_platform_yard_2.get()};
-        std::vector<Track *> tracks{mock_track_1.get(), mock_track_2.get()};
-        std::vector<Signal *> signals{mock_signal_yard_1.get(), mock_signal_track_1.get(), mock_signal_station.get(), mock_signal_track_2.get(), mock_signal_yard_2.get()};
-
-        dispatch = std::make_unique<Dispatch>(stations, trains, tracks, platforms, signals, logger);
+        cc = std::make_unique<CentralControl>(code, it->first, mnr, registry);
+        dispatch = cc->get_dispatch(train_line);
+        ASSERT_NE(dispatch, nullptr);
     }
 };
 
 TEST_F(DispatchTest, ConstructorInitializesCorrectly)
 {
-    const auto &stations_map = dispatch->get_stations();
-    EXPECT_EQ(stations_map.size(), 3);
+    EXPECT_EQ(std::get<MNR::TrainLine>(dispatch->get_train_line()), train_line);
 
-    EXPECT_THAT(stations_map, ::testing::Contains(::testing::Pair(mock_yard_1->get_id(), mock_yard_1.get())));
-    EXPECT_THAT(stations_map, ::testing::Contains(::testing::Pair(mock_station->get_id(), mock_station.get())));
-    EXPECT_THAT(stations_map, ::testing::Contains(::testing::Pair(mock_yard_2->get_id(), mock_yard_2.get())));
+    const auto &stations{dispatch->get_stations()};
+    EXPECT_THAT(stations, ::testing::Each(::testing::Truly([this](const auto &pair)
+                                                           {
+    const auto& [id, station] = pair;
+    if (!station->is_yard()) {
+        const Transit::Map::Node* node {mnr.get_node(id)};
+        return node != nullptr && node->train_lines.contains(train_line);
+    }
+    return true; })));
 
-    EXPECT_THAT(dispatch->get_trains(), ::testing::ElementsAre(mock_train_1.get()));
-    EXPECT_THAT(dispatch->get_signals(), ::testing::UnorderedElementsAre(
-                                             mock_signal_yard_1.get(),
-                                             mock_signal_track_1.get(),
-                                             mock_signal_station.get(),
-                                             mock_signal_track_2.get(),
-                                             mock_signal_yard_2.get()));
+    const auto &trains{dispatch->get_trains()};
+    EXPECT_THAT(trains, ::testing::Each(::testing::Truly([this](const Train *t)
+                                                         { return trainlines_equal(t->get_train_line(), train_line); })));
+}
 
-    EXPECT_THAT(dispatch->get_segments(), ::testing::UnorderedElementsAre(
-                                              mock_track_1.get(),
-                                              mock_track_2.get(),
-                                              static_cast<Platform *>(mock_platform_yard_1.get()),
-                                              static_cast<Platform *>(mock_platform_station.get()),
-                                              static_cast<Platform *>(mock_platform_yard_2.get())));
+TEST_F(DispatchTest, LoadsScheduleSuccessfully)
+{
+    const auto &routes_map{mnr.get_routes()};
+    const auto &schedules{dispatch->get_station_schedules()};
 
-    const auto schedule = dispatch->get_schedule();
-    EXPECT_EQ(schedule.size(), stations_map.size());
+    auto it{routes_map.find(train_line)};
+    ASSERT_NE(it, routes_map.end());
 
-    for (const auto &[station_id, queues] : schedule)
+    const std::vector<Transit::Map::Route> &routes{it->second};
+    size_t index{TestUtils::random_index(routes.size())};
+    const auto &route{routes[index]};
+
+    for (size_t i{0}; i < route.sequence.size(); ++i)
     {
-        EXPECT_TRUE(stations_map.contains(station_id));
-        EXPECT_TRUE(queues.arrivals.empty());
-        EXPECT_TRUE(queues.departures.empty());
+        const Transit::Map::Node *node{mnr.get_node(route.sequence[i])};
+        ASSERT_NE(node, nullptr);
+
+        auto schedule_it{schedules.find(node->id)};
+        ASSERT_NE(schedule_it, schedules.end());
+
+        const auto &sched{schedule_it->second};
+        EXPECT_FALSE(sched.arrivals.empty()) << "arrivals should have events in the queue";
+        EXPECT_FALSE(sched.departures.empty()) << "departures should have events in the queue";
+
+        int last_tick{-1};
+        for (const auto &[tick, event] : sched.arrivals)
+        {
+            EXPECT_GT(tick, last_tick);
+            last_tick = tick;
+            EXPECT_EQ(event.station_id, node->id);
+        }
+
+        last_tick = -1;
+        for (const auto &[tick, event] : sched.departures)
+        {
+            EXPECT_GT(tick, last_tick);
+            last_tick = tick;
+            EXPECT_EQ(event.station_id, node->id);
+        }
     }
 }
 
-TEST_F(DispatchTest, LoadsScheduleAndConstructsPriorityQueuesSucessfully)
+TEST_F(DispatchTest, AuthorizesTrainsCorrectly)
 {
-    std::ofstream out(test_schedule);
-    ASSERT_TRUE(out.is_open());
+    int tick{0};
+    dispatch->authorize(tick);
+    const auto &authorizations_before_spawn{dispatch->get_authorizations()};
+    EXPECT_TRUE(authorizations_before_spawn.empty()) << "dispatch should not authorize trains before spawning";
 
-    // write valid data
-    out << "train_id,station_id,station_name,direction,arrival_tick,departure_tick\n";
-    out << "1,4000,Yard 1,downtown,-1,2\n";
-    out << "1,2,Station,downtown,3,5\n";
-    out.close();
+    dispatch->execute(tick); // spawns first train
+    ++tick;
 
-    dispatch->load_schedule(test_schedule);
-    const auto &schedule = dispatch->get_schedule();
+    dispatch->authorize(tick);
+    const auto &authorizations{dispatch->get_authorizations()};
+    EXPECT_FALSE(authorizations.empty()) << "dispatch should authorize train movement after spawn";
 
-    EXPECT_TRUE(schedule.contains(Yards::north));
-    EXPECT_TRUE(schedule.contains(2));
-    EXPECT_EQ(schedule.at(Yards::north).arrivals.size(), 0);
-    EXPECT_EQ(schedule.at(Yards::north).departures.size(), 1);
-    EXPECT_EQ(schedule.at(2).arrivals.size(), 1);
-    EXPECT_EQ(schedule.at(2).departures.size(), 1);
+    Train *train{authorizations.front().first};
+    Track *track{authorizations.front().second};
 
-    std::remove(test_schedule.c_str());
-}
-
-TEST_F(DispatchTest, ReturnsEarlyFromLoadScheduleForEmptyFile)
-{
-    dispatch->load_schedule(test_schedule);
-    const auto &schedule = dispatch->get_schedule();
-
-    for (const auto &[station_id, queues] : schedule)
+    Track *prev{track};
+    Track *next{track->get_next_track(train_line)};
+    while (next != nullptr && next->get_inbound_switch() == nullptr)
     {
-        EXPECT_TRUE(queues.arrivals.empty());
-        EXPECT_TRUE(queues.departures.empty());
+        prev = next;
+        next = next->get_next_track(train_line);
     }
-    std::remove(test_schedule.c_str());
+
+    ASSERT_NE(next->get_inbound_switch(), nullptr) << "next track should have a switch";
+
+    Signal *signal{prev->get_signal()};
+    signal->change_state(SignalState::GREEN);
+    train->move_to_track(prev);
+    EXPECT_EQ(train->get_current_track(), prev) << "train should have moved into track right before the track with a switch";
+
+    ++tick;
+    dispatch->authorize(tick);
+    const auto &sw_authorizations{dispatch->get_authorizations()};
+
+    auto it{std::ranges::find_if(sw_authorizations.begin(), sw_authorizations.end(), [train](const std::pair<Train *, Track *> &pair)
+                                 { return pair.first == train; })};
+    EXPECT_EQ(it, sw_authorizations.end()) << "dispatch should not authorize train to move to track with switch";
 }
 
-TEST_F(DispatchTest, SkipsMalformedLinesInLoadSchedule)
+TEST_F(DispatchTest, ExecutesTrainMovementAccordingToAuthorizations)
 {
-    std::ofstream out(test_schedule);
-    ASSERT_TRUE(out.is_open());
+    int tick{0};
+    dispatch->execute(tick);
+    dispatch->authorize(tick);
+    ++tick;
+    
+    Train *train{dispatch->get_authorizations().front().first};
+    dispatch->execute(tick);
+    ++tick;
 
-    // write invalid data
-    out << "train_id,station_id,station_name,direction,arrival_tick,departure_tick\n";
-    out << "1,4000,Yard 1,downtown,-1,2\n";
-    out << "1,2,Station,downtown\n"; // malformed, should not add events for station 2 to schedule
-    out.close();
+    Track *current{train->get_current_track()};
+    Track *next{current->get_next_track(train_line)};
+    while (next != nullptr && next->get_inbound_switch() == nullptr)
+    {
+        current = next;
+        next = next->get_next_track(train_line);
+    }
 
-    dispatch->load_schedule(test_schedule);
-    const auto &schedule = dispatch->get_schedule();
+    ASSERT_NE(next->get_inbound_switch(), nullptr) << "next track should have a switch";
 
-    EXPECT_TRUE(schedule.contains(Yards::north));
-    EXPECT_EQ(schedule.at(Yards::north).arrivals.size(), 0);
-    EXPECT_EQ(schedule.at(Yards::north).departures.size(), 1);
+    Signal *signal{current->get_signal()};
+    signal->change_state(SignalState::GREEN);
+    train->move_to_track(current);
+    EXPECT_EQ(train->get_current_track(), current) << "train should have moved into track right before the track with a switch";
 
-    EXPECT_TRUE(schedule.at(2).arrivals.empty());
-    EXPECT_TRUE(schedule.at(2).departures.empty());
+    while (train->get_dwell() > 0)  // have to decrement dwell
+    {
+        train->request_movement();
+    }
 
-    std::remove(test_schedule.c_str());
-}
+    dispatch->authorize(tick);
+    const auto &authorizations{dispatch->get_authorizations()};
 
-TEST_F(DispatchTest, SkipsLinesWithInvalidInputInLoadSchedule)
-{
-    std::ofstream out(test_schedule);
-    ASSERT_TRUE(out.is_open());
+    auto it{std::ranges::find_if(authorizations.begin(), authorizations.end(), [train](const std::pair<Train *, Track *> &pair)
+                                 { return pair.first == train; })};
+    EXPECT_EQ(it, authorizations.end()) << "dispatch should not authorize train to move to track with switch";
 
-    // write invalid data
-    out << "train_id,station_id,station_name,direction,arrival_tick,departure_tick\n";
-    out << "1,4000,Yard 1,downtown,-1,2\n";
-    out << "1,2,Station,downtown,t,k\n";    // invalid number, should skip
-    out << "1,4001,Station,up,3,4\n";       // invalid direction, should skip
-    out.close();
-
-    dispatch->load_schedule(test_schedule);
-    const auto &schedule = dispatch->get_schedule();
-
-    EXPECT_TRUE(schedule.contains(Yards::north));
-    EXPECT_EQ(schedule.at(Yards::north).arrivals.size(), 0);
-    EXPECT_EQ(schedule.at(Yards::north).departures.size(), 1);
-
-    EXPECT_TRUE(schedule.at(2).arrivals.empty());
-    EXPECT_TRUE(schedule.at(2).departures.empty());
-    EXPECT_TRUE(schedule.at(Yards::south).arrivals.empty());
-    EXPECT_TRUE(schedule.at(Yards::south).departures.empty());
-
-    std::remove(test_schedule.c_str());
-}
-
-TEST_F(DispatchTest, UpdateMovesTrainIfAllowed)
-{
-    mock_train_1->spawn(mock_platform_yard_1.get());
-    dispatch->update(0);
-
-    EXPECT_EQ(mock_train_1->get_current_track(), mock_track_1.get());
-}
-
-TEST_F(DispatchTest, UpdateDeniesTrainMovementIfTrainIsDelayed)
-{
-    mock_train_1->spawn(mock_platform_yard_1.get());
-
-    mock_train_1->add_delay(2);
-    dispatch->update(0);
-
-    EXPECT_EQ(mock_train_1->get_current_track(), mock_platform_yard_1.get());
-}
-
-TEST_F(DispatchTest, UpdateDeniesTrainMovementIfSignalIsOccupied)
-{
-    mock_train_1->spawn(mock_platform_yard_1.get());
-    dispatch->update(0);
-
-    mock_train_2->spawn(mock_platform_yard_1.get());
-    dispatch->update(1);
-
-    EXPECT_EQ(mock_train_1->get_current_track(), mock_track_1.get());
-    EXPECT_EQ(mock_train_2->get_current_track(), mock_platform_yard_1.get());
-}
-
-
-TEST_F(DispatchTest, UpdateHandlesDespawnTrainOnYardArrival)
-{
-    mock_train_1->spawn(mock_platform_station.get());
-    dispatch->update(0); // moves to track_2
-    dispatch->update(1); // moves to yard_2
-    dispatch->update(2);
-
-    EXPECT_EQ(mock_train_1->get_current_track(), nullptr);
-    EXPECT_EQ(mock_train_1->get_status(), TrainStatus::OUTOFSERVICE);
-}
-
-TEST_F(DispatchTest, UpdateHandlesSpawnTrainsOnYardDeparture)
-{
-    EXPECT_EQ(mock_train_1->get_current_track(), nullptr);
-
-    std::ofstream out(test_schedule);
-    ASSERT_TRUE(out.is_open());
-
-    // write valid data
-    out << "train_id,station_id,station_name,direction,arrival_tick,departure_tick\n";
-    out << "1,4000,Yard 1,downtown,-1,0\n";
-    out << "1,2,Station,downtown,3,5\n";
-    out.close();
-
-    dispatch->load_schedule(test_schedule);
-
-    dispatch->update(0);
-
-    EXPECT_EQ(mock_train_1->get_current_track(), static_cast<Track *>(mock_platform_yard_1.get()));
-    std::remove(test_schedule.c_str());
+    cc->resolve_switches();
+    dispatch->execute(tick);
+    EXPECT_EQ(train->get_current_track(), next) << "central control should authorize train and have it move into the track with a switch";
 }

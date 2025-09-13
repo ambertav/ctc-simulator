@@ -1,9 +1,14 @@
+/**
+ * for details on design, see:
+ * docs/switch.md
+ */
+
 #include <ranges>
 #include <algorithm>
 
 #include "core/switch.h"
 
-Switch::Switch(int i) : id(i), in_progress(false) {}
+Switch::Switch(int i) : id(i) {}
 
 int Switch::get_id() const
 {
@@ -20,9 +25,15 @@ const std::vector<Track *> &Switch::get_departure_tracks() const
     return departure_tracks;
 }
 
-const std::unordered_map<Track *, Track *> &Switch::get_links() const
+const std::vector<std::pair<Track *, Track *>> Switch::get_links() const
 {
-    return links;
+    std::vector<std::pair<Track *, Track *>> output{};
+    output.reserve(links.size());
+
+    std::ranges::transform(links, std::back_inserter(output), [](const auto &pair)
+                           { return std::make_pair(pair.first, pair.second); });
+
+    return output;
 }
 
 Track *Switch::get_link(Track *input) const
@@ -38,27 +49,14 @@ Track *Switch::get_link(Track *input) const
     }
 }
 
-bool Switch::ready() const
-{
-    return !in_progress;
-}
-
 bool Switch::set_link(Track *input, Track *output)
 {
-    if (!ready())
-    {
-        return false;
-    }
-
     if (std::ranges::find(approach_tracks, input) == approach_tracks.end() || std::ranges::find(departure_tracks, output) == departure_tracks.end())
     {
         return false;
     }
 
-    begin_switching();
     links[input] = output;
-    complete_switching();
-
     return true;
 }
 
@@ -96,14 +94,4 @@ void Switch::remove_approach_track(Track *tr)
 void Switch::remove_departure_track(Track *tr)
 {
     std::erase(departure_tracks, tr);
-}
-
-void Switch::begin_switching()
-{
-    in_progress = true;
-}
-
-void Switch::complete_switching()
-{
-    in_progress = false;
 }

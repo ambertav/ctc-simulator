@@ -49,6 +49,11 @@ const std::vector<Train *> &Dispatch::get_trains() const
     return trains;
 }
 
+const std::vector<std::pair<Train *, Track *>> &Dispatch::get_authorizations() const
+{
+    return authorized;
+}
+
 const std::unordered_map<int, EventQueues> &Dispatch::get_station_schedules() const
 {
     return schedule;
@@ -108,7 +113,7 @@ void Dispatch::load_schedule()
             }
 
             Train *train{*it};
-            train->add_headsign(headsign);
+            train->set_headsign(headsign);
 
             int station_id{s_json["station_id"]};
             int arrival_tick{s_json["arrival_tick"]};
@@ -158,7 +163,7 @@ void Dispatch::authorize(int tick)
                 continue;
             }
 
-            Switch *sw{current->get_outbound_switch()};
+            Switch *sw{next->get_inbound_switch()};
 
             if (sw != nullptr)
             {
@@ -243,52 +248,17 @@ void Dispatch::execute(int tick)
         else
         {
             signal->change_state(SignalState::RED);
-            // logger->log_signal_change(tick, signal);
+            logger->log_signal_change(tick, signal);
         }
     }
 
     handle_spawns(tick);
 }
 
-// std::optional<Event> Dispatch::process_event(int tick, std::priority_queue<Event> &queue, Train *train)
-// {
-//     std::vector<Event> temp{};
-//     int search_depth{0};
-
-//     while (!queue.empty() && search_depth < Constants::MAX_EVENT_SEARCH_DEPTH)
-//     {
-//         Event event{queue.top()};
-
-//         queue.pop();
-//         ++search_depth;
-
-//         if (tick - event.tick > Constants::EVENT_TIMEOUT)
-//         {
-//             logger->log_warning("Removing stale event for train " + std::to_string(event.train_id) + " with type " + event_type_to_string(event.type) + " at station " + std::to_string(event.station_id));
-//             continue;
-//         }
-
-//         if (event.train_id == train->get_id())
-//         {
-//             for (const auto &temp_event : temp)
-//             {
-//                 queue.push(temp_event);
-//             }
-//             return event;
-//         }
-//         else
-//         {
-//             temp.push_back(event);
-//         }
-//     }
-
-//     return std::nullopt;
-// }
-
 std::optional<Event> Dispatch::process_event(int tick, std::multimap<int, Event> &event_map, Train *train)
 {
     int train_id = train->get_id();
-    
+
     // Search all events for this train (no time limit)
     for (auto it = event_map.begin(); it != event_map.end(); ++it)
     {
@@ -299,7 +269,7 @@ std::optional<Event> Dispatch::process_event(int tick, std::multimap<int, Event>
             return found_event;
         }
     }
-    
+
     return std::nullopt;
 }
 
@@ -308,7 +278,7 @@ void Dispatch::handle_spawns(int tick)
     for (Station *yard : yards)
     {
         auto &departures{schedule[yard->get_id()].departures};
-        
+
         auto it = departures.begin();
         while (it != departures.end() && it->first <= tick)
         {
@@ -318,21 +288,6 @@ void Dispatch::handle_spawns(int tick)
         }
     }
 }
-
-// void Dispatch::handle_spawns(int tick)
-// {
-//     for (Station *yard : yards)
-//     {
-//         auto &departures{schedule[yard->get_id()].departures};
-
-//         while (!departures.empty() && departures.top().tick <= tick)
-//         {
-//             Event event{departures.top()};
-//             departures.pop();
-//             spawn_train(tick, event);
-//         }
-//     }
-// }
 
 void Dispatch::spawn_train(int tick, const Event &event)
 {

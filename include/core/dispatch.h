@@ -49,7 +49,6 @@ private:
     std::vector<Station *> yards;
     std::vector<Train *> trains;
     std::vector<std::pair<Train *, Track *>> authorized;
-
     std::unordered_map<int, EventQueues> schedule;
 
     CentralControl *central_control;
@@ -62,7 +61,7 @@ public:
     TrainLine get_train_line() const;
     const std::unordered_map<int, Station *> &get_stations() const;
     const std::vector<Train *> &get_trains() const;
-    const std::vector<Track *> &get_segments() const;
+    const std::vector<std::pair<Train*, Track *>> &get_authorizations() const;
     const std::unordered_map<int, EventQueues> &get_station_schedules() const;
 
     void load_schedule();

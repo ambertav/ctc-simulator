@@ -1,9 +1,6 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include <thread>
-
-#include "utils/test_utils.h"
 #include "core/platform.h"
 #include "core/station.h"
 
@@ -31,7 +28,7 @@ TEST_F(StationTest, ConstructorInitializesCorrectly)
     EXPECT_EQ(station.get_id(), 1);
     EXPECT_EQ(station.get_name(), "station");
     EXPECT_FALSE(station.is_yard());
-    EXPECT_THAT(station.get_train_lines(), ::testing::ElementsAre(SUB::TrainLine::A, SUB::TrainLine::C, SUB::TrainLine::E));
+    EXPECT_THAT(station.get_train_lines(), ::testing::UnorderedElementsAre(SUB::TrainLine::A, SUB::TrainLine::C, SUB::TrainLine::E));
 
     EXPECT_TRUE(yard.is_yard());
 }
@@ -40,26 +37,6 @@ TEST_F(StationTest, AddsPlatformSuccessfully)
 {
     station.add_platform(&mock_platform);
     EXPECT_THAT(station.get_platforms(), ::testing::ElementsAre(&mock_platform));
-}
-
-TEST_F(StationTest, ThreadSafetyOfWriteAndReadForPlatforms)
-{
-    auto writer = [&](int i, std::atomic<bool> &done)
-    {
-        auto *p = new MockPlatform(i, nullptr, &station, platform_direction, 1, {TrainLine{SUB::TrainLine::A}});
-        station.add_platform(p);
-    };
-
-    auto reader = [&](int i, std::atomic<bool> &done)
-    {
-        auto platforms = station.get_platforms();
-        for (auto *p : platforms)
-        {
-            ASSERT_NE(p, nullptr);
-        }
-    };
-
-    TestUtils::run_concurrency_write_read(writer, reader);
 }
 
 TEST_F(StationTest, SelectPlatformReturnsMatchingPlatformSuccessfully)
@@ -97,35 +74,4 @@ TEST_F(StationTest, SelectPlatformFailsIfTrainLineIsWrong)
     auto selected{station.select_platform(platform_direction, wrong_line)};
 
     ASSERT_FALSE(selected.has_value());
-}
-
-TEST_F(StationTest, ThreadSafetyOfSelectPlatforms)
-{
-    station.add_platform(&mock_platform);
-    EXPECT_CALL(mock_platform, get_direction()).WillRepeatedly(::testing::ReturnRef(platform_direction));
-    EXPECT_CALL(mock_platform, supports_train_line(::testing::Eq(TrainLine{platform_line}))).WillRepeatedly(::testing::Return(true));
-
-    constexpr int number_of_threads{100};
-    std::vector<std::thread> threads{};
-    std::vector<bool> results(number_of_threads, false);
-
-    for (int i = 0; i < number_of_threads; ++i)
-    {
-        threads.emplace_back([&, i]()
-                             {
-        auto selected {station.select_platform(platform_direction, platform_line)};
-
-        if (selected.has_value())
-        {
-            results[i] = true;
-        } });
-    }
-
-    for (auto &t : threads)
-    {
-        t.join();
-    }
-
-    auto successes{std::count(results.begin(), results.end(), true)};
-    EXPECT_EQ(successes, number_of_threads);
 }

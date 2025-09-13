@@ -51,7 +51,7 @@ public:
 
     Track *get_next_track(TrainLine line) const;
     Track *get_prev_track(TrainLine line) const;
-    bool accept_entry(Train *train);
+    virtual bool accept_entry(Train *train);
     void release_train();
 
     void add_train_line(TrainLine line);

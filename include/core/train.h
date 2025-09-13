@@ -1,3 +1,8 @@
+/**
+ * for details on design, see:
+ * docs/train.md
+ */
+
 #pragma once
 
 #include <string>
@@ -9,10 +14,7 @@
 
 #include "core/track.h"
 #include "core/platform.h"
-#include "core/station.h"
 
-class Track;
-class Platform;
 
 class Train
 {
@@ -41,7 +43,8 @@ public:
     Track *get_current_track() const;
 
     void set_lateness(int delta);
-    void add_headsign(std::string trip_headsign);
+    void set_headsign(std::string trip_headsign);
+    
     void add_dwell(int additional_dwell);
 
     bool is_idle() const;
