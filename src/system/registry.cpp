@@ -1,6 +1,6 @@
 /**
  * for details on design, see:
- * docs/registry.md
+ * docs/system/registry.md
  */
 
 #include "system/registry.h"
@@ -80,16 +80,6 @@ Info Registry::decode(int encoded_id) const
     }
 
     return {encoded_id, system_code, train_line, direction, instance};
-}
-
-void Registry::reset_train_registry()
-{
-    train_registry.clear();
-}
-
-void Registry::reset_yard_registry()
-{
-    yard_registry.clear();
 }
 
 void Registry::build_registry()

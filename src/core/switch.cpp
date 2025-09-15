@@ -25,23 +25,11 @@ const std::vector<Track *> &Switch::get_departure_tracks() const
     return departure_tracks;
 }
 
-const std::vector<std::pair<Track *, Track *>> Switch::get_links() const
+Track* Switch::get_link(Track *input) const
 {
-    std::vector<std::pair<Track *, Track *>> output{};
-    output.reserve(links.size());
-
-    std::ranges::transform(links, std::back_inserter(output), [](const auto &pair)
-                           { return std::make_pair(pair.first, pair.second); });
-
-    return output;
-}
-
-Track *Switch::get_link(Track *input) const
-{
-    auto it{links.find(input)};
-    if (it != links.end())
+    if (link.first == input)
     {
-        return it->second;
+        return link.second;
     }
     else
     {
@@ -51,12 +39,11 @@ Track *Switch::get_link(Track *input) const
 
 bool Switch::set_link(Track *input, Track *output)
 {
-    if (std::ranges::find(approach_tracks, input) == approach_tracks.end() || std::ranges::find(departure_tracks, output) == departure_tracks.end())
+        if (std::ranges::find(approach_tracks, input) == approach_tracks.end() || std::ranges::find(departure_tracks, output) == departure_tracks.end())
     {
         return false;
     }
-
-    links[input] = output;
+    link = std::make_pair(input, output);
     return true;
 }
 
@@ -84,14 +71,4 @@ void Switch::add_departure_track(Track *tr)
     {
         departure_tracks.push_back(tr);
     }
-}
-
-void Switch::remove_approach_track(Track *tr)
-{
-    std::erase(approach_tracks, tr);
-}
-
-void Switch::remove_departure_track(Track *tr)
-{
-    std::erase(departure_tracks, tr);
 }

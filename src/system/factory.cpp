@@ -1,6 +1,6 @@
 /**
  * for details on design, see:
- * docs/factory.md
+ * docs/system/factory.md
  */
 
 #include <ranges>
@@ -172,16 +172,6 @@ std::vector<Switch *> Factory::get_switches() const
                            { return pair.second.get(); });
 
     return output;
-}
-
-void Factory::clear()
-{
-    trains.clear();
-    stations.clear();
-    signals.clear();
-    platforms.clear();
-    tracks.clear();
-    switches.clear();
 }
 
 int Factory::generate_signal_id()

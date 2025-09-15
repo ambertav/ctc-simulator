@@ -1,8 +1,3 @@
-/**
- * for details on design, see:
- * docs/platform.md
- */
-
 #pragma once
 
 #include "core/track.h"

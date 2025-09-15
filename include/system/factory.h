@@ -1,6 +1,6 @@
 /**
  * for details on design, see:
- * docs/factory.md
+ * docs/system/factory.md
  */
 
 #pragma once
@@ -44,8 +44,6 @@ public:
     std::vector<Platform *> get_platforms() const;
     std::vector<Track *> get_tracks() const;
     std::vector<Switch *> get_switches() const;
-
-    void clear();
 
 private:
     int generate_signal_id();

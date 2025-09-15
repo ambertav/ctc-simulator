@@ -1,8 +1,3 @@
-/**
- * for details on design, see:
- * docs/track.md
- */
-
 #pragma once
 
 #include <vector>
@@ -55,15 +50,10 @@ public:
     void release_train();
 
     void add_train_line(TrainLine line);
-    void remove_train_line(TrainLine line);
 
     void add_next_track(Track *next);
     void add_prev_track(Track *prev);
-    void remove_next_track(Track *next);
-    void remove_prev_track(Track *next);
 
     void add_outbound_switch(Switch *sw);
     void add_inbound_switch(Switch *sw);
-    void remove_outbound_switch();
-    void remove_inbound_switch();
 };

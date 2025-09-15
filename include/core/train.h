@@ -1,8 +1,3 @@
-/**
- * for details on design, see:
- * docs/train.md
- */
-
 #pragma once
 
 #include <string>

@@ -1,8 +1,3 @@
-/**
- * for details on design, see:
- * docs/platform.md
- */
-
 #include "core/signal.h"
 #include "core/platform.h"
 

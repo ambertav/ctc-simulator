@@ -18,25 +18,25 @@ TEST_F(SwitchTest, ConstructorInitializesCorrectly)
 
 TEST_F(SwitchTest, HandlesLinksSuccessfully)
 {
-    Track input_one{1, nullptr};
-    Track input_two{2, nullptr};
-    Track output_one{3, nullptr};
-    Track output_two{4, nullptr};
+    Track input{1, nullptr};
+    Track output_one{2, nullptr};
+    Track output_two{3, nullptr};
 
-    sw.add_approach_track(&input_one);
-    sw.add_approach_track(&input_two);
+    sw.add_approach_track(&input);
 
     sw.add_departure_track(&output_one);
     sw.add_departure_track(&output_two);
 
-    EXPECT_TRUE(sw.set_link(&input_one, &output_one));
-    EXPECT_TRUE(sw.set_link(&input_two, &output_two));
+    EXPECT_TRUE(sw.set_link(&input, &output_one));
+    EXPECT_EQ(sw.get_link(&input), &output_one);
+    
+    EXPECT_TRUE(sw.set_link(&input, &output_two));
+    EXPECT_EQ(sw.get_link(&input, &output_two));
 
-    EXPECT_EQ(sw.get_link(&input_one), &output_one);
-    EXPECT_THAT(sw.get_links(), ::testing::UnorderedElementsAre(
-        ::testing::Pair(&input_one, &output_one),
-        ::testing::Pair(&input_two, &output_two)
-    ));
+    EXPECT_FALSE(sw.set_link(&output_one, &input));
+    EXPECT_FALSE(sw.set_link(&output_two, &input));
+    EXPECT_EQ(sw.get_link(&output_one), nullptr);
+    EXPECT_EQ(sw.get_link(&output_two), nullptr);
 }
 
 TEST_F(SwitchTest, FailsToAddLinkForNonServicedTracks)
@@ -57,9 +57,6 @@ TEST_F(SwitchTest, HandlesApproachTracks)
     auto approaches{sw.get_approach_tracks()};
     EXPECT_EQ(approaches.size(), 1);
     EXPECT_TRUE(std::ranges::find(approaches, &track) != approaches.end());
-
-    sw.remove_approach_track(&track);
-    EXPECT_TRUE(sw.get_approach_tracks().empty());
 }
 
 TEST_F(SwitchTest, HandleDepartureTracks)
@@ -70,9 +67,6 @@ TEST_F(SwitchTest, HandleDepartureTracks)
     auto departures{sw.get_departure_tracks()};
     EXPECT_EQ(departures.size(), 1);
     EXPECT_TRUE(std::ranges::find(departures, &track) != departures.end());
-
-    sw.remove_departure_track(&track);
-    EXPECT_TRUE(sw.get_departure_tracks().empty());
 }
 
 TEST_F(SwitchTest, IgnoresAddingDuplicateTracks)

@@ -1,3 +1,8 @@
+/**
+ * for details on design, see:
+ * docs/map/graph.md
+ */
+
 #include "map/graph.h"
 
 #include <queue>

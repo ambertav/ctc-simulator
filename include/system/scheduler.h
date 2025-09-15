@@ -1,3 +1,8 @@
+/**
+ * for details on design, see:
+ * docs/system/scheduler.md
+ */
+
 #pragma once
 
 #include <string>

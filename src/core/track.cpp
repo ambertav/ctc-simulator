@@ -1,8 +1,3 @@
-/**
- * for details on design, see:
- * docs/track.md
- */
-
 #include <ranges>
 #include <algorithm>
 
@@ -121,11 +116,6 @@ void Track::add_train_line(TrainLine line)
     train_lines.insert(line);
 }
 
-void Track::remove_train_line(TrainLine line)
-{
-    train_lines.erase(line);
-}
-
 void Track::add_next_track(Track *next)
 {
     if (next == nullptr)
@@ -152,16 +142,6 @@ void Track::add_prev_track(Track *prev)
     }
 }
 
-void Track::remove_next_track(Track *next)
-{
-    std::erase(next_tracks, next);
-}
-
-void Track::remove_prev_track(Track *prev)
-{
-    std::erase(prev_tracks, prev);
-}
-
 void Track::add_outbound_switch(Switch *sw)
 {
     if (sw == nullptr)
@@ -180,14 +160,4 @@ void Track::add_inbound_switch(Switch *sw)
     }
 
     inbound_switch = sw;
-}
-
-void Track::remove_outbound_switch()
-{
-    outbound_switch = nullptr;
-}
-
-void Track::remove_inbound_switch()
-{
-    inbound_switch = nullptr;
 }

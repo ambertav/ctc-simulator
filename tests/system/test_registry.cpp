@@ -9,12 +9,6 @@ class RegistryTest : public ::testing::Test
 protected:
     Registry& registry {Registry::get_instance()};
     int invalid_system{999};
-
-    void TearDown() override
-    {
-        registry.reset_train_registry();
-        registry.reset_yard_registry();
-    }
 };
 
 TEST_F(RegistryTest, ConstructorBuildsRegistryForTrainsAndYards)

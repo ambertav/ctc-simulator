@@ -259,7 +259,6 @@ std::optional<Event> Dispatch::process_event(int tick, std::multimap<int, Event>
 {
     int train_id = train->get_id();
 
-    // Search all events for this train (no time limit)
     for (auto it = event_map.begin(); it != event_map.end(); ++it)
     {
         if (it->second.train_id == train_id)

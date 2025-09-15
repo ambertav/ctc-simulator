@@ -1,3 +1,8 @@
+/**
+ * for details on design, see:
+ * docs/map/metro_north.md
+ */
+
 #include <queue>
 
 #include "config.h"

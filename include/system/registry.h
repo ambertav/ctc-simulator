@@ -1,6 +1,6 @@
 /**
  * for details on design, see:
- * docs/registry.md
+ * docs/system/registry.md
  */
 
 #pragma once
@@ -36,9 +36,6 @@ public:
     //[ system (4 bits) | train_line_code (8 bits) | direction_code (12 bits) | instance (8 bits) ]
     int encode(int system_code, int train_line_code, int direction_code, int instance);
     Info decode(int encoded_id) const;
-
-    void reset_train_registry();
-    void reset_yard_registry();
 
 private:
     std::unordered_map<int /* system_code */, std::vector<int /* encoded_id */>> train_registry;

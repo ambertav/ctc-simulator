@@ -1,8 +1,3 @@
-/**
- * for details on design, see:
- * docs/train.md
- */
-
 #include "core/train.h"
 
 Train::Train(int i, TrainLine l, ServiceType t, Direction d)

@@ -1,3 +1,8 @@
+/**
+ * for details on design, see:
+ * docs/map/subway.md
+ */
+
 #pragma once
 
 #include <functional>

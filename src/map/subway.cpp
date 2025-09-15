@@ -1,3 +1,8 @@
+/**
+ * for details on design, see:
+ * docs/map/subway.md
+ */
+
 #include <fstream>
 #include <string_view>
 #include <unordered_set>

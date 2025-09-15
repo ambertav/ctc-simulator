@@ -2,10 +2,12 @@
 
 ## Overview
 
-The `Graph`, located in the `Transit::Map` namespace, is a weighted, undirected graph that provides the core functionality for constructing a transit map. It is designed to be extended by derived classes that model real-world transit systems (e.g., [`Subway`](subway.md)).
+The `Graph`, located in the `Transit::Map` namespace, is a weighted, undirected graph that provides the core functionality for constructing a transit map. It is designed to be extended by derived classes that model real-world transit systems (e.g., [`Subway`](/docs/map/subway.md), [`MetroNorth`](/docs/map/metro_north.md), [`LongIslandRailroad`](/docs/map/lirr.md)).
 
 ## Responsibilities
+
 - Provides core methods for adding/removing nodes, managing weighted edges, and pathfinding.
+- Provides full bidirectional `Route` information, containing the full stop sequence and distances, along all possible trip headsigns for that train line.
 - Remains flexible for extension by any class emulating real world transit maps
 
 ## Methods
@@ -13,14 +15,16 @@ The `Graph`, located in the `Transit::Map` namespace, is a weighted, undirected 
 For full details, see the [header](/include/map/graph.h) and [source](/src/map/graph.cpp) files
 
 ### Constructor
+
 - `Graph()` : default constructor that creates the `Graph` instance.
 
 ### Public
+
 - `add_node(...)` : constructs node and adds to graph.
 
-- `remove_node(...)` : removes node, overloaded to accept pointer and string id.
+- `remove_node(...)` : removes node, overloaded to accept pointer and int id.
 
-- `add_edge(...)` : adds a weighted, undirected edge between two nodes, overloaded to accept pointers and string ids.
+- `add_edge(...)` : adds a weighted, undirected edge between two nodes, overloaded to accept pointers and int ids.
 
 - `remove_edge(...)` : removes an edge between two node pointers.
 
@@ -28,11 +32,18 @@ For full details, see the [header](/include/map/graph.h) and [source](/src/map/g
   
 - `get_node(...)` : returns a raw pointer to the node
 
+- `get_edge(...)` : returns a raw pointer to the edge
+
 - `get_adjacency_list()` : returns the entire adjacency list.
 
 - `print()` : prints the graph's adjacency list to the console.
 
-- `find_path(...)` : accepts two string ids and finds a path between the corresponding nodes if applicable.
+- `find_path(...)` : accepts two int ids and finds a path between the corresponding nodes if applicable.
+
+- `get_routes()` : returns all routes, grouped by `TrainLine`.
+
+- `add_route(...)` : creates and adds a new route.
+
 
 ### Protected
 
@@ -40,25 +51,27 @@ For full details, see the [header](/include/map/graph.h) and [source](/src/map/g
 
 - `reconstruct_path(...)` : reconstructs the shortest path found.
 
+- `haversine_distance(...)` : calculates the distance between node coordinates using longitude and latitude.
+
 - `requires_transfer(...)` : determines whether a transfer is required between two adjacent nodes.
 
 ## Dependencies
 
-Designed to be extended by classes such as [`Subway`](subway.md), which model real-world transit systems.
+Designed to be extended by other classes to model real-world transit systems.
 
 ## Example Usage
 ```cpp
-// NOTE: The graph class is not intended to be directly used within the simulation
+// NOTE: the graph class is not intended to be used directly within the simulation
 
 Transit::Map::Graph graph{};
 
 // id, name, train_lines, gtfs_id, latitute, longitude
-graph.add_node("100", "Station 100", {TrainLine::FOUR}, {"100"}, 70.0, 70.0);
-graph.add_node("101", "Station 101", {TrainLine::FOUR}, {"101"}, 50.0, 70.0);
+graph.add_node(100, "Station 100", {TrainLine::FOUR}, {"100"}, 70.0, 70.0);
+graph.add_node(101, "Station 101", {TrainLine::FOUR}, {"101"}, 50.0, 70.0);
 
-graph.add_edge("100", "101");
+graph.add_edge(100, 101);
 
-Transit::Map::Path path { graph.find_path("100", "101") };
+std::optional<Transit::Map::Path> path_opt { graph.find_path(100, 101) };
 ```
 
 ## Notes

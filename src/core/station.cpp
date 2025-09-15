@@ -1,8 +1,3 @@
-/**
- * for details on design, see:
- * docs/station.md
- */
-
 #include "core/platform.h"
 #include "core/station.h"
 

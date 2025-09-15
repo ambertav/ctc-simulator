@@ -1,3 +1,8 @@
+/**
+ * for details on design, see:
+ * docs/map/graph.md
+ */
+
 #pragma once
 
 #include <string>

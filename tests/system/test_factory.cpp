@@ -20,7 +20,6 @@ protected:
 
     void SetUp() override
     {
-        factory.clear();
         factory.build_network(graph, registry, system_code);
     }
 };
