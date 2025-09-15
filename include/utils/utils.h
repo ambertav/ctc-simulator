@@ -7,6 +7,7 @@
 #include <sstream>
 #include <ranges>
 #include <charconv>
+#include <random>
 #include <iostream>
 
 #include "system/registry.h"
@@ -185,8 +186,25 @@ namespace Utils
         }
     }
 
-    inline std::string generate_yard_name(const Info& yard)
+    inline std::string generate_yard_name(const Info &yard)
     {
         return direction_to_string(yard.direction) + " " + trainline_to_string(yard.train_line) + " yard";
+    }
+
+    inline std::mt19937 &rng()
+    {
+        thread_local static std::mt19937 gen{std::random_device{}()};
+        return gen;
+    }
+
+    inline std::size_t random_index(std::size_t size)
+    {
+        if (size == 0)
+        {
+            throw std::invalid_argument("TestUtil::random_index called with size 0");
+        }
+
+        std::uniform_int_distribution<std::size_t> dist(0, size - 1);
+        return dist(rng());
     }
 }

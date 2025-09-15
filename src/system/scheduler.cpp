@@ -39,9 +39,9 @@ void Scheduler::process_system(nlohmann::json &train_lines_json, const Transit::
 {
     using json = nlohmann::json;
 
-    const auto& train_registry{registry.get_train_registry(system_code)};
-    const auto& yard_registry{registry.get_yard_registry(system_code)};
-    
+    const auto &train_registry{registry.get_train_registry(system_code)};
+    const auto &yard_registry{registry.get_yard_registry(system_code)};
+
     const auto &routes_map{graph.get_routes()};
 
     // TO-DO: prepares trainline to yard pair mapping, consider this being default in registry
@@ -86,20 +86,22 @@ void Scheduler::process_system(nlohmann::json &train_lines_json, const Transit::
             continue;
         }
 
-        const Transit::Map::Route *matching_route{nullptr};
+        std::vector<const Transit::Map::Route *> matching_routes{};
         for (const auto &route : routes_it->second)
         {
             if (directions_equal(route.direction, train_info.direction))
             {
-                matching_route = &route;
-                break;
+                matching_routes.push_back(&route);
             }
         }
 
-        if (matching_route == nullptr)
+        if (matching_routes.empty())
         {
             continue;
         }
+
+        size_t index{Utils::random_index(matching_routes.size())};
+        const Transit::Map::Route *matching_route{matching_routes[index]};
 
         json trains_json{};
         trains_json["train_id"] = train_id;

@@ -40,7 +40,6 @@ namespace SUB
         L,
         J,
         Z,
-        S,
         GS,
         FS,
         H,
@@ -77,7 +76,6 @@ namespace LIRR
     enum class TrainLine
     {
         BABYLON,
-        CITY_TERMINAL,
         FAR_ROCKAWAY,
         HEMPSTEAD,
         LONG_BEACH,
@@ -287,7 +285,6 @@ inline TrainLine trainline_from_string(const std::string &str)
         {"L", SUB::TrainLine::L},
         {"J", SUB::TrainLine::J},
         {"Z", SUB::TrainLine::Z},
-        {"S", SUB::TrainLine::S},
         {"GS", SUB::TrainLine::GS},
         {"FS", SUB::TrainLine::FS},
         {"H", SUB::TrainLine::H},
@@ -300,7 +297,6 @@ inline TrainLine trainline_from_string(const std::string &str)
         {"Waterbury", MNR::TrainLine::NEW_HAVEN},
         {"Danbury", MNR::TrainLine::NEW_HAVEN},
         {"Babylon Branch", LIRR::TrainLine::BABYLON},
-        {"City Terminal Zone", LIRR::TrainLine::CITY_TERMINAL},
         {"Far Rockaway Branch", LIRR::TrainLine::FAR_ROCKAWAY},
         {"Hempstead Branch", LIRR::TrainLine::HEMPSTEAD},
         {"Long Beach Branch", LIRR::TrainLine::LONG_BEACH},
@@ -354,7 +350,6 @@ inline std::ostream &operator<<(std::ostream &os, const TrainLine &trainline)
                         case SUB::TrainLine::L: return os << "L";
                         case SUB::TrainLine::J: return os << "J";
                         case SUB::TrainLine::Z: return os << "Z";
-                        case SUB::TrainLine::S: return os << "S";
                         case SUB::TrainLine::GS: return os << "42nd Street Shuttle";
                         case SUB::TrainLine::FS: return os << "Franklin Street Shuttle";
                         case SUB::TrainLine::H: return os << "Far Rockaway Shuttle";
@@ -379,7 +374,6 @@ inline std::ostream &operator<<(std::ostream &os, const TrainLine &trainline)
                        switch (line)
                        {
                        case LIRR::TrainLine::BABYLON: return os << "Babylon";
-                       case LIRR::TrainLine::CITY_TERMINAL: return os << "City Terminal";
                        case LIRR::TrainLine::FAR_ROCKAWAY: return os << "Far Rockaway";
                        case LIRR::TrainLine::HEMPSTEAD: return os << "Hempstead";
                        case LIRR::TrainLine::LONG_BEACH: return os << "Long Beach";

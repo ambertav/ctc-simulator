@@ -4,7 +4,7 @@
 #include <ranges>
 #include <algorithm>
 
-#include "utils/test_utils.h"
+#include "utils/utils.h"
 #include "system/registry.h"
 #include "map/metro_north.h"
 #include "core/dispatch.h"
@@ -127,11 +127,11 @@ TEST_F(CentralControlTest, HandlesSwitchRequestAndResolveForDifferentSwitches)
     const auto &trains{dispatch->get_trains()};
     EXPECT_FALSE(trains.empty());
 
-    size_t first_index{TestUtils::random_index(trains.size())};
-    size_t second_index{TestUtils::random_index(trains.size())};
+    size_t first_index{Utils::random_index(trains.size())};
+    size_t second_index{Utils::random_index(trains.size())};
     while (second_index == first_index)
     {
-        second_index = TestUtils::random_index(trains.size());
+        second_index = Utils::random_index(trains.size());
     }
     ASSERT_NE(first_index, second_index);
 
@@ -159,11 +159,11 @@ TEST_F(CentralControlTest, HandlesSwitchRequestAndResolveForCollisions)
     const auto &trains{dispatch->get_trains()};
     EXPECT_FALSE(trains.empty());
 
-    size_t first_index{TestUtils::random_index(trains.size())};
-    size_t second_index{TestUtils::random_index(trains.size())};
+    size_t first_index{Utils::random_index(trains.size())};
+    size_t second_index{Utils::random_index(trains.size())};
     while (second_index == first_index)
     {
-        second_index = TestUtils::random_index(trains.size());
+        second_index = Utils::random_index(trains.size());
     }
     ASSERT_NE(first_index, second_index);
 

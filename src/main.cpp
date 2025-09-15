@@ -8,9 +8,7 @@
 #include "map/subway.h"
 #include "map/metro_north.h"
 #include "map/lirr.h"
-#include "system/factory.h"
-#include "core/dispatch.h"
-#include "system/logger.h"
+#include "core/central_control.h"
 #include "system/scheduler.h"
 
 int main()
@@ -52,7 +50,13 @@ int main()
             }
             if (graph != nullptr)
             {
-            scheduler.write_schedule(*graph, registry, system_name, static_cast<int>(system_code));
+                scheduler.write_schedule(*graph, registry, system_name, static_cast<int>(system_code));
+
+                CentralControl cc {system_code, system_name, *graph, registry};
+                for (int i{0}; i < 1000; ++i)
+                {
+                    cc.run(i);
+                }
             } }));
     }
 
@@ -60,18 +64,6 @@ int main()
     {
         f.wait();
     }
-
-    // Logger logger{logger_file};
-    // Dispatch dispatch{station_ptrs, train_ptrs, track_ptrs, platform_ptrs, signal_ptrs, logger};
-    // dispatch.load_schedule(schedule_file);
-
-    // std::cout << "\n\n";
-
-    // // run loop
-    // for (int i = 0; i <= 100; i++)
-    // {
-    //     dispatch.update(i);
-    // }
 
     return 0;
 }

@@ -74,8 +74,7 @@ void Subway::load_connections(const std::string &csv)
         "ordered_stops"};
 
     Utils::open_and_parse(csv, needed_columns, [&](std::string_view line, const std::unordered_map<std::string_view, int> &column_index, int line_num)
-                          {
-
+                          {                          
         auto tokens {Utils::split(line, ',')};
         if (tokens.size() < column_index.size())
         {
@@ -109,19 +108,37 @@ void Subway::load_connections(const std::string &csv)
                 return *opt;
             });
 
-        std::vector<int> sequence {sequence_view.begin(), sequence_view.end()};
+        std::vector<int> raw_sequence {sequence_view.begin(), sequence_view.end()};
 
-        std::vector<int> distances{};
-        distances.reserve(sequence.size() - 1);
-
-        for (int i = 1; i < sequence.size(); ++i)
+        if (raw_sequence.empty())
         {
-            int u {sequence[i - 1]};
-            int v {sequence[i]};
+            return;
+        }
 
-            auto* edge {add_edge(u, v)};
-            distances.push_back(static_cast<int>(std::ceil(edge->weight)));
+        std::vector<int> sequence{};
+        std::vector<int> distances{};
+        sequence.reserve(raw_sequence.size());
+        distances.reserve(raw_sequence.size() - 1);
+
+        for (int u : raw_sequence)
+        {
+            const Node* node {get_node(u)};
+            if (!node)
+            {
+                continue;
+            }
+
+            if (node->train_lines.contains(route))
+            {
+                if (!sequence.empty())
+                {
+                    int v {sequence.back()};
+                    auto *edge {add_edge(u, v)};
+                    distances.push_back(static_cast<int>(std::ceil(edge->weight)));
+                }
+                sequence.push_back(u);
+            }
         }
 
         add_route(route, headsign, sequence, distances); });
-}
+    }

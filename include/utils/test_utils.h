@@ -3,7 +3,6 @@
 #include <vector>
 #include <string>
 #include <fstream>
-#include <random>
 #include <algorithm>
 #include <thread>
 #include <chrono>
@@ -13,16 +12,10 @@
 
 namespace TestUtils
 {
-    inline std::mt19937 &rng()
-    {
-        thread_local static std::mt19937 gen{std::random_device{}()};
-        return gen;
-    }
-
     inline bool coin_flip(double p = 0.5)
     {
         std::bernoulli_distribution dist(p);
-        return dist(rng());
+        return dist(Utils::rng());
     }
 
     inline std::vector<int> extract_random_ids(const std::string &file_path, const std::string &column_name, size_t count)
@@ -63,7 +56,7 @@ namespace TestUtils
             }
         }
 
-        std::shuffle(all_ids.begin(), all_ids.end(), rng());
+        std::shuffle(all_ids.begin(), all_ids.end(), Utils::rng());
         all_ids.resize(std::min(all_ids.size(), count));
 
         return all_ids;
@@ -80,21 +73,10 @@ namespace TestUtils
             all_ids.push_back(id);
         }
 
-        std::shuffle(all_ids.begin(), all_ids.end(), rng());
+        std::shuffle(all_ids.begin(), all_ids.end(), Utils::rng());
         all_ids.resize(std::min(all_ids.size(), count));
 
         return all_ids;
-    }
-
-    inline std::size_t random_index(std::size_t size)
-    {
-        if (size == 0)
-        {
-            throw std::invalid_argument("TestUtil::random_index called with size 0");
-        }
-
-        std::uniform_int_distribution<std::size_t> dist(0, size - 1);
-        return dist(rng());
     }
 
     template <typename W, typename R>

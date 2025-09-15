@@ -26,7 +26,7 @@ SystemConfig create_subway_config()
 
         .trip_filter = [](const auto &row)
         {
-            return row.at("service_id") == "Saturday" && (!row.at("route_id").empty() && row.at("route_id").back() != 'X');
+            return row.at("service_id") == "Weekday" && (!row.at("route_id").empty() && row.at("route_id").back() != 'X');
         },
 
         /**
