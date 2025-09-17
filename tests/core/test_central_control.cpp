@@ -37,7 +37,7 @@ protected:
         dispatch = central_control->get_dispatch(train_line);
         ASSERT_NE(dispatch, nullptr);
 
-        const auto &yard_registry{registry.get_yard_registry(static_cast<int>(code))};
+        const auto &yard_registry{registry.get_yard_registry(code)};
         ASSERT_FALSE(yard_registry.empty());
 
         auto pair_it{std::ranges::find_if(yard_registry, [&](const auto &pair)

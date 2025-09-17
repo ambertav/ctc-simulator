@@ -34,7 +34,7 @@ private:
 public:
     Factory() = default;
 
-    void build_network(const Transit::Map::Graph &graph, const Registry &registry, int system_code);
+    void build_network(const Transit::Map::Graph &graph, const Registry &registry, Constants::System system_code);
 
     std::vector<Train *> get_trains() const;
     std::vector<Train *> get_trains(TrainLine train_line) const;
@@ -50,8 +50,8 @@ private:
     int generate_track_id();
     int generate_switch_id();
 
-    void create_trains(const Registry &registry, int system_code);
-    void create_stations(const Transit::Map::Graph &graph, const Registry &registry, int system_code);
+    void create_trains(const Registry &registry, Constants::System system_code);
+    void create_stations(const Transit::Map::Graph &graph, const Registry &registry, Constants::System system_code);
     void create_track(Station *from, Station *to, TrainLine train_line, Direction direction, int duration);
     void create_switch(Platform *from, Platform *to, Track *track);
 };

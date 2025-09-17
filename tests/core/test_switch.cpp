@@ -31,7 +31,7 @@ TEST_F(SwitchTest, HandlesLinksSuccessfully)
     EXPECT_EQ(sw.get_link(&input), &output_one);
     
     EXPECT_TRUE(sw.set_link(&input, &output_two));
-    EXPECT_EQ(sw.get_link(&input, &output_two));
+    EXPECT_EQ(sw.get_link(&input), &output_two);
 
     EXPECT_FALSE(sw.set_link(&output_one, &input));
     EXPECT_FALSE(sw.set_link(&output_two, &input));

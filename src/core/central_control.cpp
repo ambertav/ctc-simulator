@@ -126,8 +126,7 @@ void CentralControl::resolve_switches()
 
 void CentralControl::run_factory(const Transit::Map::Graph &graph, const Registry &registry)
 {
-    int code{static_cast<int>(system_code)};
-    factory->build_network(graph, registry, code);
+    factory->build_network(graph, registry, system_code);
 }
 
 void CentralControl::issue_dispatchers()

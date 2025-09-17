@@ -10,7 +10,7 @@
 #include "utils/utils.h"
 #include "system/factory.h"
 
-void Factory::build_network(const Transit::Map::Graph &graph, const Registry &registry, int system_code)
+void Factory::build_network(const Transit::Map::Graph &graph, const Registry &registry, Constants::System system_code)
 {
     create_trains(registry, system_code);
     create_stations(graph, registry, system_code);
@@ -189,7 +189,7 @@ int Factory::generate_switch_id()
     return next_switch_id++;
 }
 
-void Factory::create_trains(const Registry &registry, int system_code)
+void Factory::create_trains(const Registry &registry, Constants::System system_code)
 {
     const auto &train_registry{registry.get_train_registry(system_code)};
     trains.reserve(train_registry.size());
@@ -208,7 +208,7 @@ void Factory::create_trains(const Registry &registry, int system_code)
     }
 }
 
-void Factory::create_stations(const Transit::Map::Graph &graph, const Registry &registry, int system_code)
+void Factory::create_stations(const Transit::Map::Graph &graph, const Registry &registry, Constants::System system_code)
 {
     const auto &adj_list{graph.get_adjacency_list()};
     const auto &yard_registry{registry.get_yard_registry(system_code)};

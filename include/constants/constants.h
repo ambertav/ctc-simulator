@@ -42,12 +42,10 @@ namespace Constants
         {System::METRO_NORTH, {MNR::Direction::INBOUND, MNR::Direction::OUTBOUND}},
         {System::LIRR, {LIRR::Direction::WESTBOUND, LIRR::Direction::EASTBOUND}}}};
 
-    inline std::array<Direction, 2> get_directions_by_system_code(int system_code)
+    inline std::array<Direction, 2> get_directions_by_system_code(System code)
     {
-        System sys{static_cast<System>(system_code)};
-
         auto it{std::find_if(SYSTEM_DIRECTION_ORDER.begin(), SYSTEM_DIRECTION_ORDER.end(), [&](const auto &entry)
-                             { return entry.first == sys; })};
+                             { return entry.first == code; })};
 
         if (it == SYSTEM_DIRECTION_ORDER.end())
         {

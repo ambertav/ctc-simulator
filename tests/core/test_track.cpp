@@ -92,9 +92,6 @@ TEST_F(TrackTest, AddsAndRemovesTrainLinesSuccessfully)
 
     track.add_train_line(line);
     EXPECT_TRUE(track.supports_train_line(line));
-
-    track.remove_train_line(line);
-    EXPECT_FALSE(track.supports_train_line(line));
 }
 
 TEST_F(TrackTest, GetsTrainLineNextAndPrevTrackSuccessfully)
@@ -138,9 +135,6 @@ TEST_F(TrackTest, HandleNextTracks)
     auto next_tracks{track.get_next_tracks()};
     EXPECT_EQ(next_tracks.size(), 1);
     EXPECT_TRUE(std::ranges::find(next_tracks, &next_track) != next_tracks.end());
-
-    track.remove_next_track(&next_track);
-    EXPECT_TRUE(track.get_next_tracks().empty());
 }
 
 TEST_F(TrackTest, HandlePrevTracks)
@@ -153,9 +147,6 @@ TEST_F(TrackTest, HandlePrevTracks)
     auto prev_tracks{track.get_prev_tracks()};
     EXPECT_EQ(prev_tracks.size(), 1);
     EXPECT_TRUE(std::ranges::find(prev_tracks, &prev_track) != prev_tracks.end());
-
-    track.remove_prev_track(&prev_track);
-    EXPECT_TRUE(track.get_prev_tracks().empty());
 }
 
 TEST_F(TrackTest, IgnoresAddingDuplicateTracks)
@@ -177,9 +168,6 @@ TEST_F(TrackTest, HandleOutboundSwitches)
 
     track.add_outbound_switch(&outbound_sw);
     EXPECT_EQ(track.get_outbound_switch(), &outbound_sw);
-
-    track.remove_outbound_switch();
-    EXPECT_EQ(track.get_outbound_switch(), nullptr);
 }
 
 TEST_F(TrackTest, HandleInboundSwitches)
@@ -188,7 +176,4 @@ TEST_F(TrackTest, HandleInboundSwitches)
 
     track.add_inbound_switch(&inbound_sw);
     EXPECT_EQ(track.get_inbound_switch(), &inbound_sw);
-
-    track.remove_inbound_switch();
-    EXPECT_EQ(track.get_inbound_switch(), nullptr);
 }

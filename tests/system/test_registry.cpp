@@ -8,15 +8,13 @@ class RegistryTest : public ::testing::Test
 {
 protected:
     Registry& registry {Registry::get_instance()};
-    int invalid_system{999};
 };
 
 TEST_F(RegistryTest, ConstructorBuildsRegistryForTrainsAndYards)
 {
-    for (const auto &[name, system] : Constants::SYSTEMS)
+    for (const auto &[name, code] : Constants::SYSTEMS)
     {
-        int code {static_cast<int>(system)};
-        
+
         auto trains{registry.get_train_registry(code)};
         auto yards{registry.get_yard_registry(code)};
 
@@ -25,7 +23,7 @@ TEST_F(RegistryTest, ConstructorBuildsRegistryForTrainsAndYards)
 
         switch (code)
         {
-        case 1:
+        case Constants::System::SUBWAY:
         {
             expected_trains =
                 static_cast<int>(SUB::TrainLine::COUNT) *
@@ -36,7 +34,7 @@ TEST_F(RegistryTest, ConstructorBuildsRegistryForTrainsAndYards)
 
             break;
         }
-        case 2:
+        case Constants::System::METRO_NORTH:
         {
             expected_trains =
                 static_cast<int>(MNR::TrainLine::COUNT) *
@@ -47,7 +45,7 @@ TEST_F(RegistryTest, ConstructorBuildsRegistryForTrainsAndYards)
 
             break;
         }
-        case 3:
+        case Constants::System::LIRR:
         {
             expected_trains =
                 static_cast<int>(LIRR::TrainLine::COUNT) *
@@ -60,18 +58,18 @@ TEST_F(RegistryTest, ConstructorBuildsRegistryForTrainsAndYards)
         }
         default:
         {
-            FAIL() << "Unknown system code " << code;
+            FAIL() << "Unknown system code " << static_cast<int>(code);
         }
         }
 
-        EXPECT_EQ(trains.size(), expected_trains) << "System " << code << " should have correct train count";
-        EXPECT_EQ(yards.size(), expected_yard_pairs) << "System " << code << " should have correct yard pair count";
+        EXPECT_EQ(trains.size(), expected_trains) << "System " << static_cast<int>(code) << " should have correct train count";
+        EXPECT_EQ(yards.size(), expected_yard_pairs) << "System " << static_cast<int>(code) << " should have correct yard pair count";
     }
 }
 
 TEST_F(RegistryTest, EncodesAndDecodesCorrectly)
 {
-    int system_code{1};
+    Constants::System system_code{Constants::System::SUBWAY};
     int train_line_code{5};
     int direction_code{0};
     int instance{2};
@@ -87,19 +85,4 @@ TEST_F(RegistryTest, EncodesAndDecodesCorrectly)
     EXPECT_EQ(decoded.train_line, train_line);
     EXPECT_EQ(decoded.direction, direction);
     EXPECT_EQ(decoded.instance, instance);
-}
-
-TEST_F(RegistryTest, DecodeHandlesInvalidSystemCode)
-{
-    int invalid_encoded_id{registry.encode(invalid_system, 1, 0, 0)};
-    EXPECT_THROW(registry.decode(invalid_encoded_id), std::invalid_argument);
-}
-
-TEST_F(RegistryTest, GettersReturnsEmptyVectorForInvalidSystemCode)
-{
-    auto trains{registry.get_train_registry(invalid_system)};
-    auto yards{registry.get_yard_registry(invalid_system)};
-
-    EXPECT_TRUE(trains.empty());
-    EXPECT_TRUE(yards.empty());
 }

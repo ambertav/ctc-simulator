@@ -11,7 +11,7 @@
 #include "enum/transit_types.h"
 #include "system/scheduler.h"
 
-void Scheduler::write_schedule(const Transit::Map::Graph &graph, const Registry &registry, const std::string &outfile_subfolder, int system_code)
+void Scheduler::write_schedule(const Transit::Map::Graph &graph, const Registry &registry, const std::string &outfile_subfolder, Constants::System system_code)
 {
     using json = nlohmann::json;
 
@@ -36,11 +36,11 @@ void Scheduler::write_schedule(const Transit::Map::Graph &graph, const Registry 
     }
     catch (const std::exception &e)
     {
-        throw std::runtime_error("Failed to create schedule for system: " + std::to_string(system_code) + ", " + outfile_subfolder + std::string(e.what()));
+        throw std::runtime_error("Failed to create schedule for system: " + std::to_string(static_cast<int>(system_code)) + ", " + outfile_subfolder + std::string(e.what()));
     }
 }
 
-void Scheduler::process_system(nlohmann::json &train_lines_json, const Transit::Map::Graph &graph, const Registry &registry, int system_code)
+void Scheduler::process_system(nlohmann::json &train_lines_json, const Transit::Map::Graph &graph, const Registry &registry, Constants::System system_code)
 {
     using json = nlohmann::json;
 

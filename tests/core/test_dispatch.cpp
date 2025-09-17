@@ -4,7 +4,7 @@
 #include <ranges>
 #include <algorithm>
 
-#include "utils/test_utils.h"
+#include "utils/utils.h"
 #include "constants/constants.h"
 #include "system/registry.h"
 #include "map/metro_north.h"
@@ -67,7 +67,7 @@ TEST_F(DispatchTest, LoadsScheduleSuccessfully)
     ASSERT_NE(it, routes_map.end());
 
     const std::vector<Transit::Map::Route> &routes{it->second};
-    size_t index{TestUtils::random_index(routes.size())};
+    size_t index{Utils::random_index(routes.size())};
     const auto &route{routes[index]};
 
     for (size_t i{0}; i < route.sequence.size(); ++i)

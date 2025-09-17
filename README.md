@@ -1,6 +1,8 @@
 # Centralized Traffic Control Simulator
 
-A Centralized Traffic Control simulator that models realistic train movement, signal logic, and schedule management using MTA data. The current version allows for the selection of any two NYC Subway, Metro North, or Long Island Railroad stations, from which the simulator creates a schedule, instantiates all necessary objects, and manages the simulation through the dispatcher. The schedule and runtime logs are available in `data/schedule.csv` and `logs/sim.txt` respectively.
+A Centralized Traffic Control simulator that models realistic CTC operations for MTA railroads, including train movement, switch handling, signal logic, and schedule management. The simulator supports the NYC Subway, Metro North, and Long Island Railroad, simulating each system concurrently in its own designated thread. 
+
+The simulation builds in-memory graphs of the transit systems from MTA data, instantiates all necessary resources, and generates runtime schedules and logs wrriten to the `schedule/` and `log/` directories respectively.
 
 ### Data Sources
 - [Static GTFS Data](https://www.mta.info/developers)
@@ -27,13 +29,14 @@ For details about the data preprocessing pipeline, see the [data_pipeline folder
 
 ## Project Structure
 
-- `src/` - implementation files
-- `include/` - header files
-- `tests/` - unit and integration tests
 - `bin/` - compiled output binaries (set by CMake)
-- `data/` - input data files (e.g schedules, map config)
-- `data_pipeline/` - data preprocessing pipeline
+- `data/` - input data files (e.g MTA data)
+- `data_pipeline/` - preprocessing scripts for raw data
+- `include/` - header files
 - `logs/` - runtime log outputs
+- `src/` - implementation files
+- `schedule/` - simulation generated schedules
+- `tests/` - unit and integration tests
 
 ## Build Instructions
 
@@ -51,10 +54,8 @@ cd ctc-simulator
 # create build directory
 mkdir build && cd build
 
-# configure with cmake
+# configure and build
 cmake ..
-
-# build executable and tests
 make
 ```
 
@@ -63,7 +64,7 @@ make
 ./bin/app
 ```
 
-The simulator runs with no additional configuration required. It automatically preprocesses raw data archives for the NYC Subway, Metro North, and Long Island Railroad systems by unzipping and cleaning files into the `data/` directory. Using these processed files, the simulation constructs detailed transit graphs for each rail system. All simulation events are logged to `logs/sim.txt`.
+The simulator runs with no additional configuration required. It automatically preprocesses raw data archives for the NYC Subway, Metro North, and Long Island Railroad systems by unzipping and cleaning files into the `data/` directory. Using these processed files, the simulation constructs detailed transit graphs for each rail system. All simulation schedules are written to the `schedule/` directory and all simulation events are logged to `logs/` directory, each grouped by transit system.
 
 ### Run with Docker
 ```bash
@@ -74,10 +75,10 @@ docker build -t ctc-simulator .
 docker run -p 8080:8080 ctc-simulator
 
 # see schedule
-cat data/schedule.csv
+cat schedule/*.json
 
 # see logs
-cat logs/sim.txt
+cat logs/*.txt
 ```
 
 ### Run Tests
@@ -97,24 +98,29 @@ ctest
 
 ## Output Paths (CMake Definitions)
 
-| Variable   | Purpose                         | Default Path               |
+| Variable   | Purpose                          | Default Path                |
 |------------|----------------------------------|-----------------------------|
-| `LOG_DIR`  | Runtime logs                    | `./logs/`                   |
-| `DATA_DIR` | Input data (e.g., schedule)     | `./data/`                   |
-| `bin/`     | Main app output                 | `./bin/app`                 |
-| `tests/`   | Test binary output              | `./build/tests/ctc_tests`   |
+| `LOG_DIR`  | Runtime logs                     | `./logs/`                   |
+| `DATA_DIR` | Input data                       | `./data/`                   |
+| `SCHED_DIR`| Runtime schedule                 | `./schedule/`               |
+| `bin/`     | Main executable                  | `./bin/app`                 |
+| `tests/`   | Test binary                      | `./build/tests/ctc_tests`   |
 
 ## Roadmap
 
-### Version 2.5 (Current)
-- Pathfinding between any two NYC Subway, Metro North, or Long Island Railroad stations
-- Schedule construction based on path
+### Version 3.0 (Current)
+- Multithreaded execution
+- Concurrent simulations for MTA railroads
+- Schedule construction based on transit graph
 - Train movement simulation
+- Switch handling and authorization workflows
 - Signal logic and block safety
 - Command line execution
 
-### Version 3.0 (Upcoming)
+### Version 3.5 (Upcoming)
 - Randomized delays for trains to simulate real-world unpredictability
+- Specialized mainte
+- Aggregated logging for critical logs
 
 ## License
 
