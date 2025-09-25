@@ -28,7 +28,7 @@ TEST_F(RegistryTest, ConstructorBuildsRegistryForTrainsAndYards)
             expected_trains =
                 static_cast<int>(SUB::TrainLine::COUNT) *
                 static_cast<int>(SUB::Direction::COUNT) *
-                (Constants::TRAINS_PER_LINE / 2);
+                (Constants::DEFAULT_TRAINS_PER_LINE / 2);
 
             expected_yard_pairs = static_cast<int>(SUB::TrainLine::COUNT);
 
@@ -39,7 +39,7 @@ TEST_F(RegistryTest, ConstructorBuildsRegistryForTrainsAndYards)
             expected_trains =
                 static_cast<int>(MNR::TrainLine::COUNT) *
                 static_cast<int>(MNR::Direction::COUNT) *
-                (Constants::TRAINS_PER_LINE / 2);
+                (Constants::DEFAULT_TRAINS_PER_LINE / 2);
 
             expected_yard_pairs = static_cast<int>(MNR::TrainLine::COUNT);
 
@@ -50,7 +50,7 @@ TEST_F(RegistryTest, ConstructorBuildsRegistryForTrainsAndYards)
             expected_trains =
                 static_cast<int>(LIRR::TrainLine::COUNT) *
                 static_cast<int>(LIRR::Direction::COUNT) *
-                (Constants::TRAINS_PER_LINE / 2);
+                (Constants::DEFAULT_TRAINS_PER_LINE / 2);
 
             expected_yard_pairs = static_cast<int>(LIRR::TrainLine::COUNT);
 

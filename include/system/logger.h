@@ -1,7 +1,6 @@
 #pragma once
 
 #include <fstream>
-#include <mutex>
 #include <string_view>
 
 #include "core/signal.h"
@@ -13,7 +12,6 @@ class Logger
 {
 private:
     std::ofstream outfile;
-    std::mutex mutex;
 
 public:
     Logger(const std::string &file_path);

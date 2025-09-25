@@ -78,4 +78,4 @@ for (auto &f : futures)
 
 - The `Scheduler` relies on the [`Registry`](/docs/system/registry.md) to standardize train and yard information, ensuring data consistency between the `Scheduler` and the [`Factory`](/docs/system/factory.md).
 
-- The `Constants` namespace provides simulation configuration values used by the `Scheduler`, such as `STATION_DWELL_TIME`, `DEFAULT_TRAVEL_TIME`, and `YARD_DEPARTURE_GAP`.
+- The `Constants` namespace provides simulation configuration values used by the `Scheduler`, such as `DEFAULT_DWELL_TIME`, `DEFAULT_TRAVEL_TIME`, and `DEFAULT_YARD_HEADWAY`.

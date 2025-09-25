@@ -71,12 +71,12 @@ void Logger::log_train_despawn(int actual_tick, int planned_tick, Train *train, 
 
 void Logger::log_warning(std::string_view message)
 {
-    std::lock_guard<std::mutex> lock(mutex);
     outfile << "[WARNING] " << message << "\n";
+    outfile.flush();
 }
 
 void Logger::log(std::string_view message)
 {
-    std::lock_guard<std::mutex> lock(mutex);
     outfile << "[INFO] " << message << "\n";
+    outfile.flush();
 }

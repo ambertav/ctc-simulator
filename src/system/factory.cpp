@@ -227,7 +227,7 @@ void Factory::create_stations(const Transit::Map::Graph &graph, const Registry &
             Signal *signal_ptr{signal.get()};
             signals.emplace(signal_id, std::move(signal));
 
-            int duration{station_ptr->is_yard() ? 0 : Constants::STATION_DWELL_TIME};
+            int duration{station_ptr->is_yard() ? 0 : Constants::DEFAULT_DWELL_TIME};
 
             auto platform{std::make_unique<Platform>(
                 track_id,

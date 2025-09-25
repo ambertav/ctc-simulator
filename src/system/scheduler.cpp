@@ -125,7 +125,7 @@ void Scheduler::generate_train_schedule(nlohmann::json &schedule_json, const Tra
 {
     using json = nlohmann::json;
 
-    int current_tick{train_info.instance * Constants::YARD_DEPARTURE_GAP};
+    int current_tick{train_info.instance * Constants::DEFAULT_YARD_HEADWAY};
 
     json origin{};
     origin["station_id"] = origin_yard_info.id;
@@ -149,17 +149,13 @@ void Scheduler::generate_train_schedule(nlohmann::json &schedule_json, const Tra
         stop["station_name"] = node->name;
         stop["arrival_tick"] = current_tick;
 
-        current_tick += Constants::STATION_DWELL_TIME;
+        current_tick += Constants::DEFAULT_DWELL_TIME;
         stop["departure_tick"] = current_tick;
         schedule_json.push_back(stop);
 
         if (i < route.distances.size())
         {
             current_tick += route.distances[i];
-        }
-        else
-        {
-            current_tick += Constants::DEFAULT_TRAVEL_TIME;
         }
     }
 

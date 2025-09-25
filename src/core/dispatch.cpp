@@ -139,6 +139,7 @@ void Dispatch::load_schedule()
 void Dispatch::authorize(int tick)
 {
     authorized.clear();
+    handle_spawns(tick);
 
     for (Train *train : trains)
     {
@@ -230,6 +231,11 @@ void Dispatch::execute(int tick)
                 Platform *departure_platform{static_cast<Platform *>(train->get_current_track()->get_prev_track(train_line))};
                 const Station *departure_station{departure_platform->get_station()};
 
+                if (departure_station->is_yard())
+                {
+                    continue;
+                }
+
                 auto &departures{schedule[departure_station->get_id()].departures};
                 std::optional<Event> event_opt{process_event(tick, departures, train)};
 
@@ -251,8 +257,6 @@ void Dispatch::execute(int tick)
             logger->log_signal_change(tick, signal);
         }
     }
-
-    handle_spawns(tick);
 }
 
 std::optional<Event> Dispatch::process_event(int tick, std::multimap<int, Event> &event_map, Train *train)

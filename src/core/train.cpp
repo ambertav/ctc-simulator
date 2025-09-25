@@ -139,7 +139,7 @@ bool Train::move_to_track(Track *to)
         status = TrainStatus::MOVING;
     }
 
-    dwell_timer = to->get_duration();
+    dwell_timer = to->get_duration() - 1;
     return true;
 }
 

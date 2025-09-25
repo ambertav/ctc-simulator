@@ -1,6 +1,9 @@
 #include <vector>
 #include <filesystem>
 #include <thread>
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
 #include <iostream>
 
 #include "config.h"
@@ -24,6 +27,14 @@ int main()
     Registry &registry{Registry::get_instance()};
     Scheduler scheduler{};
 
+    std::atomic<int> global_tick{0};
+    std::mutex tick_mutex{};
+    std::condition_variable tick_cv{};
+    const int max_tick{500};
+
+    int ready_threads{0};
+    const int total_threads{Constants::SYSTEMS.size()};
+
     std::vector<std::thread> threads{};
     for (const auto &[system_name, system_code] : Constants::SYSTEMS)
     {
@@ -42,11 +53,33 @@ int main()
             if (graph != nullptr)
             {
                 scheduler.write_schedule(*graph, registry, system_name, system_code);
-
                 CentralControl cc{system_code, system_name, *graph, registry};
-                for (int i{0}; i < 1000; ++i)
+
+                while (true)
                 {
-                    cc.run(i);
+                    int tick {global_tick.load()};
+                    if (tick >= max_tick)
+                    {
+                        break;
+                    }
+
+                    cc.run(tick);
+
+                    {
+                        std::unique_lock lock(tick_mutex);
+                        ++ready_threads;
+                        if (ready_threads == total_threads)
+                        {
+                            ready_threads = 0;
+                            ++global_tick;
+                            tick_cv.notify_all();
+                        }
+                        else
+                        {
+                            tick_cv.wait(lock, [&]{ return tick != global_tick.load(); });
+                        }
+
+                    }
                 }
             }
         }

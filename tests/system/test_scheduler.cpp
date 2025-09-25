@@ -147,7 +147,7 @@ TEST_F(SchedulerTest, ValidateRouteSequences)
 
             ASSERT_FALSE(valid_sequences.empty()) << "no valid routes found for line " << line_name << " with direction " << train["direction"];
 
-            bool matches_any{std::any_of(valid_sequences.begin(), valid_sequences.end(), [&](const auto &sequence)
+            bool matches_any{std::any_of(valid_sequences.begin(), valid_sequences.end(), [&](const auto &seq)
                                          {
                     if (seq.empty())
                     {

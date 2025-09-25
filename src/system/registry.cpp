@@ -124,7 +124,7 @@ void Registry::build_registry()
 
 void Registry::generate_trains(Constants::System system_code, int tl_count, int dir_count)
 {
-    int trains_per_dir{Constants::TRAINS_PER_LINE / 2};
+    int trains_per_dir{Constants::DEFAULT_TRAINS_PER_LINE / 2};
     int total_trains{tl_count * dir_count * trains_per_dir};
 
     train_registry[system_code].reserve(total_trains);
