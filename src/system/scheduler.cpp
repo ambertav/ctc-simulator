@@ -105,7 +105,7 @@ void Scheduler::process_system(nlohmann::json &train_lines_json, const Transit::
             continue;
         }
 
-        size_t index{Utils::random_index(matching_routes.size())};
+        size_t index{Utils::random_in_range(matching_routes.size())};
         const Transit::Map::Route *matching_route{matching_routes[index]};
 
         json trains_json{};

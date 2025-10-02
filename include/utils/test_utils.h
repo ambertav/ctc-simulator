@@ -12,12 +12,6 @@
 
 namespace TestUtils
 {
-    inline bool coin_flip(double p = 0.5)
-    {
-        std::bernoulli_distribution dist(p);
-        return dist(Utils::rng());
-    }
-
     inline std::vector<int> extract_random_ids(const std::string &file_path, const std::string &column_name, size_t count)
     {
         std::ifstream file(file_path);

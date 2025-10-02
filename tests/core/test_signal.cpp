@@ -6,13 +6,12 @@
 class SignalTest : public testing::Test
 {
 protected:
-    Signal signal{1, 1};
+    Signal signal{1};
 };
 
 TEST_F(SignalTest, ConstructorInitializesCorrectly)
 {
     EXPECT_EQ(signal.get_id(), 1);
-    EXPECT_EQ(signal.get_target(), 1);
     EXPECT_EQ(signal.get_state(), SignalState::RED);
 
     EXPECT_TRUE(signal.is_red());

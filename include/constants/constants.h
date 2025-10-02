@@ -18,12 +18,14 @@ namespace Constants
     inline constexpr int DEFAULT_TRAVEL_TIME{2};
     inline constexpr int DEFAULT_YARD_HEADWAY{6};
 
+    inline constexpr double PLATFORM_DELAY_PROBABILITY{0.3};
+    inline constexpr double SIGNAL_FAILURE_PROBABILITY{0.2};
+    inline constexpr double SWITCH_FAILURE_PROBABILITY{0.05};
+    inline constexpr int MAX_DELAY{5};
+
     inline constexpr double SUBWAY_SCALE_FACTOR{0.5};
     inline constexpr double METRO_NORTH_SCALE_FACTOR{2};
     inline constexpr double LIRR_SCALE_FACTOR{1.4};
-
-    inline constexpr int MAX_EVENT_SEARCH_DEPTH{10};
-    inline constexpr int EVENT_TIMEOUT{15};
 
     enum class System
     {

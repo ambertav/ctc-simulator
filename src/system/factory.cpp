@@ -223,7 +223,7 @@ void Factory::create_stations(const Transit::Map::Graph &graph, const Registry &
             int signal_id{generate_signal_id()};
             int track_id{generate_track_id()};
 
-            auto signal{std::make_unique<Signal>(signal_id, track_id)};
+            auto signal{std::make_unique<Signal>(signal_id)};
             Signal *signal_ptr{signal.get()};
             signals.emplace(signal_id, std::move(signal));
 
@@ -238,6 +238,7 @@ void Factory::create_stations(const Transit::Map::Graph &graph, const Registry &
                 station_ptr->get_train_lines())};
 
             station_ptr->add_platform(platform.get());
+            signal_ptr->set_track(static_cast<Track*>(platform.get()));
             platforms.emplace(track_id, std::move(platform));
         }
     };
@@ -308,13 +309,15 @@ void Factory::create_track(Station *from, Station *to, TrainLine train_line, Dir
     int signal_id{generate_signal_id()};
     int track_id{generate_track_id()};
 
-    auto signal{std::make_unique<Signal>(signal_id, track_id)};
+    auto signal{std::make_unique<Signal>(signal_id)};
     Signal *signal_ptr{signal.get()};
     signals.emplace(signal_id, std::move(signal));
 
     auto track{std::make_unique<Track>(track_id, signal_ptr, duration, std::unordered_set<TrainLine>{train_line})};
     Track *track_ptr{track.get()};
     tracks.emplace(track_id, std::move(track));
+
+    signal_ptr->set_track(track_ptr);
 
     track_ptr->add_prev_track(from_platform);
     track_ptr->add_next_track(to_platform);

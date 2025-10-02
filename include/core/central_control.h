@@ -3,6 +3,7 @@
 #include <queue>
 #include <string>
 #include <map>
+#include <unordered_set>
 #include <unordered_map>
 #include <memory>
 
@@ -37,6 +38,7 @@ private:
     Constants::System system_code;
     int current_tick;
 
+    std::unordered_set<Switch *> failed_switches;
     std::unordered_map<Switch *, std::multimap<int /* priority */, SwitchRequest, std::greater<int>>> switch_requests;
     std::unordered_map<Dispatch *, std::vector<std::pair<Train *, Track *>>> granted_links;
     std::unordered_map<Train *, std::pair<Switch *, std::multimap<int /* priority */, SwitchRequest>::iterator>> train_to_request;

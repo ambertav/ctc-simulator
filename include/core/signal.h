@@ -3,25 +3,32 @@
 #include "enum/signal_state.h"
 
 class Track;
-class Platform;
 
 class Signal
 {
 private:
     const int id;
     SignalState state;
-    const int target_id;
+    Track* track;
+    int failure_timer;
+    bool functional;
 
 public:
-    Signal(int i, int t);
+    Signal(int i);
 
     int get_id() const;
-    int get_target() const;
+    Track* get_track() const;
 
+    void set_track(Track* tr);
+
+    void set_failure(int failure);
+    void update_repair();
+    
     bool is_red() const;
     bool is_yellow() const;
     virtual bool is_green() const;
-
+    bool is_functional() const;
+    
     SignalState get_state() const;
     bool change_state(SignalState new_state);
 };

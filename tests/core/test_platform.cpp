@@ -12,7 +12,7 @@ protected:
     class MockSignal : public Signal
     {
     public:
-        MockSignal(int i, int t) : Signal(i, t) {}
+        MockSignal(int i) : Signal(i) {}
         MOCK_METHOD(bool, is_green, (), (const, override));
     };
 
@@ -32,7 +32,7 @@ protected:
 
     MockTrain mock_train{1, *train_lines.begin(), ServiceType::LOCAL, SUB::Direction::DOWNTOWN};
     MockStation mock_station{1, "station", false, train_lines};
-    MockSignal mock_signal{1, 1};
+    MockSignal mock_signal{1};
 
     Platform platform{1, &mock_signal, &mock_station, SUB::Direction::DOWNTOWN, 2, train_lines};
 };

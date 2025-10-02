@@ -67,7 +67,7 @@ TEST_F(DispatchTest, LoadsScheduleSuccessfully)
     ASSERT_NE(it, routes_map.end());
 
     const std::vector<Transit::Map::Route> &routes{it->second};
-    size_t index{Utils::random_index(routes.size())};
+    size_t index{Utils::random_in_range(routes.size())};
     const auto &route{routes[index]};
 
     for (size_t i{0}; i < route.sequence.size(); ++i)

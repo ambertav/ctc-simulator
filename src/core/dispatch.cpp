@@ -11,6 +11,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include "utils/utils.h"
 #include "core/central_control.h"
 #include "core/dispatch.h"
 #include "constants/constants.h"
@@ -174,9 +175,18 @@ void Dispatch::authorize(int tick)
             }
 
             Signal *signal{next->get_signal()};
-            signal->change_state(SignalState::GREEN);
-            logger->log_signal_change(tick, signal);
+            auto signal_delay{randomize_delay(Constants::SIGNAL_FAILURE_PROBABILITY)};
+            if (signal_delay.first == true)
+            {
+                int time_to_repair{signal_delay.second};
+                signal->set_failure(time_to_repair);
+                failed_signals.insert(signal);
 
+                logger->log_signal_failure(tick, train, signal);
+                continue;
+            }
+
+            handle_signal_state(tick, signal);
             authorized.emplace_back(train, next);
         }
     }
@@ -184,14 +194,27 @@ void Dispatch::authorize(int tick)
 
 void Dispatch::execute(int tick)
 {
+
+    std::erase_if(failed_signals, [&](Signal *signal)
+                  {
+    signal->update_repair();
+    if (signal->is_functional())
+    {
+        logger->log_signal_repair(tick, signal, train_line);
+        return true;
+    }
+    else
+    {
+        return false;
+    } });
+
     std::vector<std::pair<Train *, Track *>> switch_granted{central_control->get_granted_links(this)};
 
     for (const auto &[train, next_track] : switch_granted)
     {
         authorized.emplace_back(train, next_track);
         Signal *signal{next_track->get_signal()};
-        signal->change_state(SignalState::GREEN);
-        logger->log_signal_change(tick, signal);
+        handle_signal_state(tick, signal);
     }
 
     for (const auto &[train, next_track] : authorized)
@@ -199,14 +222,24 @@ void Dispatch::execute(int tick)
         bool moved{train->move_to_track(next_track)};
         Signal *signal{next_track->get_signal()};
 
+        handle_signal_state(tick, signal, true);
+
         if (moved)
         {
-            signal->change_state(SignalState::RED);
-
             if (train->is_arriving())
             {
                 Platform *arrival_platform{static_cast<Platform *>(train->get_current_track())};
                 const Station *arrival_station{arrival_platform->get_station()};
+
+                if (!arrival_station->is_yard())
+                {
+                    auto platform_delay{randomize_delay(Constants::PLATFORM_DELAY_PROBABILITY)};
+                    if (platform_delay.first == true)
+                    {
+                        train->add_dwell(platform_delay.second);
+                        logger->log_platform_delay(tick, train, arrival_platform);
+                    }
+                }
 
                 auto &arrivals{schedule[arrival_station->get_id()].arrivals};
                 std::optional<Event> event_opt{process_event(tick, arrivals, train)};
@@ -251,12 +284,46 @@ void Dispatch::execute(int tick)
                 }
             }
         }
-        else
-        {
-            signal->change_state(SignalState::RED);
-            logger->log_signal_change(tick, signal);
-        }
     }
+}
+
+void Dispatch::handle_signal_state(int tick, Signal *signal, bool set_red)
+{
+    Track *track{signal->get_track()};
+    SignalState new_state{};
+
+    if (set_red == true || track->is_occupied())
+    {
+        new_state = SignalState::RED;
+    }
+    else if (needs_yellow_signal(track))
+    {
+        new_state = SignalState::YELLOW;
+    }
+    else
+    {
+        new_state = SignalState::GREEN;
+    }
+
+    signal->change_state(new_state);
+    logger->log_signal_change(tick, signal);
+}
+
+bool Dispatch::needs_yellow_signal(Track *track)
+{
+    if (track == nullptr)
+    {
+        return false;
+    }
+
+    Track *next{track->get_next_track(train_line)};
+    if (next == nullptr)
+    {
+        return false;
+    }
+
+    Track *next_next{next->get_next_track(train_line)};
+    return next->is_occupied() || (next_next && next_next->is_occupied());
 }
 
 std::optional<Event> Dispatch::process_event(int tick, std::multimap<int, Event> &event_map, Train *train)
@@ -305,8 +372,8 @@ void Dispatch::spawn_train(int tick, const Event &event)
 
     Platform *platform{*platform_opt};
     Signal *signal{platform->get_signal()};
-    signal->change_state(SignalState::GREEN);
-    logger->log_signal_change(tick, signal);
+
+    handle_signal_state(tick, signal);
 
     auto it{std::ranges::find_if(trains, [event](Train *t)
                                  { return t->get_id() == event.train_id; })};
@@ -321,17 +388,15 @@ void Dispatch::spawn_train(int tick, const Event &event)
     if (train->is_idle())
     {
         train->spawn(platform);
-        logger->log_train_spawn(tick, event.tick, train, event.direction);
-
-        signal->change_state(SignalState::RED);
-        logger->log_signal_change(tick, signal);
+        logger->log_train_spawn(tick, event.tick, train);
+        handle_signal_state(tick, signal);
     }
 }
 
 void Dispatch::despawn_train(int tick, const Event &event, Train *train, int yard_id)
 {
     train->despawn();
-    logger->log_train_despawn(tick, event.tick, train, event.direction);
+    logger->log_train_despawn(tick, event.tick, train);
 }
 
 int Dispatch::calculate_switch_priority(int tick, Train *train)
@@ -344,4 +409,17 @@ int Dispatch::calculate_switch_priority(int tick, Train *train)
     }
 
     return priority;
+}
+
+std::pair<bool, int> Dispatch::randomize_delay(double probability)
+{
+    bool is_delayed{Utils::coin_flip(probability)};
+    int delay{0};
+
+    if (is_delayed)
+    {
+        delay = std::max<int>(1, Utils::random_in_range(Constants::MAX_DELAY)) + 1;
+    }
+
+    return {is_delayed, delay};
 }

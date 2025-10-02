@@ -1,3 +1,4 @@
+#include "utils/utils.h"
 #include "core/dispatch.h"
 #include "core/central_control.h"
 
@@ -5,7 +6,7 @@ CentralControl::CentralControl(Constants::System sc, const std::string &sn, cons
     : system_code(sc), system_name(sn), current_tick(0)
 {
     factory = std::make_unique<Factory>();
-    logger = std::make_unique<Logger>(std::string(LOG_DIRECTORY) + "/" + system_name + "/log.txt");
+    logger = std::make_unique<Logger>(std::string(LOG_DIRECTORY) + "/" + system_name + "/log.txt", sc);
 
     run_factory(g, r);
     issue_dispatchers();
@@ -49,6 +50,19 @@ std::vector<std::pair<Train *, Track *>> CentralControl::get_granted_links(Dispa
 void CentralControl::run(int tick)
 {
     current_tick = tick;
+
+    std::erase_if(failed_switches, [&](Switch *sw)
+                  {
+    sw->update_repair();
+    if (sw->is_functional())
+    {
+        logger->log_switch_repair(current_tick, sw);
+        return true;
+    }
+    else
+    {
+        return false;
+    }});
 
     for (const auto &dispatch : dispatchers)
     {
@@ -106,19 +120,33 @@ void CentralControl::resolve_switches()
 
     for (auto &[sw, requests] : switch_requests)
     {
-        auto granted{std::ranges::find_if(requests, [](const auto &pair)
-                                          {
-            const auto& [priority, request] = pair;
-            return request.train->is_active() && request.train->get_current_track() == request.from; })};
-
-        if (granted != requests.end())
+        if (sw->is_functional())
         {
-            const auto &[priority, request] = *granted;
-            if (sw->set_link(request.from, request.to))
+            bool failed{Utils::coin_flip(Constants::SWITCH_FAILURE_PROBABILITY)};
+            if (failed)
             {
-                granted_links[request.dispatch].emplace_back(request.train, request.to);
-                train_to_request.erase(request.train);
-                requests.erase(granted);
+                int time_to_repair{std::max<int>(1, Utils::random_in_range(Constants::MAX_DELAY))};
+                sw->set_failure(time_to_repair);
+                failed_switches.insert(sw);
+
+                logger->log_switch_failure(current_tick, sw);
+                continue;
+            }
+
+            auto granted{std::ranges::find_if(requests, [](const auto &pair)
+                                              {
+                const auto& [priority, request] = pair;
+                return request.train->is_active() && request.train->get_current_track() == request.from; })};
+
+            if (granted != requests.end())
+            {
+                const auto &[priority, request] = *granted;
+                if (sw->set_link(request.from, request.to))
+                {
+                    granted_links[request.dispatch].emplace_back(request.train, request.to);
+                    train_to_request.erase(request.train);
+                    requests.erase(granted);
+                }
             }
         }
     }

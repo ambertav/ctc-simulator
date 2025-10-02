@@ -69,9 +69,9 @@ TEST_F(FactoryTest, CreatesConnectionsSuccessfully)
     auto stations{factory.get_stations()};
     const auto &routes_map{graph.get_routes()};
 
-    TrainLine chosen_line{static_cast<MNR::TrainLine>(Utils::random_index(static_cast<std::size_t>(MNR::TrainLine::COUNT)))};
+    TrainLine chosen_line{static_cast<MNR::TrainLine>(Utils::random_in_range(static_cast<std::size_t>(MNR::TrainLine::COUNT)))};
     const auto &routes{routes_map.at(chosen_line)};
-    const auto &route{routes[Utils::random_index(routes.size())]};
+    const auto &route{routes[Utils::random_in_range(routes.size())]};
 
     auto it{std::find_if(stations.begin(), stations.end(), [&](Station *s)
                          { return s->get_id() == route.sequence.front(); })};

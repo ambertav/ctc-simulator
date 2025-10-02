@@ -17,6 +17,8 @@ private:
     std::vector<Track *> departure_tracks;
     std::pair<Track *, Track *> link;
     const int id;
+    int failure_timer;
+    bool functional;
 
 public:
     Switch(int i);
@@ -28,6 +30,10 @@ public:
 
     Track *get_link(Track *input) const;
     bool set_link(Track *input, Track *output);
+
+    void set_failure(int failure);
+    void update_repair();
+    bool is_functional() const;
 
     void add_approach_track(Track *tr);
     void add_departure_track(Track *tr);

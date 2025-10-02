@@ -1,15 +1,42 @@
 #include "core/signal.h"
 
-Signal::Signal(int i, int t) : id(i), state(SignalState::RED), target_id(t) {}
+Signal::Signal(int i) : id(i), track(nullptr), state(SignalState::RED), functional(true), failure_timer(0) {}
 
 int Signal::get_id() const
 {
     return id;
 }
 
-int Signal::get_target() const
+Track *Signal::get_track() const
 {
-    return target_id;
+    return track;
+}
+
+void Signal::set_track(Track *tr)
+{
+    track = tr;
+}
+
+void Signal::set_failure(int failure)
+{
+    if (failure > 0)
+    {
+        failure_timer = failure;
+        functional = false;
+    }
+}
+
+void Signal::update_repair()
+{
+    if (failure_timer > 0)
+    {
+        --failure_timer;
+
+        if (failure_timer == 0)
+        {
+            functional = true;
+        }
+    }
 }
 
 bool Signal::is_red() const
@@ -27,6 +54,11 @@ bool Signal::is_green() const
     return state == SignalState::GREEN;
 }
 
+bool Signal::is_functional() const
+{
+    return functional;
+}
+
 SignalState Signal::get_state() const
 {
     return state;
@@ -34,7 +66,7 @@ SignalState Signal::get_state() const
 
 bool Signal::change_state(SignalState new_state)
 {
-    bool changed {state != new_state};
+    bool changed{state != new_state};
     state = new_state;
     return changed;
 }

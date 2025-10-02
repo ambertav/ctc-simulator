@@ -197,11 +197,17 @@ namespace Utils
         return gen;
     }
 
-    inline std::size_t random_index(std::size_t size)
+    inline bool coin_flip(double p = 0.5)
+    {
+        std::bernoulli_distribution dist(p);
+        return dist(rng());
+    }
+
+    inline std::size_t random_in_range(std::size_t size)
     {
         if (size == 0)
         {
-            throw std::invalid_argument("TestUtil::random_index called with size 0");
+            throw std::invalid_argument("TestUtil::random_in_range called with size 0");
         }
 
         std::uniform_int_distribution<std::size_t> dist(0, size - 1);

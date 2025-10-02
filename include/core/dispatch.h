@@ -6,7 +6,9 @@
 #pragma once
 
 #include <vector>
+#include <unordered_set>
 #include <unordered_map>
+#include <variant>
 #include <optional>
 #include <map>
 #include <memory>
@@ -48,6 +50,7 @@ private:
     std::unordered_map<int, Station *> stations;
     std::vector<Station *> yards;
     std::vector<Train *> trains;
+    std::unordered_set<Signal *> failed_signals;
     std::vector<std::pair<Train *, Track *>> authorized;
     std::unordered_map<int, EventQueues> schedule;
 
@@ -61,7 +64,7 @@ public:
     TrainLine get_train_line() const;
     const std::unordered_map<int, Station *> &get_stations() const;
     const std::vector<Train *> &get_trains() const;
-    const std::vector<std::pair<Train*, Track *>> &get_authorizations() const;
+    const std::vector<std::pair<Train *, Track *>> &get_authorizations() const;
     const std::unordered_map<int, EventQueues> &get_station_schedules() const;
 
     void load_schedule();
@@ -69,11 +72,14 @@ public:
     void execute(int tick);
 
 private:
+    void handle_signal_state(int tick, Signal *signal, bool set_red = false);
+    bool needs_yellow_signal(Track* track);
     std::optional<Event> process_event(int tick, std::multimap<int, Event> &queue, Train *train);
-    
+
     void handle_spawns(int tick);
     void spawn_train(int tick, const Event &event);
     void despawn_train(int tick, const Event &event, Train *train, int yard_id);
 
     int calculate_switch_priority(int tick, Train *train);
+    std::pair<bool, int> randomize_delay(double probability);
 };

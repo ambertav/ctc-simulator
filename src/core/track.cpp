@@ -14,7 +14,14 @@ int Track::get_id() const
 
 int Track::get_duration() const
 {
-    return duration;
+    if (signal->is_yellow())
+    {
+        return static_cast<int>(std::ceil(duration * 1.3));
+    }
+    else
+    {
+        return duration;
+    }
 }
 
 Signal *Track::get_signal() const
@@ -95,7 +102,7 @@ bool Track::accept_entry(Train *train)
         return false;
     }
 
-    if (occupied || !signal->is_green())
+    if (occupied || signal->is_red())
     {
         return false;
     }
