@@ -8,12 +8,12 @@
 #include "system/registry.h"
 #include "map/metro_north.h"
 #include "core/dispatch.h"
-#include "core/central_control.h"
+#include "core/agency_control.h"
 
-class CentralControlTest : public ::testing::Test
+class AgencyControlTest : public ::testing::Test
 {
 protected:
-    std::unique_ptr<CentralControl> central_control{};
+    std::unique_ptr<AgencyControl> agency_control{};
     Transit::Map::MetroNorth &mnr{Transit::Map::MetroNorth::get_instance()};
     Registry &registry{Registry::get_instance()};
     Dispatch *dispatch{};
@@ -33,8 +33,8 @@ protected:
         ASSERT_NE(it, Constants::SYSTEMS.end()) << "Invalid system code";
         name = it->first;
 
-        central_control = std::make_unique<CentralControl>(code, name, mnr, registry);
-        dispatch = central_control->get_dispatch(train_line);
+        agency_control = std::make_unique<AgencyControl>(code, name, mnr, registry);
+        dispatch = agency_control->get_dispatch(train_line);
         ASSERT_NE(dispatch, nullptr);
 
         const auto &yard_registry{registry.get_yard_registry(code)};
@@ -102,15 +102,15 @@ protected:
     }
 };
 
-TEST_F(CentralControlTest, ConstructorInitializesCorrectly)
+TEST_F(AgencyControlTest, ConstructorInitializesCorrectly)
 {
-    EXPECT_NE(central_control, nullptr);
-    EXPECT_EQ(central_control->get_system_name(), name);
+    EXPECT_NE(agency_control, nullptr);
+    EXPECT_EQ(agency_control->get_system_name(), name);
 
     for (int i{0}; i < static_cast<int>(MNR::TrainLine::COUNT); ++i)
     {
         auto line{static_cast<MNR::TrainLine>(i)};
-        Dispatch *valid_dispatch{central_control->get_dispatch(line)};
+        Dispatch *valid_dispatch{agency_control->get_dispatch(line)};
         EXPECT_NE(valid_dispatch, nullptr) << "dispatch should be created for train line";
 
         EXPECT_TRUE(trainlines_equal(valid_dispatch->get_train_line(), line));
@@ -118,11 +118,11 @@ TEST_F(CentralControlTest, ConstructorInitializesCorrectly)
         EXPECT_FALSE(valid_dispatch->get_stations().empty());
     }
 
-    Dispatch *invalid_dispatch{central_control->get_dispatch(SUB::TrainLine::A)};
+    Dispatch *invalid_dispatch{agency_control->get_dispatch(SUB::TrainLine::A)};
     EXPECT_EQ(invalid_dispatch, nullptr);
 }
 
-TEST_F(CentralControlTest, HandlesSwitchRequestAndResolveForDifferentSwitches)
+TEST_F(AgencyControlTest, HandlesSwitchRequestAndResolveForDifferentSwitches)
 {
     const auto &trains{dispatch->get_trains()};
     EXPECT_FALSE(trains.empty());
@@ -143,18 +143,18 @@ TEST_F(CentralControlTest, HandlesSwitchRequestAndResolveForDifferentSwitches)
     int tick{100};
     int priority{5};
 
-    central_control->request_switch(train_1, sw_1, from_1, to_1, priority, tick, dispatch);
-    central_control->request_switch(train_2, sw_2, from_2, to_2, priority, tick, dispatch);
+    agency_control->request_switch(train_1, sw_1, from_1, to_1, priority, tick, dispatch);
+    agency_control->request_switch(train_2, sw_2, from_2, to_2, priority, tick, dispatch);
 
-    auto empty_granted_links{central_control->get_granted_links(dispatch)};
+    auto empty_granted_links{agency_control->get_granted_links(dispatch)};
     EXPECT_TRUE(empty_granted_links.empty());
 
-    central_control->resolve_switches();
-    auto granted_links{central_control->get_granted_links(dispatch)};
+    agency_control->resolve_switches();
+    auto granted_links{agency_control->get_granted_links(dispatch)};
     EXPECT_FALSE(granted_links.empty());
 }
 
-TEST_F(CentralControlTest, HandlesSwitchRequestAndResolveForCollisions)
+TEST_F(AgencyControlTest, HandlesSwitchRequestAndResolveForCollisions)
 {
     const auto &trains{dispatch->get_trains()};
     EXPECT_FALSE(trains.empty());
@@ -176,14 +176,14 @@ TEST_F(CentralControlTest, HandlesSwitchRequestAndResolveForCollisions)
     int first_priority{10};
     int second_priority{5};
 
-    central_control->request_switch(train_1, sw_1, from_1, to_1, first_priority, tick, dispatch);
-    central_control->request_switch(train_2, sw_2, from_2, to_2, second_priority, tick, dispatch);
+    agency_control->request_switch(train_1, sw_1, from_1, to_1, first_priority, tick, dispatch);
+    agency_control->request_switch(train_2, sw_2, from_2, to_2, second_priority, tick, dispatch);
 
-    auto empty_granted_links{central_control->get_granted_links(dispatch)};
+    auto empty_granted_links{agency_control->get_granted_links(dispatch)};
     EXPECT_TRUE(empty_granted_links.empty());
 
-    central_control->resolve_switches();
-    auto granted_links{central_control->get_granted_links(dispatch)};
+    agency_control->resolve_switches();
+    auto granted_links{agency_control->get_granted_links(dispatch)};
     EXPECT_EQ(granted_links.size(), 1) << "only one train should be granted the switch";
     EXPECT_EQ(granted_links.front().first, train_1);
     EXPECT_EQ(granted_links.front().second, to_1);

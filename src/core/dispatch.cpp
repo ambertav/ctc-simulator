@@ -8,16 +8,17 @@
 #include <string>
 #include <ranges>
 #include <algorithm>
+#include <format>
 
 #include <nlohmann/json.hpp>
 
 #include "utils/utils.h"
-#include "core/central_control.h"
+#include "core/agency_control.h"
 #include "core/dispatch.h"
 #include "constants/constants.h"
 
-Dispatch::Dispatch(CentralControl *cc, TrainLine tl, const std::vector<Station *> &st, const std::vector<Train *> &tn, Logger *log)
-    : central_control(cc), train_line(tl), trains(tn), logger(log)
+Dispatch::Dispatch(AgencyControl *ac, TrainLine tl, const std::vector<Station *> &st, const std::vector<Train *> &tn, Logger *log)
+    : agency_control(ac), train_line(tl), trains(tn), logger(log)
 {
     authorized.reserve(tn.size());
 
@@ -64,12 +65,12 @@ void Dispatch::load_schedule()
 {
     using json = nlohmann::json;
 
-    std::string file_path{std::string(SCHED_DIRECTORY) + "/" + central_control->get_system_name() + "/schedule.json"};
+    std::string file_path{std::string(SCHED_DIRECTORY) + "/" + agency_control->get_system_name() + "/schedule.json"};
 
     std::ifstream file(file_path);
     if (!file.is_open())
     {
-        std::cerr << "Failed to open schedule file for " << central_control->get_system_name() << " at " << train_line << " dispatch\n";
+        std::cerr << "Failed to open schedule file for " << agency_control->get_system_name() << " at " << train_line << " dispatch\n";
         return;
     }
 
@@ -170,7 +171,7 @@ void Dispatch::authorize(int tick)
             if (sw != nullptr)
             {
                 int priority{calculate_switch_priority(tick, train)};
-                central_control->request_switch(train, sw, current, next, priority, tick, this);
+                agency_control->request_switch(train, sw, current, next, priority, tick, this);
                 continue;
             }
 
@@ -182,7 +183,7 @@ void Dispatch::authorize(int tick)
                 signal->set_failure(time_to_repair);
                 failed_signals.insert(signal);
 
-                logger->log_signal_failure(tick, train, signal);
+                logger->critical(std::format("Signal {} failed on {} line at tick {}", signal->get_id(), trainline_to_string(train_line), tick));
                 continue;
             }
 
@@ -200,7 +201,7 @@ void Dispatch::execute(int tick)
     signal->update_repair();
     if (signal->is_functional())
     {
-        logger->log_signal_repair(tick, signal, train_line);
+        logger->critical(std::format("Signal {} restored on {} line at tick {}", signal->get_id(), trainline_to_string(train_line), tick));
         return true;
     }
     else
@@ -208,7 +209,7 @@ void Dispatch::execute(int tick)
         return false;
     } });
 
-    std::vector<std::pair<Train *, Track *>> switch_granted{central_control->get_granted_links(this)};
+    std::vector<std::pair<Train *, Track *>> switch_granted{agency_control->get_granted_links(this)};
 
     for (const auto &[train, next_track] : switch_granted)
     {
@@ -231,16 +232,6 @@ void Dispatch::execute(int tick)
                 Platform *arrival_platform{static_cast<Platform *>(train->get_current_track())};
                 const Station *arrival_station{arrival_platform->get_station()};
 
-                if (!arrival_station->is_yard())
-                {
-                    auto platform_delay{randomize_delay(Constants::PLATFORM_DELAY_PROBABILITY)};
-                    if (platform_delay.first == true)
-                    {
-                        train->add_dwell(platform_delay.second);
-                        logger->log_platform_delay(tick, train, arrival_platform);
-                    }
-                }
-
                 auto &arrivals{schedule[arrival_station->get_id()].arrivals};
                 std::optional<Event> event_opt{process_event(tick, arrivals, train)};
 
@@ -248,15 +239,36 @@ void Dispatch::execute(int tick)
                 {
                     Event event{*event_opt};
                     train->set_lateness(tick - event.tick);
-                    logger->log_arrival(tick, event.tick, train, arrival_platform);
+
+                    logger->info(std::format("Train {} arrived at station {} on platform {} (actual tick {}, planned tick {})",
+                                             train->get_id(),
+                                             arrival_station->get_name(),
+                                             arrival_platform->get_id(),
+                                             tick,
+                                             event.tick));
+
                     if (arrival_station->is_yard())
                     {
-                        despawn_train(tick, event, train, arrival_station->get_id());
+                        despawn_train(tick, event, train, arrival_station);
                     }
                 }
                 else
                 {
-                    logger->log_warning("Non-scheduled arrival for train " + std::to_string(train->get_id()) + " at station " + arrival_station->get_name() + " (tick): " + std::to_string(tick));
+                    logger->warn(std::format("Non-scheduled arrival for train {} at station {}, (tick {})", train->get_id(), arrival_station->get_name(), tick));
+                }
+
+                if (!arrival_station->is_yard())
+                {
+                    auto platform_delay{randomize_delay(Constants::PLATFORM_DELAY_PROBABILITY)};
+                    if (platform_delay.first == true)
+                    {
+                        train->add_dwell(platform_delay.second);
+                        logger->warn(std::format("Train {} is delayed at {} on platform {} at tick {}",
+                                                 train->get_id(),
+                                                 arrival_station->get_name(),
+                                                 arrival_platform->get_id(),
+                                                 tick));
+                    }
                 }
             }
             else if (train->is_departing())
@@ -276,11 +288,17 @@ void Dispatch::execute(int tick)
                 {
                     Event event{*event_opt};
                     train->set_lateness(tick - event.tick);
-                    logger->log_departure(tick, event.tick, train, departure_platform);
+
+                    logger->info(std::format("Train {} is departing station {} from platform {} (actual tick {}, planned tick {})", 
+                        train->get_id(),
+                        departure_station->get_name(),
+                        departure_platform->get_id(),
+                        tick,
+                        event.tick));
                 }
                 else
                 {
-                    logger->log_warning("Non-scheduled departure for train " + std::to_string(train->get_id()) + " at station " + departure_station->get_name() + " (tick): " + std::to_string(tick));
+                    logger->warn(std::format("Non-scheduled departure for train {} at station {}, (tick {})", train->get_id(), departure_station->get_name(), tick));
                 }
             }
         }
@@ -306,7 +324,7 @@ void Dispatch::handle_signal_state(int tick, Signal *signal, bool set_red)
     }
 
     signal->change_state(new_state);
-    logger->log_signal_change(tick, signal);
+    logger->info(std::format("Signal {} changed state to {} at tick {}", signal->get_id(), signal_state_to_string(signal->get_state()), tick));
 }
 
 bool Dispatch::needs_yellow_signal(Track *track)
@@ -361,7 +379,7 @@ void Dispatch::handle_spawns(int tick)
 
 void Dispatch::spawn_train(int tick, const Event &event)
 {
-    Station *station = stations[event.station_id];
+    Station *station{stations[event.station_id]};
 
     std::optional<Platform *> platform_opt{station->select_platform(event.direction, train_line)};
     if (!platform_opt.has_value())
@@ -388,15 +406,15 @@ void Dispatch::spawn_train(int tick, const Event &event)
     if (train->is_idle())
     {
         train->spawn(platform);
-        logger->log_train_spawn(tick, event.tick, train);
+        logger->info(std::format("Train {} is leaving the yard {} (actual tick {}, planned tick ())", train->get_id(), station->get_name(), tick, event.tick));
         handle_signal_state(tick, signal);
     }
 }
 
-void Dispatch::despawn_train(int tick, const Event &event, Train *train, int yard_id)
+void Dispatch::despawn_train(int tick, const Event &event, Train *train, const Station *yard)
 {
     train->despawn();
-    logger->log_train_despawn(tick, event.tick, train);
+    logger->info(std::format("Train {} is arriving at yard {} (actual tick {}, planned tick {})", train->get_id(), yard->get_name(), tick, event.tick));
 }
 
 int Dispatch::calculate_switch_priority(int tick, Train *train)

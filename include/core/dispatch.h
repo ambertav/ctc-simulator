@@ -20,7 +20,7 @@
 #include "core/station.h"
 #include "system/logger.h"
 
-class CentralControl;
+class AgencyControl;
 
 struct Event
 {
@@ -54,12 +54,12 @@ private:
     std::vector<std::pair<Train *, Track *>> authorized;
     std::unordered_map<int, EventQueues> schedule;
 
-    CentralControl *central_control;
+    AgencyControl *agency_control;
     Logger *logger;
     TrainLine train_line;
 
 public:
-    Dispatch(CentralControl *cc, TrainLine tl, const std::vector<Station *> &st, const std::vector<Train *> &tn, Logger *log);
+    Dispatch(AgencyControl *ac, TrainLine tl, const std::vector<Station *> &st, const std::vector<Train *> &tn, Logger *log);
 
     TrainLine get_train_line() const;
     const std::unordered_map<int, Station *> &get_stations() const;
@@ -78,7 +78,7 @@ private:
 
     void handle_spawns(int tick);
     void spawn_train(int tick, const Event &event);
-    void despawn_train(int tick, const Event &event, Train *train, int yard_id);
+    void despawn_train(int tick, const Event &event, Train *train, const Station* yard);
 
     int calculate_switch_priority(int tick, Train *train);
     std::pair<bool, int> randomize_delay(double probability);

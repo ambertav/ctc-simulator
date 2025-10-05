@@ -28,7 +28,7 @@ struct SwitchRequest
     Dispatch *dispatch;
 };
 
-class CentralControl
+class AgencyControl
 {
 private:
     std::vector<std::unique_ptr<Dispatch>> dispatchers;
@@ -44,8 +44,8 @@ private:
     std::unordered_map<Train *, std::pair<Switch *, std::multimap<int /* priority */, SwitchRequest>::iterator>> train_to_request;
 
 public:
-    CentralControl(Constants::System sc, const std::string &sn, const Transit::Map::Graph &g, const Registry &r);
-    ~CentralControl();
+    AgencyControl(Constants::System sc, const std::string &sn, const Transit::Map::Graph &g, const Registry &r);
+    ~AgencyControl();
 
     std::string get_system_name() const;
     Dispatch *get_dispatch(TrainLine train_line) const;

@@ -1,8 +1,10 @@
+#include <format>
+
 #include "utils/utils.h"
 #include "core/dispatch.h"
-#include "core/central_control.h"
+#include "core/agency_control.h"
 
-CentralControl::CentralControl(Constants::System sc, const std::string &sn, const Transit::Map::Graph &g, const Registry &r)
+AgencyControl::AgencyControl(Constants::System sc, const std::string &sn, const Transit::Map::Graph &g, const Registry &r)
     : system_code(sc), system_name(sn), current_tick(0)
 {
     factory = std::make_unique<Factory>();
@@ -12,14 +14,14 @@ CentralControl::CentralControl(Constants::System sc, const std::string &sn, cons
     issue_dispatchers();
 }
 
-CentralControl::~CentralControl() = default;
+AgencyControl::~AgencyControl() = default;
 
-std::string CentralControl::get_system_name() const
+std::string AgencyControl::get_system_name() const
 {
     return system_name;
 }
 
-Dispatch *CentralControl::get_dispatch(TrainLine train_line) const
+Dispatch *AgencyControl::get_dispatch(TrainLine train_line) const
 {
     auto it{std::ranges::find_if(dispatchers, [train_line](auto &dispatch)
                                  { return trainlines_equal(dispatch->get_train_line(), train_line); })};
@@ -34,7 +36,7 @@ Dispatch *CentralControl::get_dispatch(TrainLine train_line) const
     }
 }
 
-std::vector<std::pair<Train *, Track *>> CentralControl::get_granted_links(Dispatch *dispatch)
+std::vector<std::pair<Train *, Track *>> AgencyControl::get_granted_links(Dispatch *dispatch)
 {
     auto it{granted_links.find(dispatch)};
     if (it == granted_links.end())
@@ -47,7 +49,7 @@ std::vector<std::pair<Train *, Track *>> CentralControl::get_granted_links(Dispa
     }
 }
 
-void CentralControl::run(int tick)
+void AgencyControl::run(int tick)
 {
     current_tick = tick;
 
@@ -56,7 +58,7 @@ void CentralControl::run(int tick)
     sw->update_repair();
     if (sw->is_functional())
     {
-        logger->log_switch_repair(current_tick, sw);
+        logger->critical(std::format("Switch {} restored at tick {}", sw->get_id(), current_tick));
         return true;
     }
     else
@@ -77,7 +79,7 @@ void CentralControl::run(int tick)
     }
 }
 
-void CentralControl::request_switch(Train *train, Switch *sw, Track *from, Track *to, int priority, int tick, Dispatch *dispatch)
+void AgencyControl::request_switch(Train *train, Switch *sw, Track *from, Track *to, int priority, int tick, Dispatch *dispatch)
 {
     auto existing{train_to_request.find(train)};
 
@@ -114,7 +116,7 @@ void CentralControl::request_switch(Train *train, Switch *sw, Track *from, Track
     train_to_request[train] = {sw, new_it};
 }
 
-void CentralControl::resolve_switches()
+void AgencyControl::resolve_switches()
 {
     granted_links.clear();
 
@@ -129,7 +131,7 @@ void CentralControl::resolve_switches()
                 sw->set_failure(time_to_repair);
                 failed_switches.insert(sw);
 
-                logger->log_switch_failure(current_tick, sw);
+                logger->critical(std::format("Switch {} failure at tick {}", sw->get_id(), current_tick));
                 continue;
             }
 
@@ -152,12 +154,12 @@ void CentralControl::resolve_switches()
     }
 }
 
-void CentralControl::run_factory(const Transit::Map::Graph &graph, const Registry &registry)
+void AgencyControl::run_factory(const Transit::Map::Graph &graph, const Registry &registry)
 {
     factory->build_network(graph, registry, system_code);
 }
 
-void CentralControl::issue_dispatchers()
+void AgencyControl::issue_dispatchers()
 {
     auto issue = [&](const auto &line)
     {

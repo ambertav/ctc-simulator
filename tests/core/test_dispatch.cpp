@@ -8,18 +8,18 @@
 #include "constants/constants.h"
 #include "system/registry.h"
 #include "map/metro_north.h"
-#include "core/central_control.h"
+#include "core/agency_control.h"
 #include "core/dispatch.h"
 
 class DispatchTest : public ::testing::Test
 {
 protected:
-    class MockCentralControl : public CentralControl
+    class MockAgencyControl : public AgencyControl
     {
-        MockCentralControl(Constants::System sc, const std::string &sn, const Transit::Map::Graph &g, const Registry &r) : CentralControl(sc, sn, g, r) {}
+        MockAgencyControl(Constants::System sc, const std::string &sn, const Transit::Map::Graph &g, const Registry &r) : AgencyControl(sc, sn, g, r) {}
     };
 
-    std::unique_ptr<CentralControl> cc{};
+    std::unique_ptr<AgencyControl> ac{};
     Transit::Map::MetroNorth &mnr{Transit::Map::MetroNorth::get_instance()};
     Registry &registry{Registry::get_instance()};
 
@@ -33,8 +33,8 @@ protected:
                                      { return entry.second == code; })};
         ASSERT_NE(it, Constants::SYSTEMS.end()) << "Invalid system code";
 
-        cc = std::make_unique<CentralControl>(code, it->first, mnr, registry);
-        dispatch = cc->get_dispatch(train_line);
+        ac = std::make_unique<AgencyControl>(code, it->first, mnr, registry);
+        dispatch = ac->get_dispatch(train_line);
         ASSERT_NE(dispatch, nullptr);
     }
 };
@@ -179,7 +179,8 @@ TEST_F(DispatchTest, ExecutesTrainMovementAccordingToAuthorizations)
                                  { return pair.first == train; })};
     EXPECT_EQ(it, authorizations.end()) << "dispatch should not authorize train to move to track with switch";
 
-    cc->resolve_switches();
+    ac->resolve_switches();
+    
     dispatch->execute(tick);
-    EXPECT_EQ(train->get_current_track(), next) << "central control should authorize train and have it move into the track with a switch";
+    EXPECT_EQ(train->get_current_track(), next) << "agency control should authorize train and have it move into the track with a switch";
 }

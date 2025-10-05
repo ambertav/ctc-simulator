@@ -12,7 +12,7 @@
 #include "map/metro_north.h"
 #include "map/lirr.h"
 #include "system/scheduler.h"
-#include "core/central_control.h"
+#include "core/agency_control.h"
 
 int main()
 {
@@ -53,7 +53,7 @@ int main()
             if (graph != nullptr)
             {
                 scheduler.write_schedule(*graph, registry, system_name, system_code);
-                CentralControl cc{system_code, system_name, *graph, registry};
+                AgencyControl agency{system_code, system_name, *graph, registry};
 
                 while (true)
                 {
@@ -63,7 +63,7 @@ int main()
                         break;
                     }
 
-                    cc.run(tick);
+                    agency.run(tick);
 
                     {
                         std::unique_lock lock(tick_mutex);
