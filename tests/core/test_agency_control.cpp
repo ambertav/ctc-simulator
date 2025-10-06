@@ -8,6 +8,7 @@
 #include "system/registry.h"
 #include "map/metro_north.h"
 #include "core/dispatch.h"
+#include "system/central_logger.h"
 #include "core/agency_control.h"
 
 class AgencyControlTest : public ::testing::Test
@@ -16,6 +17,7 @@ protected:
     std::unique_ptr<AgencyControl> agency_control{};
     Transit::Map::MetroNorth &mnr{Transit::Map::MetroNorth::get_instance()};
     Registry &registry{Registry::get_instance()};
+    CentralLogger & central_logger{CentralLogger::get_instance()};
     Dispatch *dispatch{};
 
     std::string name{};
@@ -33,7 +35,7 @@ protected:
         ASSERT_NE(it, Constants::SYSTEMS.end()) << "Invalid system code";
         name = it->first;
 
-        agency_control = std::make_unique<AgencyControl>(code, name, mnr, registry);
+        agency_control = std::make_unique<AgencyControl>(code, name, mnr, registry, central_logger);
         dispatch = agency_control->get_dispatch(train_line);
         ASSERT_NE(dispatch, nullptr);
 

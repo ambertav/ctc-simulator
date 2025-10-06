@@ -7,6 +7,7 @@
 #include "utils/utils.h"
 #include "constants/constants.h"
 #include "system/registry.h"
+#include "system/central_logger.h"
 #include "map/metro_north.h"
 #include "core/agency_control.h"
 #include "core/dispatch.h"
@@ -16,12 +17,13 @@ class DispatchTest : public ::testing::Test
 protected:
     class MockAgencyControl : public AgencyControl
     {
-        MockAgencyControl(Constants::System sc, const std::string &sn, const Transit::Map::Graph &g, const Registry &r) : AgencyControl(sc, sn, g, r) {}
+        MockAgencyControl(Constants::System sc, const std::string &sn, const Transit::Map::Graph &g, const Registry &r, CentralLogger& cl) : AgencyControl(sc, sn, g, r, cl) {}
     };
 
     std::unique_ptr<AgencyControl> ac{};
     Transit::Map::MetroNorth &mnr{Transit::Map::MetroNorth::get_instance()};
     Registry &registry{Registry::get_instance()};
+    CentralLogger & central_logger{CentralLogger::get_instance()};
 
     Dispatch *dispatch{};
     MNR::TrainLine train_line{MNR::TrainLine::HUDSON};
@@ -33,7 +35,7 @@ protected:
                                      { return entry.second == code; })};
         ASSERT_NE(it, Constants::SYSTEMS.end()) << "Invalid system code";
 
-        ac = std::make_unique<AgencyControl>(code, it->first, mnr, registry);
+        ac = std::make_unique<AgencyControl>(code, it->first, mnr, registry, central_logger);
         dispatch = ac->get_dispatch(train_line);
         ASSERT_NE(dispatch, nullptr);
     }

@@ -4,7 +4,7 @@
 
 #include "system/logger.h"
 
-Logger::Logger(const std::string &file_path, Constants::System sc) : system_code(sc)
+Logger::Logger(const std::string &file_path, Constants::System sc, CentralLogger& cl) : system_code(sc), central_logger(cl)
 {
     std::filesystem::path p(file_path);
     std::filesystem::path dir{p.parent_path()};
@@ -43,5 +43,5 @@ void Logger::critical(std::string_view message)
 {
     outfile << "[CRITICAL] " << message << "\n";
     outfile.flush();
-    // central_logger.report(system_code, message);
+    central_logger.report(system_code, message);
 }

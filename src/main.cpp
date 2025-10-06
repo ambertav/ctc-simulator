@@ -12,6 +12,7 @@
 #include "map/metro_north.h"
 #include "map/lirr.h"
 #include "system/scheduler.h"
+#include "system/central_logger.h"
 #include "core/agency_control.h"
 
 int main()
@@ -26,6 +27,7 @@ int main()
 
     Registry &registry{Registry::get_instance()};
     Scheduler scheduler{};
+    CentralLogger &central_logger{CentralLogger::get_instance()};
 
     std::atomic<int> global_tick{0};
     std::mutex tick_mutex{};
@@ -53,7 +55,7 @@ int main()
             if (graph != nullptr)
             {
                 scheduler.write_schedule(*graph, registry, system_name, system_code);
-                AgencyControl agency{system_code, system_name, *graph, registry};
+                AgencyControl agency{system_code, system_name, *graph, registry, central_logger};
 
                 while (true)
                 {
@@ -87,6 +89,12 @@ int main()
         {
             std::cerr << "[ERROR] Simulation failed for system " << system_name << ": " << e.what() << "\n";
         } });
+    }
+
+    while (global_tick.load() < max_tick)
+    {
+        central_logger.process();
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
     for (auto &t : threads)

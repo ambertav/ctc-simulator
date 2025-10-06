@@ -4,11 +4,11 @@
 #include "core/dispatch.h"
 #include "core/agency_control.h"
 
-AgencyControl::AgencyControl(Constants::System sc, const std::string &sn, const Transit::Map::Graph &g, const Registry &r)
+AgencyControl::AgencyControl(Constants::System sc, const std::string &sn, const Transit::Map::Graph &g, const Registry &r, CentralLogger& cl)
     : system_code(sc), system_name(sn), current_tick(0)
 {
     factory = std::make_unique<Factory>();
-    logger = std::make_unique<Logger>(std::string(LOG_DIRECTORY) + "/" + system_name + "/log.txt", sc);
+    logger = std::make_unique<Logger>(std::string(LOG_DIRECTORY) + "/" + system_name + "/log.txt", sc, cl);
 
     run_factory(g, r);
     issue_dispatchers();

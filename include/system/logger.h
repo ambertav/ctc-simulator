@@ -4,22 +4,17 @@
 #include <string_view>
 
 #include "constants/constants.h"
-#include "core/switch.h"
-#include "core/signal.h"
-#include "core/train.h"
-#include "core/station.h"
-#include "core/platform.h"
-
-class CentralLogger;
+#include "system/central_logger.h"
 
 class Logger
 {
 private:
     std::ofstream outfile;
     Constants::System system_code;
+    CentralLogger& central_logger;
 
 public:
-    Logger(const std::string &file_path, Constants::System sc);
+    Logger(const std::string &file_path, Constants::System sc, CentralLogger& cl);
     ~Logger();
 
     void info(std::string_view message);

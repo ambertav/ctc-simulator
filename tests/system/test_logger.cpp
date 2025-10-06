@@ -71,7 +71,7 @@ TEST(LoggerTestNoFixture, ConstructorThrowsErrorForInvalidPath)
 TEST_F(LoggerTest, LogsSingleMessageToFileSuccessfully)
 {
     std::string message{"This is the message"};
-    logger->log(message);
+    logger->info(message);
 
     std::string expected_message = message + "\n";
 
@@ -96,7 +96,7 @@ TEST_F(LoggerTest, HandlesConcurrentLoggingWithoutRaceConditions)
     {
         for (int i = 0; i < logs_per_thread; i++)
         {
-            logger->log("Thread " + std::to_string(thread_id) + " log #" + std::to_string(i));
+            logger->info("Thread " + std::to_string(thread_id) + " log #" + std::to_string(i));
         }
     };
 

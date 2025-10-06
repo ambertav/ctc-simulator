@@ -44,7 +44,7 @@ private:
     std::unordered_map<Train *, std::pair<Switch *, std::multimap<int /* priority */, SwitchRequest>::iterator>> train_to_request;
 
 public:
-    AgencyControl(Constants::System sc, const std::string &sn, const Transit::Map::Graph &g, const Registry &r);
+    AgencyControl(Constants::System sc, const std::string &sn, const Transit::Map::Graph &g, const Registry &r, CentralLogger& cl);
     ~AgencyControl();
 
     std::string get_system_name() const;
