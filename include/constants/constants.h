@@ -13,10 +13,11 @@ namespace Constants
 
     inline constexpr double TRANSFER_EPSILON{0.001};
 
-    inline constexpr int DEFAULT_TRAINS_PER_LINE{20};
+    inline constexpr int DEFAULT_TRAINS_PER_LINE{10};
     inline constexpr int DEFAULT_DWELL_TIME{2};
     inline constexpr int DEFAULT_TRAVEL_TIME{2};
     inline constexpr int DEFAULT_YARD_HEADWAY{6};
+    inline constexpr int MAX_TRACK_DURATION{4};
 
     inline constexpr double PLATFORM_DELAY_PROBABILITY{0.3};
     inline constexpr double SIGNAL_FAILURE_PROBABILITY{0.05};
@@ -24,7 +25,7 @@ namespace Constants
     inline constexpr int MAX_DELAY{4};
 
     inline constexpr double SUBWAY_SCALE_FACTOR{0.5};
-    inline constexpr double METRO_NORTH_SCALE_FACTOR{2};
+    inline constexpr double METRO_NORTH_SCALE_FACTOR{1.8};
     inline constexpr double LIRR_SCALE_FACTOR{1.4};
 
     enum class System

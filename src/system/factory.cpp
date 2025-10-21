@@ -46,6 +46,11 @@ void Factory::build_network(const Transit::Map::Graph &graph, const Registry &re
                 Station *to{stations.at(to_id).get()};
                 int duration{route.distances[i - 1]};
 
+                if (system_code == Constants::System::LIRR)
+                {
+                    std::cout << "Route to " << route.headsign << ", duration: " << duration << std::endl;
+                }
+
                 create_track(from, to, train_line, route.direction, duration);
             }
 
@@ -238,7 +243,7 @@ void Factory::create_stations(const Transit::Map::Graph &graph, const Registry &
                 station_ptr->get_train_lines())};
 
             station_ptr->add_platform(platform.get());
-            signal_ptr->set_track(static_cast<Track*>(platform.get()));
+            signal_ptr->set_track(static_cast<Track *>(platform.get()));
             platforms.emplace(track_id, std::move(platform));
         }
     };
@@ -288,47 +293,66 @@ void Factory::create_track(Station *from, Station *to, TrainLine train_line, Dir
     Platform *from_platform{*from_platform_opt};
     Platform *to_platform{*to_platform_opt};
 
-    const auto &next_tracks{from_platform->get_next_tracks()};
-    const auto &prev_tracks{to_platform->get_prev_tracks()};
-
-    for (Track *next_track : next_tracks)
+    auto it{connected_platforms.find(from_platform)};
+    if (it != connected_platforms.end())
     {
-        for (Track *prev_track : prev_tracks)
+        if (it->second.contains(to_platform))
         {
-            if (next_track == prev_track) // constrained to only 1 track inbetween platforms
-            {
-                if (!next_track->supports_train_line(train_line))
-                {
-                    next_track->add_train_line(train_line);
-                }
-                return;
-            }
+            return;
         }
     }
 
-    int signal_id{generate_signal_id()};
-    int track_id{generate_track_id()};
+    // dividing track block into multiple parts as needed
+    std::vector<int> duration_subparts{};
+    while (duration > 0)
+    {
+        int remaining_parts{static_cast<int>(std::ceil(static_cast<double>(duration) / Constants::MAX_TRACK_DURATION))};
+        int part{duration / remaining_parts};
 
-    auto signal{std::make_unique<Signal>(signal_id)};
-    Signal *signal_ptr{signal.get()};
-    signals.emplace(signal_id, std::move(signal));
+        if (duration % remaining_parts != 0)
+        {
+            part += 1;
+        }
 
-    auto track{std::make_unique<Track>(track_id, signal_ptr, duration, std::unordered_set<TrainLine>{train_line})};
-    Track *track_ptr{track.get()};
-    tracks.emplace(track_id, std::move(track));
+        if (part > Constants::MAX_TRACK_DURATION)
+        {
+            part = Constants::MAX_TRACK_DURATION;
+        }
 
-    signal_ptr->set_track(track_ptr);
+        duration_subparts.push_back(part);
+        duration -= part;
+    }
 
-    track_ptr->add_prev_track(from_platform);
-    track_ptr->add_next_track(to_platform);
+    // construct and connect from track block sub parts
+    Track *current{static_cast<Track *>(from_platform)};
+    for (int i{0}; i < duration_subparts.size(); ++i)
+    {
+        int signal_id{generate_signal_id()};
+        int track_id{generate_track_id()};
 
-    from_platform->add_next_track(track_ptr);
-    to_platform->add_prev_track(track_ptr);
+        auto signal{std::make_unique<Signal>(signal_id)};
+        Signal *signal_ptr{signal.get()};
+        signals.emplace(signal_id, std::move(signal));
 
-    create_switch(from_platform, to_platform, track_ptr);
+        auto track{std::make_unique<Track>(track_id, signal_ptr, duration_subparts[i], std::unordered_set<TrainLine>{train_line})};
+        Track *track_ptr{track.get()};
+        tracks.emplace(track_id, std::move(track));
+
+        signal_ptr->set_track(track_ptr);
+
+        current->add_next_track(track_ptr);
+        track_ptr->add_prev_track(current);
+        current = track_ptr;
+    }
+
+    current->add_next_track(to_platform);
+    to_platform->add_prev_track(current);
+
+    connected_platforms[from_platform].insert(to_platform);
+    create_switch(from_platform, to_platform);
 }
 
-void Factory::create_switch(Platform *from, Platform *to, Track *track)
+void Factory::create_switch(Platform *from, Platform *to)
 {
     const auto &next_tracks{from->get_next_tracks()};
     const auto &prev_tracks{to->get_prev_tracks()};
@@ -345,19 +369,13 @@ void Factory::create_switch(Platform *from, Platform *to, Track *track)
 
             for (Track *tr : next_tracks)
             {
-                if (tr != track)
-                {
-                    sw->add_departure_track(tr);
-                    tr->add_inbound_switch(sw);
-                }
+                sw->add_departure_track(tr);
+                tr->add_inbound_switch(sw);
             }
         }
 
         from->add_outbound_switch(sw);
-        track->add_inbound_switch(sw);
-
         sw->add_approach_track(from);
-        sw->add_departure_track(track);
     }
 
     if (prev_tracks.size() > 1)
@@ -372,18 +390,12 @@ void Factory::create_switch(Platform *from, Platform *to, Track *track)
 
             for (Track *tr : prev_tracks)
             {
-                if (tr != track)
-                {
-                    sw->add_approach_track(tr);
-                    tr->add_outbound_switch(sw);
-                }
+                sw->add_approach_track(tr);
+                tr->add_outbound_switch(sw);
             }
         }
 
         to->add_inbound_switch(sw);
-        track->add_outbound_switch(sw);
-
         sw->add_departure_track(to);
-        sw->add_approach_track(track);
     }
 }

@@ -60,7 +60,7 @@ TEST_F(FactoryTest, CreatesStationsSuccessfully)
         EXPECT_NE(it, stations.end()) << "Station " << id << " missing from Factory stations";
     }
 
-    auto platforms {factory.get_platforms()};
+    auto platforms{factory.get_platforms()};
     EXPECT_GE(platforms.size(), stations.size() * 2);
 }
 
@@ -85,15 +85,26 @@ TEST_F(FactoryTest, CreatesConnectionsSuccessfully)
         ASSERT_TRUE(platform_opt.has_value());
 
         Platform *platform{*platform_opt};
-        auto *next_track{platform->get_next_track(chosen_line)};
-        ASSERT_NE(next_track, nullptr);
+        Platform *next_platform{nullptr};
 
-        Platform *next_platform{static_cast<Platform *>(next_track->get_next_track(chosen_line))};
-        ASSERT_NE(next_platform, nullptr);
+        Track *current{static_cast<Track *>(platform)};
+        while (true)
+        {
+            auto *next_track{current->get_next_track(chosen_line)};
+            ASSERT_NE(next_track, nullptr);
+
+            if (next_track->is_platform())
+            {
+                next_platform = static_cast<Platform *>(next_track);
+                ASSERT_NE(next_platform, nullptr);
+                break;
+            }
+
+            current = next_track;
+        }
 
         const Station *next_station{next_platform->get_station()};
         EXPECT_EQ(next_station->get_id(), route.sequence[i + 1]);
-
         current_station = next_station;
     }
 }
@@ -112,7 +123,6 @@ TEST_F(FactoryTest, CreatesAndConnectsSwitchesSuccessfully)
 
         for (auto *tr : approach_tracks)
         {
-
             EXPECT_EQ(sw, tr->get_outbound_switch());
         }
 

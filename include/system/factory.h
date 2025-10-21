@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <unordered_map>
+#include <unordered_set>
 #include <memory>
 
 #include "core/train.h"
@@ -31,6 +33,8 @@ private:
     std::unordered_map<int, std::unique_ptr<Track>> tracks;
     std::unordered_map<int, std::unique_ptr<Switch>> switches;
 
+    std::unordered_map<Platform*, std::unordered_set<Platform*>> connected_platforms;
+
 public:
     Factory() = default;
 
@@ -53,5 +57,5 @@ private:
     void create_trains(const Registry &registry, Constants::System system_code);
     void create_stations(const Transit::Map::Graph &graph, const Registry &registry, Constants::System system_code);
     void create_track(Station *from, Station *to, TrainLine train_line, Direction direction, int duration);
-    void create_switch(Platform *from, Platform *to, Track *track);
+    void create_switch(Platform *from, Platform *to);
 };
