@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include "constants/constants.h"
+#include "constants/railroad_constants.h"
 #include "enum/transit_types.h"
 #include "system/scheduler.h"
 
@@ -91,22 +92,43 @@ void Scheduler::process_system(nlohmann::json &train_lines_json, const Transit::
             continue;
         }
 
-        std::vector<const Transit::Map::Route *> matching_routes{};
+        const Transit::Map::Route *matching_route{nullptr};
         for (const auto &route : routes_it->second)
         {
             if (directions_equal(route.direction, train_info.direction))
             {
-                matching_routes.push_back(&route);
+                // alternate penn station and grand central terminal in routes if applicable
+                if (system_code == Constants::System::LIRR)
+                {
+                    const std::string &headsign{route.headsign};
+                    if (headsign == "Penn Station" || headsign == "Grand Central")
+                    {
+                        if (headsign != ((train_info.instance % 2 == 0) ? "Grand Central" : "Penn Station"))
+                        {
+                            continue;
+                        }
+
+                        matching_route = &route;
+                        break;
+                    }
+                    else
+                    {
+                        matching_route = &route;
+                        break;
+                    }
+                }
+                else
+                {
+                    matching_route = &route;
+                    break;
+                }
             }
         }
 
-        if (matching_routes.empty())
+        if (matching_route == nullptr)
         {
             continue;
         }
-
-        size_t index{Utils::random_in_range(matching_routes.size())};
-        const Transit::Map::Route *matching_route{matching_routes[index]};
 
         json trains_json{};
         trains_json["train_id"] = train_id;

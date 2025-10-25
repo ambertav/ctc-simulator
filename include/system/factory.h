@@ -6,7 +6,7 @@
 #pragma once
 
 #include <unordered_map>
-#include <unordered_set>
+#include <vector>
 #include <memory>
 
 #include "core/train.h"
@@ -33,7 +33,14 @@ private:
     std::unordered_map<int, std::unique_ptr<Track>> tracks;
     std::unordered_map<int, std::unique_ptr<Switch>> switches;
 
-    std::unordered_map<Platform*, std::unordered_set<Platform*>> connected_platforms;
+    struct platform_pair_hash
+    {
+        std::size_t operator()(const std::pair<Platform *, Platform *> &p) const noexcept
+        {
+            return std::hash<Platform *>()(p.first) ^ (std::hash<Platform *>()(p.second) << 1);
+        }
+    };
+    std::unordered_map<std::pair<Platform *, Platform *>, std::vector<Track *>, platform_pair_hash> built_connections;
 
 public:
     Factory() = default;

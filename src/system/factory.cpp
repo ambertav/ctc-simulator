@@ -46,11 +46,6 @@ void Factory::build_network(const Transit::Map::Graph &graph, const Registry &re
                 Station *to{stations.at(to_id).get()};
                 int duration{route.distances[i - 1]};
 
-                if (system_code == Constants::System::LIRR)
-                {
-                    std::cout << "Route to " << route.headsign << ", duration: " << duration << std::endl;
-                }
-
                 create_track(from, to, train_line, route.direction, duration);
             }
 
@@ -293,13 +288,14 @@ void Factory::create_track(Station *from, Station *to, TrainLine train_line, Dir
     Platform *from_platform{*from_platform_opt};
     Platform *to_platform{*to_platform_opt};
 
-    auto it{connected_platforms.find(from_platform)};
-    if (it != connected_platforms.end())
+    auto it{built_connections.find({from_platform, to_platform})};
+    if (it != built_connections.end())
     {
-        if (it->second.contains(to_platform))
+        for (Track* tr : it->second)
         {
-            return;
+            tr->add_train_line(train_line);
         }
+        return;
     }
 
     // dividing track block into multiple parts as needed
@@ -324,6 +320,7 @@ void Factory::create_track(Station *from, Station *to, TrainLine train_line, Dir
     }
 
     // construct and connect from track block sub parts
+    std::vector<Track*> built_tracks{};
     Track *current{static_cast<Track *>(from_platform)};
     for (int i{0}; i < duration_subparts.size(); ++i)
     {
@@ -342,13 +339,15 @@ void Factory::create_track(Station *from, Station *to, TrainLine train_line, Dir
 
         current->add_next_track(track_ptr);
         track_ptr->add_prev_track(current);
+
+        built_tracks.push_back(track_ptr);
         current = track_ptr;
     }
 
     current->add_next_track(to_platform);
     to_platform->add_prev_track(current);
 
-    connected_platforms[from_platform].insert(to_platform);
+    built_connections[{from_platform, to_platform}] = std::move(built_tracks);
     create_switch(from_platform, to_platform);
 }
 
