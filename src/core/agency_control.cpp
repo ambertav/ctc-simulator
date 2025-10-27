@@ -4,8 +4,8 @@
 #include "core/dispatch.h"
 #include "core/agency_control.h"
 
-AgencyControl::AgencyControl(Constants::System sc, const std::string &sn, const Transit::Map::Graph &g, const Registry &r, CentralLogger& cl)
-    : system_code(sc), system_name(sn), current_tick(0)
+AgencyControl::AgencyControl(Constants::System sc, const std::string &sn, const Transit::Map::Graph &g, const Registry &r, CentralLogger &cl)
+    : system_code(sc), system_name(sn), current_tick(0), simulation_complete(false)
 {
     factory = std::make_unique<Factory>();
     logger = std::make_unique<Logger>(std::string(LOG_DIRECTORY) + "/" + system_name + "/log.txt", sc, cl);
@@ -49,33 +49,47 @@ std::vector<std::pair<Train *, Track *>> AgencyControl::get_granted_links(Dispat
     }
 }
 
+void AgencyControl::inactivate(Dispatch *dispatch)
+{
+    active_dispatchers.erase(dispatch);
+    if (active_dispatchers.empty())
+    {
+        std::cout << system_name << " is complete!" << std::endl;
+        simulation_complete = true;
+    }
+}
+
 void AgencyControl::run(int tick)
 {
     current_tick = tick;
 
-    std::erase_if(failed_switches, [&](Switch *sw)
-                  {
-    sw->update_repair();
-    if (sw->is_functional())
+    if (!simulation_complete)
     {
-        logger->critical(std::format("Switch {} restored at tick {}", sw->get_id(), current_tick));
-        return true;
-    }
-    else
-    {
-        return false;
-    }});
 
-    for (const auto &dispatch : dispatchers)
-    {
-        dispatch->authorize(tick);
-    }
+        std::erase_if(failed_switches, [&](Switch *sw)
+                      {
+                        sw->update_repair();
+                        if (sw->is_functional())
+                        {
+                            logger->critical(std::format("Switch {} restored at tick {}", sw->get_id(), current_tick));
+                            return true;
+                        }
+                        else
+                        {
+                            return false;
+                        } });
 
-    resolve_switches();
+        for (auto *dispatch : active_dispatchers)
+        {
+            dispatch->authorize(tick);
+        }
 
-    for (const auto &dispatch : dispatchers)
-    {
-        dispatch->execute(tick);
+        resolve_switches();
+
+        for (auto *dispatch : active_dispatchers)
+        {
+            dispatch->execute(tick);
+        }
     }
 }
 
@@ -90,6 +104,7 @@ void AgencyControl::request_switch(Train *train, Switch *sw, Track *from, Track 
         {
             SwitchRequest updated_request{request_it->second};
             updated_request.priority = priority;
+            updated_request.from = from;
 
             switch_requests[sw].erase(request_it);
 
@@ -122,6 +137,16 @@ void AgencyControl::resolve_switches()
 
     for (auto &[sw, requests] : switch_requests)
     {
+        std::erase_if(requests, [](const auto &pair)
+                      {
+        const auto& [priority, request] = pair;
+        return !request.train->is_active() || request.train->get_current_track() != request.from; });
+
+        if (requests.empty())
+        {
+            continue;
+        }
+
         if (sw->is_functional())
         {
             bool failed{Utils::coin_flip(Constants::SWITCH_FAILURE_PROBABILITY)};
@@ -175,6 +200,8 @@ void AgencyControl::issue_dispatchers()
 
             auto& dispatch {dispatchers.emplace_back(std::make_unique<Dispatch>(this, train_line, stations, trains, logger.get()))};
             dispatch->load_schedule();
+
+            active_dispatchers.insert(dispatch.get());
         } }, line);
     };
 

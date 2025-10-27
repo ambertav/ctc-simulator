@@ -50,6 +50,7 @@ private:
     std::unordered_map<int, Station *> stations;
     std::vector<Station *> yards;
     std::vector<Train *> trains;
+    std::unordered_set<Train*> finished_trains;
     std::unordered_set<Signal *> failed_signals;
     std::vector<std::pair<Train *, Track *>> authorized;
     std::unordered_map<int, EventQueues> schedule;
@@ -73,12 +74,14 @@ public:
 
 private:
     void handle_signal_state(int tick, Signal *signal, bool set_red = false);
-    bool needs_yellow_signal(Track* track);
+    bool needs_yellow_signal(Track *track);
     std::optional<Event> process_event(int tick, std::multimap<int, Event> &queue, Train *train);
 
     void handle_spawns(int tick);
-    void spawn_train(int tick, const Event &event);
-    void despawn_train(int tick, const Event &event, Train *train, const Station* yard);
+    bool spawn_train(int tick, const Event &event);
+    void despawn_train(int tick, const Event &event, Train *train, const Station *yard);
+
+    void check_completion(int tick);
 
     int calculate_switch_priority(int tick, Train *train);
     std::pair<bool, int> randomize_delay(double probability);

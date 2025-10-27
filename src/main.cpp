@@ -34,7 +34,7 @@ int main()
     std::condition_variable tick_cv{};
     const int max_tick{500};
 
-    int ready_threads{0};
+    std::atomic<int> ready_threads{0};
     const int total_threads{Constants::SYSTEMS.size()};
 
     std::vector<std::thread> threads{};
@@ -59,26 +59,29 @@ int main()
 
                 while (true)
                 {
-                    int tick {global_tick.load()};
-                    if (tick >= max_tick)
-                    {
-                        break;
-                    }
-
-                    agency.run(tick);
-
+                    int tick{};
                     {
                         std::unique_lock lock(tick_mutex);
-                        ++ready_threads;
-                        if (ready_threads == total_threads)
+                        tick = global_tick.load();
+                    }
+                
+                    agency.run(tick);
+                
+                    {
+                        std::unique_lock lock(tick_mutex);
+                        if (ready_threads.fetch_add(1) + 1 == total_threads)
                         {
-                            ready_threads = 0;
+                            ready_threads.store(0);
                             ++global_tick;
                             tick_cv.notify_all();
                         }
                         else
                         {
                             tick_cv.wait(lock, [&]{ return tick != global_tick.load(); });
+                            if (global_tick.load() >= max_tick)
+                            {
+                                break;
+                            }
                         }
 
                     }
@@ -96,6 +99,12 @@ int main()
         central_logger.process();
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
+
+    {
+        std::unique_lock lock(tick_mutex);
+        tick_cv.notify_all();
+    }
+
 
     for (auto &t : threads)
     {

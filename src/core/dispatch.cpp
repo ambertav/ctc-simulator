@@ -92,7 +92,7 @@ void Dispatch::load_schedule()
         std::cerr << "Train line " << train_line_name << " not found in schedule\n";
     }
 
-    auto trains_json{input_json["train_lines"][train_line_name]["trains"][0]};
+    auto trains_json = input_json["train_lines"][train_line_name]["trains"];
     for (const auto &t_json : trains_json)
     {
         int train_id{t_json["train_id"]};
@@ -107,16 +107,6 @@ void Dispatch::load_schedule()
 
         for (const auto &s_json : t_json["schedule"])
         {
-            auto it{std::ranges::find_if(trains, [train_id](Train *t)
-                                         { return t->get_id() == train_id; })};
-            if (it == trains.end())
-            {
-                continue;
-            }
-
-            Train *train{*it};
-            train->set_headsign(headsign);
-
             int station_id{s_json["station_id"]};
             int arrival_tick{s_json["arrival_tick"]};
             int departure_tick{s_json["departure_tick"]};
@@ -195,7 +185,6 @@ void Dispatch::authorize(int tick)
 
 void Dispatch::execute(int tick)
 {
-
     std::erase_if(failed_signals, [&](Signal *signal)
                   {
     signal->update_repair();
@@ -289,12 +278,11 @@ void Dispatch::execute(int tick)
                     Event event{*event_opt};
                     train->set_lateness(tick - event.tick);
 
-                    logger->info(std::format("Train {} is departing station {} from platform {} (actual tick {}, planned tick {})", 
-                        train->get_id(),
-                        departure_station->get_name(),
-                        departure_platform->get_id(),
-                        tick,
-                        event.tick));
+                    logger->info(std::format("Train {} is departing station {} (actual tick {}, planned tick {})",
+                                             train->get_id(),
+                                             departure_station->get_name(),
+                                             tick,
+                                             event.tick));
                 }
                 else
                 {
@@ -367,47 +355,71 @@ void Dispatch::handle_spawns(int tick)
     {
         auto &departures{schedule[yard->get_id()].departures};
 
-        auto it = departures.begin();
+        auto it{departures.begin()};
         while (it != departures.end() && it->first <= tick)
         {
             Event event = it->second;
-            spawn_train(tick, event);
-            it = departures.erase(it);
+            bool spawned{spawn_train(tick, event)};
+
+            if (spawned)
+            {
+                it = departures.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
         }
     }
 }
 
-void Dispatch::spawn_train(int tick, const Event &event)
+bool Dispatch::spawn_train(int tick, const Event &event)
 {
     Station *station{stations[event.station_id]};
 
-    std::optional<Platform *> platform_opt{station->select_platform(event.direction, train_line)};
-    if (!platform_opt.has_value())
+    std::vector<Platform *> platforms{station->select_platforms(event.direction, train_line)};
+    if (platforms.empty())
     {
         std::cerr << "No platform found at yard " << event.station_id << " for direction " << event.direction << "\n";
-        return;
+        return false;
     }
 
-    Platform *platform{*platform_opt};
-    Signal *signal{platform->get_signal()};
+    auto platform_it{std::ranges::find_if(platforms, [](Platform *p)
+                                          { return !p->is_occupied(); })};
+    if (platform_it == platforms.end())
+    {
+        return false;
+    }
+    Platform *platform{*platform_it};
 
+    Signal *signal{platform->get_signal()};
     handle_signal_state(tick, signal);
 
-    auto it{std::ranges::find_if(trains, [event](Train *t)
-                                 { return t->get_id() == event.train_id; })};
-    if (it == trains.end())
+    auto train_it{std::ranges::find_if(trains, [&event](Train *t)
+                                       { return t->get_id() == event.train_id; })};
+    if (train_it == trains.end())
     {
         std::cerr << "No matching train found for event train id: " << event.train_id << " in spawn train\n";
-        return;
+        return false;
     }
-
-    Train *train{*it};
+    Train *train{*train_it};
 
     if (train->is_idle())
     {
-        train->spawn(platform);
-        logger->info(std::format("Train {} is leaving the yard {} (actual tick {}, planned tick ())", train->get_id(), station->get_name(), tick, event.tick));
+        bool spawned{train->spawn(platform)};
+        if (!spawned)
+        {
+            return false;
+        }
+
+        logger->info(std::format("Train {} is leaving the yard {} (actual tick {}, planned tick {})", train->get_id(), station->get_name(), tick, event.tick));
         handle_signal_state(tick, signal);
+
+        return true;
+    }
+    else
+    {
+        return false;
     }
 }
 
@@ -415,6 +427,21 @@ void Dispatch::despawn_train(int tick, const Event &event, Train *train, const S
 {
     train->despawn();
     logger->info(std::format("Train {} is arriving at yard {} (actual tick {}, planned tick {})", train->get_id(), yard->get_name(), tick, event.tick));
+
+    if (train->is_out_of_service())
+    {
+        finished_trains.insert(train);
+    }
+
+    check_completion(tick);
+}
+
+void Dispatch::check_completion(int tick)
+{
+    if (finished_trains.size() == trains.size())
+    {
+        agency_control->inactivate(this);
+    }
 }
 
 int Dispatch::calculate_switch_priority(int tick, Train *train)
