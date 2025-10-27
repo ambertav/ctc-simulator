@@ -37,17 +37,12 @@ void Station::add_platform(Platform *platform)
     platforms.push_back(platform);
 }
 
-std::optional<Platform *> Station::select_platform(Direction dir, TrainLine line) const
+std::vector<Platform *> Station::select_platforms(Direction dir, TrainLine line) const
 {
-    auto it{std::ranges::find_if(platforms, [&](Platform *p)
-                                 { return directions_equal(p->get_direction(), dir) && p->supports_train_line(line); })};
+    std::vector<Platform *> selected{};
 
-    if (it != platforms.end())
-    {
-        return *it;
-    }
-    else
-    {
-        return std::nullopt;
-    }
+    std::ranges::copy_if(platforms, std::back_inserter(selected), [&](Platform *p)
+                         { return directions_equal(p->get_direction(), dir) && p->supports_train_line(line); });
+
+    return selected;
 }

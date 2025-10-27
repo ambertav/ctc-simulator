@@ -84,6 +84,25 @@ Info Registry::decode(int encoded_id) const
     return {encoded_id, system_code, train_line, direction, instance};
 }
 
+void Registry::register_route(int train_id, const Transit::Map::Route& route)
+{
+    route_registry.insert({train_id, route});
+}
+
+std::optional<std::reference_wrapper<const Transit::Map::Route>> Registry::get_registered_route(int train_id) const
+{
+    auto it {route_registry.find(train_id)};
+
+    if (it == route_registry.end())
+    {
+        return std::nullopt;
+    }
+    else
+    {
+        return it->second;
+    }
+}
+
 void Registry::build_registry()
 {
     for (const auto &[name, system] : Constants::SYSTEMS)

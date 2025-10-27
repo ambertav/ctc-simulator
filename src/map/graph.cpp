@@ -259,7 +259,7 @@ std::optional<Path> Graph::find_path(int u_id, int v_id) const
     }
 }
 
-std::unordered_map<TrainLine, std::vector<Route>> Graph::get_routes() const
+const std::unordered_map<TrainLine, std::vector<Route>>& Graph::get_routes() const
 {
     return routes;
 }

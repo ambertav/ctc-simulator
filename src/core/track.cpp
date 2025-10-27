@@ -71,29 +71,48 @@ bool Track::is_platform() const
 
 Track *Track::get_next_track(TrainLine line) const
 {
-    for (auto *next : next_tracks)
+    Track* fallback{nullptr};
+
+    for (Track* tr : next_tracks)
     {
-        if (next->supports_train_line(line))
+        if (tr->supports_train_line(line))
         {
-            return next;
+            if (!tr->is_occupied())
+            {
+                return tr;
+            }
+            else
+            {
+                fallback = tr;
+            }
         }
     }
 
-    return nullptr;
+    return fallback;
 }
 
 Track *Track::get_prev_track(TrainLine line) const
 {
-    for (auto *prev : prev_tracks)
+    Track* fallback{nullptr};
+
+    for (Track* tr : prev_tracks)
     {
-        if (prev->supports_train_line(line))
+        if (tr->supports_train_line(line))
         {
-            return prev;
+            if (!tr->is_occupied())
+            {
+                return tr;
+            }
+            else
+            {
+                fallback = tr;
+            }
         }
     }
 
-    return nullptr;
+    return fallback;
 }
+
 
 bool Track::accept_entry(Train *train)
 {

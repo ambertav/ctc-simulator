@@ -12,8 +12,8 @@
 
 void Factory::build_network(const Transit::Map::Graph &graph, const Registry &registry, Constants::System system_code)
 {
-    create_trains(registry, system_code);
     create_stations(graph, registry, system_code);
+    create_trains(registry, system_code);
 
     const auto &routes_map{graph.get_routes()};
     const auto &yard_registry{registry.get_yard_registry(system_code)};
@@ -198,13 +198,31 @@ void Factory::create_trains(const Registry &registry, Constants::System system_c
     {
         Info info{registry.decode(encoded)};
 
-        trains.emplace(
-            info.id,
-            std::make_unique<Train>(
+        const auto &route_opt{registry.get_registered_route(info.id)};
+
+        if (route_opt.has_value())
+        {
+            const auto &train_route{route_opt->get()};
+
+            std::vector<const Station *> train_route_stops{};
+            train_route_stops.reserve(train_route.sequence.size());
+
+            for (const auto &stop : train_route.sequence)
+            {
+                const auto &station{stations.at(stop)};
+                train_route_stops.push_back(station.get());
+            }
+
+            trains.emplace(
                 info.id,
-                info.train_line,
-                ServiceType::BOTH,
-                info.direction));
+                std::make_unique<Train>(
+                    info.id,
+                    train_route.headsign,
+                    info.train_line,
+                    ServiceType::BOTH,
+                    info.direction,
+                    train_route_stops));
+        }
     }
 }
 
@@ -216,30 +234,33 @@ void Factory::create_stations(const Transit::Map::Graph &graph, const Registry &
 
     stations.reserve(adj_list.size() + (yard_registry.size() * 2));
 
-    auto create_platforms = [&](const std::array<Direction, 2> &directions, Station *station_ptr)
+    auto create_platforms = [&](const std::array<Direction, 2> &directions, Station *station_ptr, int count = 1)
     {
         for (const auto &direction : directions)
         {
-            int signal_id{generate_signal_id()};
-            int track_id{generate_track_id()};
+            for (int i{0}; i < count; ++i)
+            {
+                int signal_id{generate_signal_id()};
+                int track_id{generate_track_id()};
 
-            auto signal{std::make_unique<Signal>(signal_id)};
-            Signal *signal_ptr{signal.get()};
-            signals.emplace(signal_id, std::move(signal));
+                auto signal{std::make_unique<Signal>(signal_id)};
+                Signal *signal_ptr{signal.get()};
+                signals.emplace(signal_id, std::move(signal));
 
-            int duration{station_ptr->is_yard() ? 0 : Constants::DEFAULT_DWELL_TIME};
+                int duration{station_ptr->is_yard() ? 0 : Constants::DEFAULT_DWELL_TIME};
 
-            auto platform{std::make_unique<Platform>(
-                track_id,
-                signal_ptr,
-                station_ptr,
-                direction,
-                duration,
-                station_ptr->get_train_lines())};
+                auto platform{std::make_unique<Platform>(
+                    track_id,
+                    signal_ptr,
+                    station_ptr,
+                    direction,
+                    duration,
+                    station_ptr->get_train_lines())};
 
-            station_ptr->add_platform(platform.get());
-            signal_ptr->set_track(static_cast<Track *>(platform.get()));
-            platforms.emplace(track_id, std::move(platform));
+                station_ptr->add_platform(platform.get());
+                signal_ptr->set_track(static_cast<Track *>(platform.get()));
+                platforms.emplace(track_id, std::move(platform));
+            }
         }
     };
 
@@ -248,7 +269,8 @@ void Factory::create_stations(const Transit::Map::Graph &graph, const Registry &
         const Transit::Map::Node *node{graph.get_node(id)};
 
         auto station{std::make_unique<Station>(id, node->name, false, node->train_lines)};
-        create_platforms(directions, station.get());
+        int count{std::clamp((static_cast<int>(node->train_lines.size()) + 2) / 3, 1, 3)};
+        create_platforms(directions, station.get(), count);
         stations.emplace(id, std::move(station));
     }
 
@@ -270,28 +292,26 @@ void Factory::create_stations(const Transit::Map::Graph &graph, const Registry &
 
 void Factory::create_track(Station *from, Station *to, TrainLine train_line, Direction direction, int duration)
 {
-    std::optional<Platform *> from_platform_opt{from->select_platform(direction, train_line)};
-    std::optional<Platform *> to_platform_opt{to->select_platform(direction, train_line)};
+    std::vector<Platform *> from_platforms{from->select_platforms(direction, train_line)};
+    std::vector<Platform *> to_platforms{to->select_platforms(direction, train_line)};
 
-    if (!from_platform_opt.has_value())
+    if (from_platforms.empty())
     {
         std::cerr << "No valid platform found at station " << from->get_name() << " for line " << trainline_to_string(train_line) << " in direction " << direction_to_string(direction) << "\n";
         return;
     }
 
-    if (!to_platform_opt.has_value())
+    if (to_platforms.empty())
     {
         std::cerr << "No valid platform found at station " << to->get_name() << " for line " << trainline_to_string(train_line) << " in direction " << direction_to_string(direction) << "\n";
         return;
     }
 
-    Platform *from_platform{*from_platform_opt};
-    Platform *to_platform{*to_platform_opt};
-
-    auto it{built_connections.find({from_platform, to_platform})};
+    std::tuple<Station *, Station *, Direction> key{std::make_tuple(from, to, direction)};
+    auto it{built_connections.find(key)};
     if (it != built_connections.end())
     {
-        for (Track* tr : it->second)
+        for (Track *tr : it->second)
         {
             tr->add_train_line(train_line);
         }
@@ -320,8 +340,8 @@ void Factory::create_track(Station *from, Station *to, TrainLine train_line, Dir
     }
 
     // construct and connect from track block sub parts
-    std::vector<Track*> built_tracks{};
-    Track *current{static_cast<Track *>(from_platform)};
+    std::vector<Track *> built_tracks{};
+    Track *current{nullptr};
     for (int i{0}; i < duration_subparts.size(); ++i)
     {
         int signal_id{generate_signal_id()};
@@ -337,28 +357,57 @@ void Factory::create_track(Station *from, Station *to, TrainLine train_line, Dir
 
         signal_ptr->set_track(track_ptr);
 
-        current->add_next_track(track_ptr);
-        track_ptr->add_prev_track(current);
+        if (i == 0)
+        {
+            // connect first track to all from_platforms
+            for (Platform *p : from_platforms)
+            {
+                p->add_next_track(track_ptr);
+                track_ptr->add_prev_track(p);
+            }
+        }
+        else
+        {
+            // connect tracks to each other
+            current->add_next_track(track_ptr);
+            track_ptr->add_prev_track(current);
+        }
 
         built_tracks.push_back(track_ptr);
         current = track_ptr;
     }
 
-    current->add_next_track(to_platform);
-    to_platform->add_prev_track(current);
+    // connection last track to all to_platforms
+    for (Platform *p : to_platforms)
+    {
+        current->add_next_track(p);
+        p->add_prev_track(current);
+    }
 
-    built_connections[{from_platform, to_platform}] = std::move(built_tracks);
-    create_switch(from_platform, to_platform);
+    built_connections[key] = std::move(built_tracks);
+    create_switch(from_platforms, to_platforms);
 }
 
-void Factory::create_switch(Platform *from, Platform *to)
+void Factory::create_switch(const std::vector<Platform *> &from_platforms, const std::vector<Platform *> &to_platforms)
 {
-    const auto &next_tracks{from->get_next_tracks()};
-    const auto &prev_tracks{to->get_prev_tracks()};
+    std::unordered_set<Track *> next_tracks{};
+    std::unordered_set<Track *> prev_tracks{};
+
+    std::ranges::for_each(from_platforms, [&](Platform *p)
+                          {
+    const auto& nt {p->get_next_tracks()};
+    next_tracks.insert(nt.begin(), nt.end()); });
+
+    std::ranges::for_each(to_platforms, [&](Platform *p)
+                          {
+    const auto& pt {p->get_prev_tracks()};
+    prev_tracks.insert(pt.begin(), pt.end()); });
 
     if (next_tracks.size() > 1)
     {
-        Switch *sw{from->get_outbound_switch()};
+        Platform *base_platform{from_platforms.front()};
+        Switch *sw{base_platform->get_outbound_switch()};
+
         if (sw == nullptr)
         {
             int switch_id{generate_switch_id()};
@@ -366,20 +415,29 @@ void Factory::create_switch(Platform *from, Platform *to)
             sw = new_sw.get();
             switches.emplace(switch_id, std::move(new_sw));
 
-            for (Track *tr : next_tracks)
+            for (Platform *from : from_platforms)
             {
-                sw->add_departure_track(tr);
-                tr->add_inbound_switch(sw);
+                from->add_outbound_switch(sw);
             }
         }
 
-        from->add_outbound_switch(sw);
-        sw->add_approach_track(from);
+        for (Track *tr : next_tracks)
+        {
+            sw->add_departure_track(tr);
+            tr->add_inbound_switch(sw);
+        }
+
+        for (Platform *from : from_platforms)
+        {
+            sw->add_approach_track(from);
+        }
     }
 
     if (prev_tracks.size() > 1)
     {
-        Switch *sw{to->get_inbound_switch()};
+        Platform *base_platform{to_platforms.front()};
+        Switch *sw{base_platform->get_inbound_switch()};
+
         if (sw == nullptr)
         {
             int switch_id{generate_switch_id()};
@@ -387,14 +445,21 @@ void Factory::create_switch(Platform *from, Platform *to)
             sw = new_sw.get();
             switches.emplace(switch_id, std::move(new_sw));
 
-            for (Track *tr : prev_tracks)
+            for (Platform *to : to_platforms)
             {
-                sw->add_approach_track(tr);
-                tr->add_outbound_switch(sw);
+                to->add_inbound_switch(sw);
             }
         }
 
-        to->add_inbound_switch(sw);
-        sw->add_departure_track(to);
+        for (Track *tr : prev_tracks)
+        {
+            sw->add_approach_track(tr);
+            tr->add_outbound_switch(sw);
+        }
+
+        for (Platform *to : to_platforms)
+        {
+            sw->add_departure_track(to);
+        }
     }
 }

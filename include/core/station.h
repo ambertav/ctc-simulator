@@ -3,8 +3,6 @@
 #include <string>
 #include <vector>
 #include <unordered_set>
-#include <span>
-#include <optional>
 
 #include "enum/transit_types.h"
 
@@ -31,5 +29,5 @@ public:
     bool is_yard() const;
     
     void add_platform(Platform* platform);
-    std::optional<Platform *> select_platform(Direction dir, TrainLine line) const;
+    std::vector<Platform *> select_platforms(Direction dir, TrainLine line) const;
 };

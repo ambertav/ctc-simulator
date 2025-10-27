@@ -7,6 +7,7 @@
 
 #include <unordered_map>
 #include <vector>
+#include <tuple>
 #include <memory>
 
 #include "core/train.h"
@@ -40,7 +41,19 @@ private:
             return std::hash<Platform *>()(p.first) ^ (std::hash<Platform *>()(p.second) << 1);
         }
     };
-    std::unordered_map<std::pair<Platform *, Platform *>, std::vector<Track *>, platform_pair_hash> built_connections;
+
+    struct tuple_hash
+    {
+        size_t operator()(const std::tuple<Station *, Station *, std::variant<SUB::Direction, MNR::Direction, LIRR::Direction, Generic::Direction>> &t) const
+        {
+            auto [from, to, dir] = t;
+            size_t hash{std::hash<Station *>{}(from) ^ (std::hash<Station *>{}(to) << 1)};
+            std::visit([&](auto &&d)
+                       { hash ^= (std::hash<int>{}(static_cast<int>(d)) << 2); }, dir);
+            return hash;
+        }
+    };
+    std::unordered_map<std::tuple<Station *, Station *, std::variant<SUB::Direction, MNR::Direction, LIRR::Direction, Generic::Direction>>, std::vector<Track *>, tuple_hash> built_connections;
 
 public:
     Factory() = default;
@@ -64,5 +77,5 @@ private:
     void create_trains(const Registry &registry, Constants::System system_code);
     void create_stations(const Transit::Map::Graph &graph, const Registry &registry, Constants::System system_code);
     void create_track(Station *from, Station *to, TrainLine train_line, Direction direction, int duration);
-    void create_switch(Platform *from, Platform *to);
+    void create_switch(const std::vector<Platform *> &from_platforms, const std::vector<Platform *> &to_platforms);
 };

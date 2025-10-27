@@ -12,7 +12,7 @@
 #include "enum/transit_types.h"
 #include "system/scheduler.h"
 
-void Scheduler::write_schedule(const Transit::Map::Graph &graph, const Registry &registry, const std::string &outfile_subfolder, Constants::System system_code)
+void Scheduler::write_schedule(const Transit::Map::Graph &graph, Registry &registry, const std::string &outfile_subfolder, Constants::System system_code)
 {
     using json = nlohmann::json;
 
@@ -41,7 +41,7 @@ void Scheduler::write_schedule(const Transit::Map::Graph &graph, const Registry 
     }
 }
 
-void Scheduler::process_system(nlohmann::json &train_lines_json, const Transit::Map::Graph &graph, const Registry &registry, Constants::System system_code)
+void Scheduler::process_system(nlohmann::json &train_lines_json, const Transit::Map::Graph &graph, Registry &registry, Constants::System system_code)
 {
     using json = nlohmann::json;
 
@@ -129,6 +129,9 @@ void Scheduler::process_system(nlohmann::json &train_lines_json, const Transit::
         {
             continue;
         }
+
+        // store chosen route to registry for continuity)
+        registry.register_route(train_id, *matching_route);
 
         json trains_json{};
         trains_json["train_id"] = train_id;

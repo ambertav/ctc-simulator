@@ -7,8 +7,12 @@
 
 #include <vector>
 #include <unordered_map>
+#include <optional>
+#include <functional>
+
 #include "constants/constants.h"
 #include "enum/transit_types.h"
+#include "map/graph.h"
 
 struct Info
 {
@@ -38,9 +42,13 @@ public:
     int encode(Constants::System system_code, int train_line_code, int direction_code, int instance);
     Info decode(int encoded_id) const;
 
+    void register_route(int train_id, const Transit::Map::Route& route);
+    std::optional<std::reference_wrapper<const Transit::Map::Route>> get_registered_route(int train_id) const;
+
 private:
     std::unordered_map<Constants::System, std::vector<int /* encoded_id */>> train_registry;
     std::unordered_map<Constants::System, std::vector<std::pair<int /* from_encoded_id */, int /* to_encoded_id */>>> yard_registry;
+    std::unordered_map<int /* train_id */, const Transit::Map::Route&> route_registry;
 
     Registry();
 

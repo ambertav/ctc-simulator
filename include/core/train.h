@@ -2,11 +2,14 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
+#include <queue>
 
 #include "enum/transit_types.h"
 #include "enum/service_type.h"
 #include "enum/train_status.h"
 
+#include "core/station.h"
 #include "core/track.h"
 #include "core/platform.h"
 
@@ -23,9 +26,10 @@ private:
     TrainStatus status;
     Direction direction;
     Track *current_track;
+    std::queue<const Station*> route;
 
 public:
-    Train(int i, TrainLine l, ServiceType t, Direction d);
+    Train(int i, const std::string& h, TrainLine l, ServiceType t, Direction d, std::vector<const Station*> r);
 
     int get_id() const;
     int get_dwell() const;
@@ -36,21 +40,21 @@ public:
     TrainStatus get_status() const;
     Direction get_direction() const;
     Track *get_current_track() const;
+    const Station* get_destination() const;
 
     void set_lateness(int delta);
-    void set_headsign(std::string trip_headsign);
-    
     void add_dwell(int additional_dwell);
 
     bool is_idle() const;
     bool is_active() const;
     bool is_arriving() const;
     bool is_departing() const;
+    bool is_out_of_service() const;
     bool is_late() const;
 
     bool request_movement();
     bool move_to_track(Track* to);
 
-    void spawn(Platform *yard_platform);
+    bool spawn(Platform *yard_platform);
     void despawn();
 };

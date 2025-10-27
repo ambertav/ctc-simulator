@@ -107,7 +107,7 @@ namespace Transit::Map
         void print() const;
 
         std::optional<Path> find_path(int u_id, int v_id) const;
-        std::unordered_map<TrainLine, std::vector<Route>> get_routes() const;
+        const std::unordered_map<TrainLine, std::vector<Route>>& get_routes() const;
         void add_route(TrainLine route, const std::string &headsign, const std::vector<int> &sequence, const std::vector<int> &distances);
 
     protected:

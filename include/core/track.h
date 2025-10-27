@@ -37,6 +37,7 @@ public:
 
     const std::vector<Track *> &get_next_tracks() const;
     const std::vector<Track *> &get_prev_tracks() const;
+
     Switch *get_outbound_switch() const;
     Switch *get_inbound_switch() const;
 
@@ -44,8 +45,9 @@ public:
     virtual bool supports_train_line(TrainLine line) const;
     virtual bool is_platform() const;
 
-    Track *get_next_track(TrainLine line) const;
-    Track *get_prev_track(TrainLine line) const;
+    Track * get_next_track(TrainLine line) const;
+    Track * get_prev_track(TrainLine line) const;
+
     virtual bool accept_entry(Train *train);
     void release_train();
 

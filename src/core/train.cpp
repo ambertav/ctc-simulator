@@ -1,7 +1,14 @@
 #include "core/train.h"
 
-Train::Train(int i, TrainLine l, ServiceType t, Direction d)
-    : id(i), dwell_timer(0), punctuality_delta(0), train_line(l), service_type(t), status(TrainStatus::IDLE), direction(d), current_track(nullptr) {}
+Train::Train(int i, const std::string& h, TrainLine l, ServiceType t, Direction d, std::vector<const Station *> r)
+    : id(i), dwell_timer(0), punctuality_delta(0), headsign(h), train_line(l), service_type(t),
+      status(TrainStatus::IDLE), direction(d), current_track(nullptr) 
+      {
+        for (const Station* station : r)
+        {
+            route.push(station);
+        }
+      }
 
 int Train::get_id() const
 {
@@ -48,14 +55,21 @@ Track *Train::get_current_track() const
     return current_track;
 }
 
+const Station* Train::get_destination() const
+{
+    if (route.size() > 0)
+    {
+        return route.front();
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
 void Train::set_lateness(int delta)
 {
     punctuality_delta = delta;
-}
-
-void Train::set_headsign(std::string trip_headsign)
-{
-    headsign = trip_headsign;
 }
 
 void Train::add_dwell(int additional_dwell)
@@ -86,6 +100,11 @@ bool Train::is_departing() const
     return status == TrainStatus::DEPARTING;
 }
 
+bool Train::is_out_of_service() const
+{
+    return status == TrainStatus::OUTOFSERVICE;
+}
+
 bool Train::is_late() const
 {
     return punctuality_delta > 0;
@@ -110,10 +129,10 @@ bool Train::move_to_track(Track *to)
     {
         return false;
     }
-    
+
     Track *from{current_track};
 
-    bool moved {to->accept_entry(this)};
+    bool moved{to->accept_entry(this)};
     if (!moved)
     {
         return false;
@@ -129,6 +148,7 @@ bool Train::move_to_track(Track *to)
     if (to->is_platform())
     {
         status = TrainStatus::ARRIVING;
+        route.pop();
     }
     else if (from && from->is_platform())
     {
@@ -143,7 +163,7 @@ bool Train::move_to_track(Track *to)
     return true;
 }
 
-void Train::spawn(Platform *yard_platform)
+bool Train::spawn(Platform *yard_platform)
 {
     bool spawned{yard_platform->accept_entry(this)};
     if (spawned)
@@ -151,6 +171,8 @@ void Train::spawn(Platform *yard_platform)
         current_track = yard_platform;
         status = TrainStatus::READY;
     }
+
+    return spawned;
 }
 
 void Train::despawn()
